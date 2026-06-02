@@ -206,13 +206,45 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
     <div class="section-label">Techniques intermédiaires · Moyen</div>
     <div class="tips-group">
 
-      <!-- 5. Ends imply middles -->
+      <!-- 5a. Dist4 -->
       <div class="tip-card medium-card">
         <div class="tip-body">
-          <div class="tip-name">↔ Extrémités identiques → milieu opposé <span class="tip-badge medium">Moyen</span></div>
+          <div class="tip-name">↔ Distance 4 : la 6ᵉ case est forcée <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Sur 4 cases consécutives, si les deux <b>extrémités sont identiques</b> (ex: ☀ · · ☀), les deux cases du milieu doivent être l'<b>autre symbole</b>.<br><br>
-            <b>Pourquoi ?</b> Si une case du milieu était ☀, on aurait ☀ ☀ · ☀ ou ☀ · ☀ ☀ — deux paires obligent la 3ᵉ à être 🌙, et l'équilibre confirme le reste.
+            Si deux cases séparées de <b>4 positions</b> sont identiques — [0] et [4], ou [1] et [5] — alors la case à l'autre bout de la ligne est <b>forcée vers l'opposé</b>.<br><br>
+            <b>Pourquoi ?</b> Il n'existe que 3 lignes légales contenant ce pattern, et dans les trois, l'extrémité distante est toujours l'autre symbole. L'équilibre de la ligne (3+3) n'admet pas d'autre possibilité.<br><br>
+            <b>Exemple :</b> [0]=☀ et [4]=☀ → [5] = 🌙 obligatoirement.
+          </div>
+        </div>
+        <div class="mini-grid">
+          <div class="mg" style="grid-template-rows:repeat(1,36px)">
+            <div class="mg-row">
+              <div class="mc filled">☀</div>
+              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+              <div class="mc filled">☀</div>
+              <div class="mc hi result">🌙</div>
+            </div>
+          </div>
+          <div style="height:6px"></div>
+          <div class="mg" style="grid-template-rows:repeat(1,36px)">
+            <div class="mg-row">
+              <div class="mc">·</div>
+              <div class="mc filled">🌙</div>
+              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+              <div class="mc filled">🌙</div>
+            </div>
+          </div>
+          <div style="height:4px;font-size:10px;color:var(--muted);text-align:center">→ [0] = ☀</div>
+        </div>
+      </div>
+
+      <!-- 5b. Dist5 -->
+      <div class="tip-card medium-card">
+        <div class="tip-body">
+          <div class="tip-name">↔↔ Extrémités identiques → cases 2 et 5 forcées <span class="tip-badge medium">Moyen</span></div>
+          <div class="tip-desc">
+            Si <b>[0] et [5] sont identiques</b>, alors les cases [1] et [4] sont toutes deux forcées vers le symbole opposé.<br><br>
+            <b>Pourquoi ?</b> Il n'existe que 2 lignes légales avec [0]=[5]=☀, et dans les deux, [1]=🌙 et [4]=🌙. Idem pour 🌙. C'est une conséquence combinée de l'anti-triplet et de l'équilibre.
           </div>
         </div>
         <div class="mini-grid">
@@ -220,9 +252,40 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
             <div class="mg-row">
               <div class="mc filled">☀</div>
               <div class="mc hi result">🌙</div>
+              <div class="mc">·</div><div class="mc">·</div>
               <div class="mc hi result">🌙</div>
               <div class="mc filled">☀</div>
-              <div class="mc">·</div><div class="mc">·</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5c. Pair at extremity -->
+      <div class="tip-card medium-card">
+        <div class="tip-body">
+          <div class="tip-name">XX en bord → extrémité opposée forcée <span class="tip-badge medium">Moyen</span></div>
+          <div class="tip-desc">
+            Si une <b>paire identique</b> occupe les deux premières cases [0,1] ou les deux dernières [4,5], alors la case à l'autre extrémité de la ligne est <b>forcée vers l'opposé</b>.<br><br>
+            <b>Pourquoi ?</b> Une paire en bord ne laisse que 2 lignes légales possibles, et dans les deux, l'extrémité distante est toujours l'autre symbole.<br><br>
+            <b>Note :</b> les cas immédiats (case [2] après ☀☀ en [0,1]) sont déjà couverts par la règle anti-triplet. Ce tip couvre uniquement la case <em>distante</em> [5].
+          </div>
+        </div>
+        <div class="mini-grid">
+          <div class="mg" style="grid-template-rows:repeat(1,36px)">
+            <div class="mg-row">
+              <div class="mc filled">🌙</div>
+              <div class="mc filled">🌙</div>
+              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+              <div class="mc hi result">☀</div>
+            </div>
+          </div>
+          <div style="height:6px"></div>
+          <div class="mg" style="grid-template-rows:repeat(1,36px)">
+            <div class="mg-row">
+              <div class="mc hi result">🌙</div>
+              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+              <div class="mc filled">☀</div>
+              <div class="mc filled">☀</div>
             </div>
           </div>
         </div>

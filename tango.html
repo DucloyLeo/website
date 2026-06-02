@@ -255,7 +255,52 @@ function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const 
 function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-row'});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-row'});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-col'});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-col'});}); }return m;}
 function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o,tip:'triple-h'});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o,tip:'triple-v'});break;}}}return m;}
 function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN),tip:'constraint-h'});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN),tip:'constraint-h'});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN),tip:'constraint-v'});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN),tip:'constraint-v'});}return m;}
-function tEnds(b){const m=[];for(let r=0;r<N;r++)for(let i=0;i<=N-4;i++){const a=b[r][i],bv=b[r][i+3];if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;if(b[r][i+1]===EMPTY)m.push({r,c:i+1,val:o,tip:'ends-h'});if(b[r][i+2]===EMPTY)m.push({r,c:i+2,val:o,tip:'ends-h'});}}for(let c=0;c<N;c++)for(let i=0;i<=N-4;i++){const a=b[i][c],bv=b[i+3][c];if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;if(b[i+1][c]===EMPTY)m.push({r:i+1,c,val:o,tip:'ends-v'});if(b[i+2][c]===EMPTY)m.push({r:i+2,c,val:o,tip:'ends-v'});}}return m;}
+function tEnds(b){
+  const m=[];
+  const opp=v=>v===SUN?MOON:SUN;
+  // Rule A — dist4: [p] and [p+4] same → the 6th cell is opposite
+  // Row: [0]+[4]=v → [5]=opp | [1]+[5]=v → [0]=opp
+  // Col: [r]+[r+4]=v → [r+5 or r-1]=opp
+  for(let r=0;r<N;r++){
+    const a=b[r][0],e=b[r][4];
+    if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a),tip:'dist4'});
+    const bb=b[r][1],f=b[r][5];
+    if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb),tip:'dist4'});
+  }
+  for(let c=0;c<N;c++){
+    const a=b[0][c],e=b[4][c];
+    if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a),tip:'dist4'});
+    const bb=b[1][c],f=b[5][c];
+    if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb),tip:'dist4'});
+  }
+  // Rule B — dist5: [0] and [5] same → [1] and [4] are both opposite
+  for(let r=0;r<N;r++){
+    const a=b[r][0],f=b[r][5];
+    if(a!==EMPTY&&a===f){
+      const o=opp(a);
+      if(b[r][1]===EMPTY)m.push({r,c:1,val:o,tip:'dist5'});
+      if(b[r][4]===EMPTY)m.push({r,c:4,val:o,tip:'dist5'});
+    }
+  }
+  for(let c=0;c<N;c++){
+    const a=b[0][c],f=b[5][c];
+    if(a!==EMPTY&&a===f){
+      const o=opp(a);
+      if(b[1][c]===EMPTY)m.push({r:1,c,val:o,tip:'dist5'});
+      if(b[4][c]===EMPTY)m.push({r:4,c,val:o,tip:'dist5'});
+    }
+  }
+  // Rule C — pair at extremity: [0,1]=v → [5]=opp | [4,5]=v → [0]=opp
+  for(let r=0;r<N;r++){
+    if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0]),tip:'pair-end'});
+    if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4]),tip:'pair-end'});
+  }
+  for(let c=0;c<N;c++){
+    if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c]),tip:'pair-end'});
+    if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c]),tip:'pair-end'});
+  }
+  return m;
+}
 function tChain(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v,tip:'chain-eq'});if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v,tip:'chain-eq'});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v,tip:'chain-eq'});}}if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o,tip:'chain-x'});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o,tip:'chain-x'});}}}for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){const k1=r+','+c,k2=(r+1)+','+c;if(ccv[k1]==='='&&ccv[k2]==='='){const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v,tip:'chain-eq'});if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v,tip:'chain-eq'});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v,tip:'chain-eq'});}}if(ccv[k1]==='×'&&ccv[k2]==='×'){const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o,tip:'chain-x'});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o,tip:'chain-x'});}}}return m;}
 function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON,tip:'elim'});if(!cM&&cS)m.push({r,c,val:SUN,tip:'elim'});}return m;}
 function humanSolve(puz,cch,ccv){const b=puz.map(r=>[...r]);let cx=0;for(let i=0;i<200;i++){const sm=[...tBalance(b),...tTriple(b),...tConstraints(b,cch,ccv)];let ap=0;for(const{r,c,val}of sm){if(b[r][c]===EMPTY){b[r][c]=val;ap++;}}if(ap)continue;const cm=[...tEnds(b),...tChain(b,cch,ccv),...tElim(b,cch,ccv)];let ca=0;for(const{r,c,val}of cm){if(b[r][c]===EMPTY){b[r][c]=val;ca++;cx++;}}if(ca)continue;break;}return{solved:b.every(row=>row.every(v=>v!==EMPTY)),cx};}
@@ -267,8 +312,9 @@ const TIP_TEXT={
   'triple-v':'Pas de triplet : deux symboles identiques côte à côte en colonne — la case adjacente est forcée pour éviter un triplet vertical.',
   'constraint-h':'Contrainte = / × : la case voisine est connue et la contrainte entre elles détermine directement le symbole de cette case.',
   'constraint-v':'Contrainte = / × : la case voisine (verticale) est connue et la contrainte entre elles détermine directement le symbole de cette case.',
-  'ends-h':'Extrémités identiques : sur 4 cases consécutives en ligne, si les deux extrémités sont identiques, les deux cases du milieu doivent être le symbole opposé (éviter le triplet et respecter l\'équilibre).',
-  'ends-v':'Extrémités identiques : sur 4 cases consécutives en colonne, si les deux extrémités sont identiques, les deux cases du milieu doivent être le symbole opposé.',
+  'dist4':'Distance 4 : deux cases identiques séparées de 4 positions (ex : [0] et [4]) forcent la 6ᵉ case à être le symbole opposé — c\'est la seule valeur qui maintient l\'équilibre de la ligne.',
+  'dist5':'Extrémités identiques : si [0] et [5] sont identiques, les cases [1] et [4] sont toutes deux forcées vers le symbole opposé — seules deux dispositions légales existent et elles partagent cette contrainte.',
+  'pair-end':'Paire en extrémité : une paire identique en [0-1] force [5] à l\'opposé (et inversement pour [4-5] → [0]) — l\'équilibre de la ligne n\'admet qu\'une seule valeur possible pour cette extrémité distante.',
   'chain-eq':'Chaîne = = : deux contraintes "égal" consécutives forment un trio — si l\'un est connu, les deux autres sont identiques.',
   'chain-x':'Chaîne × × : si A ≠ B et B ≠ C, alors A et C sont nécessairement identiques.',
   'elim':'Élimination : placer l\'autre symbole ici mènerait à une contradiction détectée dans la ligne, la colonne ou une contrainte — ce symbole est le seul légal.',

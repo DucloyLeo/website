@@ -13,7 +13,6 @@
   --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
   --text:#f0ede6;--muted:rgba(240,237,230,0.45);
   --sun:#f5c842;--moon:#8fa8d4;
-  --error:rgba(220,80,60,0.22);--win:rgba(80,180,120,0.15);
   --radius:10px;
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding:0 1.5rem}
@@ -32,14 +31,22 @@ h1{font-family:'Crimson Pro',serif;font-size:2rem;font-weight:600;text-align:cen
 .tdot.run{background:var(--sun)}.tdot.done{background:#6dbb8a}
 
 /* Grid */
-.grid-wrap{position:relative;display:inline-block}
+.grid-outer{position:relative}
+.grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
+.grid-wrap.blurred{filter:blur(6px) brightness(0.6);pointer-events:none}
 table{border-collapse:collapse;border:2px solid var(--border2);border-radius:var(--radius);overflow:hidden}
 td{position:relative;text-align:center;vertical-align:middle;border:1px solid var(--border)}
 .ci{display:flex;align-items:center;justify-content:center;width:64px;height:64px;font-size:1.75rem;cursor:pointer;user-select:none;background:var(--surface);transition:background .1s}
 .ci:hover{background:var(--surface2)}
 .ci.fx{cursor:default;background:#1a1a1d}
-.ci.err{background:var(--error)}
-.ci.win{background:var(--win)}
+
+/* Error: glow outline, NOT background fill */
+.ci.err{
+  box-shadow:inset 0 0 0 2px rgba(220,80,60,0.8), 0 0 8px rgba(220,80,60,0.35);
+  background:var(--surface);
+}
+.ci.fx.err{background:#1a1a1d}
+
 .cn{position:absolute;font-size:10px;font-weight:500;color:var(--muted);z-index:3;pointer-events:none;background:var(--bg);border-radius:99px;width:15px;height:15px;display:flex;align-items:center;justify-content:center}
 .cn.h{right:-8px;top:50%;transform:translateY(-50%)}
 .cn.v{bottom:-8px;left:50%;transform:translateX(-50%)}
@@ -49,17 +56,14 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .btn{font-family:'DM Mono',monospace;font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .btn:hover{background:var(--surface2)}
 .btn.sun{border-color:var(--sun);color:var(--sun)}.btn.sun:hover{background:rgba(245,200,66,.08)}
-.btn.moon{border-color:var(--moon);color:var(--moon)}.btn.moon:hover{background:rgba(143,168,212,.08)}
 .btn:disabled{opacity:.28;cursor:not-allowed}
 
-/* Diff badge */
-.diff-badge{font-size:11px;padding:3px 11px;border-radius:99px;border:1px solid var(--border2);color:var(--muted);letter-spacing:.06em}
-.diff-badge.easy{border-color:#6dbb8a44;color:#6dbb8a}
-.diff-badge.medium{border-color:#f5c84244;color:var(--sun)}
-.diff-badge.hard{border-color:#d87a5044;color:#d87a50}
-
-.status{font-size:12px;color:var(--muted);min-height:1.2rem;text-align:center}
-.status.gen{color:var(--moon)}
+/* Diff badge — clickable */
+.diff-badge{font-size:11px;padding:3px 11px;border-radius:99px;border:1px solid var(--border2);color:var(--muted);letter-spacing:.06em;cursor:pointer;transition:all .15s}
+.diff-badge:hover{background:var(--surface2)}
+.diff-badge.easy{border-color:#6dbb8a66;color:#6dbb8a}
+.diff-badge.medium{border-color:#f5c84266;color:var(--sun)}
+.diff-badge.hard{border-color:#d87a5066;color:#d87a50}
 
 /* Pref toggle */
 .pref-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
@@ -74,22 +78,21 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .rules{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.4rem;font-size:12px;color:var(--muted);line-height:1.8;max-width:400px;width:100%}
 .rr{display:flex;gap:10px;margin-bottom:5px}.rr:last-child{margin-bottom:0}
 
-/* Overlay modals */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:center;justify-content:center}
+/* Overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:center;justify-content:center;cursor:pointer}
 .overlay.show{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:2rem 2.2rem;max-width:360px;width:90%;display:flex;flex-direction:column;gap:1.1rem}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:2rem 2.2rem;max-width:360px;width:90%;display:flex;flex-direction:column;gap:1.1rem;cursor:default}
 .modal-ico{font-size:2.2rem;text-align:center}
 .modal-title{font-family:'Crimson Pro',serif;font-size:1.5rem;font-weight:600;text-align:center}
 .modal-sub{font-size:12px;color:var(--muted);line-height:1.6;text-align:center}
 .modal-time{font-size:1.7rem;font-weight:500;color:var(--sun);text-align:center;letter-spacing:.06em}
 .modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:.3rem}
 
-/* Diff selector in modal */
+/* Diff grid */
 .diff-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .diff-opt{font-family:'DM Mono',monospace;font-size:11px;padding:14px 8px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:6px;letter-spacing:.04em}
-.diff-opt:hover{background:var(--surface2)}
 .diff-opt .d-icon{font-size:1.4rem}
-.diff-opt .d-name{font-weight:500;color:var(--text)}
+.diff-opt .d-name{font-weight:500;color:var(--text);font-size:12px}
 .diff-opt .d-desc{font-size:10px;line-height:1.4;text-align:center}
 .diff-opt.easy:hover,.diff-opt.easy.sel{border-color:#6dbb8a88;background:rgba(109,187,138,.07)}
 .diff-opt.medium:hover,.diff-opt.medium.sel{border-color:#f5c84266;background:rgba(245,200,66,.06)}
@@ -103,7 +106,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <nav>
   <a href="index.html" class="nav-back">← Accueil</a>
   <span class="nav-title">☀ Tango 🌙</span>
-  <span class="diff-badge" id="diff-badge">—</span>
+  <span class="diff-badge" id="diff-badge" onclick="openChangeDiff()" title="Changer la difficulté">—</span>
 </nav>
 
 <main>
@@ -117,9 +120,9 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <span class="timer-val" id="tval">0:00</span>
   </div>
 
-  <div class="grid-wrap"><table id="grid"></table></div>
-
-  <div class="status" id="status"></div>
+  <div class="grid-outer">
+    <div class="grid-wrap" id="grid-wrap"><table id="grid"></table></div>
+  </div>
 
   <div class="controls">
     <button class="btn" id="btn-undo" onclick="undo()" disabled>↩ Annuler</button>
@@ -129,7 +132,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
   </div>
 
   <div class="pref-row">
-    <label class="toggle" title="Mémoriser la difficulté">
+    <label class="toggle">
       <input type="checkbox" id="pref-remember" onchange="onPrefChange()">
       <span class="toggle-track"><span class="toggle-thumb"></span></span>
     </label>
@@ -145,7 +148,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </main>
 
 <!-- Difficulty picker modal -->
-<div class="overlay" id="diff-modal">
+<div class="overlay" id="diff-modal" onclick="onOverlayClick(event,'diff-modal')">
   <div class="modal">
     <div class="modal-ico">☀🌙</div>
     <div class="modal-title">Choisir la difficulté</div>
@@ -171,7 +174,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </div>
 
 <!-- Win modal -->
-<div class="overlay" id="win-modal">
+<div class="overlay" id="win-modal" onclick="onOverlayClick(event,'win-modal')">
   <div class="modal">
     <div class="modal-ico">🎉</div>
     <div class="modal-title">Puzzle résolu !</div>
@@ -179,7 +182,6 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <div class="modal-sub" id="win-sub">Bravo !</div>
     <div class="modal-btns">
       <button class="btn sun" style="justify-content:center;padding:11px" onclick="onWinNext()">✦ Nouveau puzzle</button>
-      <button class="btn" style="justify-content:center;padding:11px" onclick="closeWin()">Voir la grille</button>
     </div>
   </div>
 </div>
@@ -203,19 +205,27 @@ let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
 let generating=false;
-let currentDiff=null; // null = not chosen yet
+let currentDiff=null;
 let rememberDiff=false;
-let pendingAfterWin=false;
+let errorTimeout=null; // debounce for error highlighting
+
+/* ─── Overlay close on outside click ─── */
+function onOverlayClick(e, id){
+  if(e.target===document.getElementById(id)){
+    document.getElementById(id).classList.remove('show');
+    // If win modal closed by clicking outside, unblur the grid
+    if(id==='win-modal'){
+      // keep blurred — user just dismissed
+    }
+  }
+}
 
 /* ─── Persistence ─── */
 function loadPrefs(){
   try{
     rememberDiff=localStorage.getItem('tango_remember')==='1';
     document.getElementById('pref-remember').checked=rememberDiff;
-    if(rememberDiff){
-      const d=localStorage.getItem('tango_diff');
-      if(d)currentDiff=d;
-    }
+    if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}
   }catch(e){}
 }
 function savePrefs(){
@@ -225,8 +235,7 @@ function savePrefs(){
   }catch(e){}
 }
 function onPrefChange(){
-  rememberDiff=document.getElementById('pref-remember').checked;
-  savePrefs();
+  rememberDiff=document.getElementById('pref-remember').checked;savePrefs();
 }
 
 /* ─── Timer ─── */
@@ -241,7 +250,7 @@ function startTimer(){
 function stopTimer(){clearInterval(timerInt);document.getElementById('tdot').className='tdot done';}
 function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
 
-/* ─── Human solver tips ─── */
+/* ─── Human solver ─── */
 function isConsistent(b,cch,ccv){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const v=b[r][c];if(v===EMPTY)continue;
@@ -251,130 +260,17 @@ function isConsistent(b,cch,ccv){
     if(rs>N/2||rm>N/2)return false;
     let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});
     if(cs>N/2||cm>N/2)return false;
-    const kh=r+','+c;
-    if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}
-    const kv=r+','+c;
-    if(ccv[kv]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))return false;}
+    const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}
+    const kv=r+','+c;if(ccv[kv]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))return false;}
   }
   return true;
 }
-function tBalance(b){
-  const m=[];
-  for(let r=0;r<N;r++){
-    const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;
-    if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});
-    if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});
-  }
-  for(let c=0;c<N;c++){
-    const col=b.map(row=>row[c]);
-    const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;
-    if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});
-    if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});});
-  }
-  return m;
-}
-function tTriple(b){
-  const m=[];
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-    if(b[r][c]!==EMPTY)continue;
-    for(const val of[SUN,MOON]){
-      const o=val===SUN?MOON:SUN;let f=false;
-      if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;
-      if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;
-      if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;
-      if(f){m.push({r,c,val:o});break;}
-    }
-    if(b[r][c]!==EMPTY)continue;
-    for(const val of[SUN,MOON]){
-      const o=val===SUN?MOON:SUN;let f=false;
-      if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;
-      if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;
-      if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;
-      if(f){m.push({r,c,val:o});break;}
-    }
-  }
-  return m;
-}
-function tConstraints(b,cch,ccv){
-  const m=[];
-  for(const[k,t]of Object.entries(cch)){
-    const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;
-    const a=b[r][c],bv=b[r][c+1];
-    if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});
-    if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});
-  }
-  for(const[k,t]of Object.entries(ccv)){
-    const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;
-    const a=b[r][c],bv=b[r+1][c];
-    if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});
-    if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});
-  }
-  return m;
-}
-function tEnds(b){
-  const m=[];
-  for(let r=0;r<N;r++)for(let i=0;i<=N-4;i++){
-    const a=b[r][i],bv=b[r][i+3];
-    if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;
-      if(b[r][i+1]===EMPTY)m.push({r,c:i+1,val:o});
-      if(b[r][i+2]===EMPTY)m.push({r,c:i+2,val:o});}
-  }
-  for(let c=0;c<N;c++)for(let i=0;i<=N-4;i++){
-    const a=b[i][c],bv=b[i+3][c];
-    if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;
-      if(b[i+1][c]===EMPTY)m.push({r:i+1,c,val:o});
-      if(b[i+2][c]===EMPTY)m.push({r:i+2,c,val:o});}
-  }
-  return m;
-}
-function tChain(b,cch,ccv){
-  const m=[];
-  for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){
-    if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){
-      const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);
-      if(vals.length){const v=vals[0];
-        if(b[r][c]===EMPTY)m.push({r,c,val:v});
-        if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v});
-        if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v});}
-    }
-    if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){
-      const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;
-        if(b[r][c]===EMPTY)m.push({r,c,val:o});
-        if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o});}
-    }
-  }
-  for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){
-    const k1=r+','+c,k2=(r+1)+','+c;
-    if(ccv[k1]==='='&&ccv[k2]==='='){
-      const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);
-      if(vals.length){const v=vals[0];
-        if(b[r][c]===EMPTY)m.push({r,c,val:v});
-        if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v});
-        if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v});}
-    }
-    if(ccv[k1]==='×'&&ccv[k2]==='×'){
-      const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;
-        if(b[r][c]===EMPTY)m.push({r,c,val:o});
-        if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o});}
-    }
-  }
-  return m;
-}
-function tElim(b,cch,ccv){
-  const m=[];
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-    if(b[r][c]!==EMPTY)continue;
-    let cS=true,cM=true;
-    for(const val of[SUN,MOON]){
-      const b2=b.map(row=>[...row]);b2[r][c]=val;
-      if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}
-    }
-    if(!cS&&cM)m.push({r,c,val:MOON});
-    if(!cM&&cS)m.push({r,c,val:SUN});
-  }
-  return m;
-}
-
+function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});}); }return m;}
+function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o});break;}}}return m;}
+function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}return m;}
+function tEnds(b){const m=[];for(let r=0;r<N;r++)for(let i=0;i<=N-4;i++){const a=b[r][i],bv=b[r][i+3];if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;if(b[r][i+1]===EMPTY)m.push({r,c:i+1,val:o});if(b[r][i+2]===EMPTY)m.push({r,c:i+2,val:o});}}for(let c=0;c<N;c++)for(let i=0;i<=N-4;i++){const a=b[i][c],bv=b[i+3][c];if(a!==EMPTY&&a===bv){const o=a===SUN?MOON:SUN;if(b[i+1][c]===EMPTY)m.push({r:i+1,c,val:o});if(b[i+2][c]===EMPTY)m.push({r:i+2,c,val:o});}}return m;}
+function tChain(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v});}}if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o});}}}for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){const k1=r+','+c,k2=(r+1)+','+c;if(ccv[k1]==='='&&ccv[k2]==='='){const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v});}}if(ccv[k1]==='×'&&ccv[k2]==='×'){const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o});}}}return m;}
+function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON});if(!cM&&cS)m.push({r,c,val:SUN});}return m;}
 function humanSolve(puz,cch,ccv){
   const b=puz.map(r=>[...r]);let cx=0;
   for(let i=0;i<200;i++){
@@ -383,8 +279,7 @@ function humanSolve(puz,cch,ccv){
     if(ap)continue;
     const cm=[...tEnds(b),...tChain(b,cch,ccv),...tElim(b,cch,ccv)];
     let ca=0;for(const{r,c,val}of cm){if(b[r][c]===EMPTY){b[r][c]=val;ca++;cx++;}}
-    if(ca)continue;
-    break;
+    if(ca)continue;break;
   }
   return{solved:b.every(row=>row.every(v=>v!==EMPTY)),cx};
 }
@@ -406,70 +301,49 @@ function isValid(b,r,c,val){
 }
 function countBT(b,cch,ccv,lim){
   let cnt=0;const brd=b.map(r=>[...r]);
-  function bt(){
-    if(cnt>=lim)return;
-    for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-      if(brd[r][c]===EMPTY){
-        for(const val of[SUN,MOON]){
-          if(!isValid(brd,r,c,val))continue;
-          let ok=true;
-          const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}
-          const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}
-          const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}
-          const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}
-          if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}
-        }
-        return;
-      }
-    }
-    cnt++;
-  }
+  function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}
   bt();return cnt;
 }
 function genSolution(){
   const b=Array.from({length:N},()=>Array(N).fill(EMPTY));
-  function fill(pos){
-    if(pos===N*N)return true;
-    const r=Math.floor(pos/N),c=pos%N;
-    const vals=Math.random()<.5?[SUN,MOON]:[MOON,SUN];
-    for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}
-    return false;
-  }
+  function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=Math.random()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}
   return fill(0)?b:null;
 }
-
 function genForDiff(diff){
-  // Constraint density: easy=high, hard=low (constraints help the player)
   const chR=diff==='easy'?0.52:diff==='medium'?0.30:0.14;
   const cvR=diff==='easy'?0.52:diff==='medium'?0.30:0.14;
-  // Max complex tips allowed during removal
   const maxCx=diff==='easy'?1:diff==='medium'?6:999;
-  // Min complex tips required in final puzzle
   const minCx=diff==='easy'?0:diff==='medium'?2:6;
-
   for(let att=0;att<350;att++){
     const sol=genSolution();if(!sol)continue;
     const cch={},ccv={};
     for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(Math.random()<chR)cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}
     for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(Math.random()<cvR)ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}
-
     const puz=sol.map(r=>[...r]);
-    const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
-    cells.sort(()=>Math.random()-.5);
-
-    for(const[r,c]of cells){
-      const sv=puz[r][c];puz[r][c]=EMPTY;
-      const{solved,cx}=humanSolve(puz,cch,ccv);
-      if(!solved||cx>maxCx){puz[r][c]=sv;}
-    }
-
+    const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);cells.sort(()=>Math.random()-.5);
+    for(const[r,c]of cells){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved,cx}=humanSolve(puz,cch,ccv);if(!solved||cx>maxCx){puz[r][c]=sv;}}
     const{solved,cx}=humanSolve(puz,cch,ccv);
     if(!solved||cx<minCx||cx>maxCx)continue;
     if(countBT(puz,cch,ccv,2)!==1)continue;
-
     return{puzzle:puz,solution:sol,ch:cch,cv:ccv,cx};
   }
   return null;
+}
+
+/* ─── Error highlighting with 3s debounce ─── */
+let pendingErrors = new Set();
+let errorApplied = false;
+
+function scheduleErrors(){
+  clearTimeout(errorTimeout);
+  errorTimeout = setTimeout(()=>{
+    errorApplied = true;
+    renderGrid(true);
+  }, 3000);
+}
+function cancelErrors(){
+  clearTimeout(errorTimeout);
+  errorApplied = false;
 }
 
 /* ─── Render ─── */
@@ -479,16 +353,15 @@ function getErrors(){
     const v=board[r][c];if(v===EMPTY)continue;
     if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)[c,c+1,c+2].forEach(ci=>err.add(r+','+ci));
     if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)[r,r+1,r+2].forEach(ri=>err.add(ri+','+c));
-    const kh=r+','+c;
-    if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s)){err.add(kh);err.add(r+','+(c+1));}}
-    const kv=r+','+c;
-    if(cv[kv]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kv]==='='&&!s)||(cv[kv]==='×'&&s)){err.add(kv);err.add((r+1)+','+c);}}
+    const kh=r+','+c;if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s)){err.add(kh);err.add(r+','+(c+1));}}
+    const kv=r+','+c;if(cv[kv]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kv]==='='&&!s)||(cv[kv]==='×'&&s)){err.add(kv);err.add((r+1)+','+c);}}
   }
   return err;
 }
-function renderGrid(){
+
+function renderGrid(showErrors){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
-  const errs=getErrors();
+  const errs = showErrors ? getErrors() : new Set();
   for(let r=0;r<N;r++){
     const tr=document.createElement('tr');
     for(let c=0;c<N;c++){
@@ -515,35 +388,56 @@ function cycleCell(r,c,dir){
   if(!timerOn&&!timerDone)startTimer();
   hist.push({r,c,prev:board[r][c]});
   board[r][c]=((board[r][c]+dir+3)%3);
-  renderGrid();
-  if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
+  // Re-render without errors, then schedule error check
+  cancelErrors();
+  renderGrid(false);
+  if(board.every(row=>row.every(v=>v!==EMPTY))){
+    checkWin();
+  } else {
+    // Only schedule error highlight if there are actual errors
+    const hasErrs = getErrors().size > 0;
+    if(hasErrs) scheduleErrors();
+  }
 }
+
 function undo(){
   if(!hist.length)return;
-  const{r,c,prev}=hist.pop();board[r][c]=prev;renderGrid();
+  const{r,c,prev}=hist.pop();board[r][c]=prev;
+  cancelErrors();
+  renderGrid(false);
+  const hasErrs=getErrors().size>0;
+  if(hasErrs)scheduleErrors();
 }
+
 function checkWin(){
+  cancelErrors();
   if(getErrors().size>0)return;
   for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   stopTimer();timerDone=true;
-  document.querySelectorAll('.ci:not(.fx)').forEach(el=>el.classList.add('win'));
-  document.getElementById('modal-time').textContent=fmt(timerSec);
-  const lbl=DIFF_LABELS[currentDiff]||'';
-  document.getElementById('win-sub').textContent='Niveau '+lbl+' · Bravo !';
-  setTimeout(()=>document.getElementById('win-modal').classList.add('show'),500);
+  // Blur the grid instead of coloring cells
+  setTimeout(()=>{
+    document.getElementById('grid-wrap').classList.add('blurred');
+    document.getElementById('modal-time').textContent=fmt(timerSec);
+    document.getElementById('win-sub').textContent='Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
+    document.getElementById('win-modal').classList.add('show');
+  },400);
 }
+
 function resetPuzzle(){
   board=puzzle.map(r=>[...r]);hist=[];
+  cancelErrors();
   resetTimer();
-  document.getElementById('status').textContent='';
-  renderGrid();
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  renderGrid(false);
 }
+
 function showSolution(){
   board=solution.map(r=>[...r]);
+  cancelErrors();
   stopTimer();timerDone=true;
-  document.getElementById('status').textContent='Solution affichée.';
-  renderGrid();
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  renderGrid(false);
 }
 
 /* ─── Difficulty flow ─── */
@@ -553,11 +447,14 @@ function setDiffBadge(diff){
   el.className='diff-badge '+DIFF_BADGE_CLASS[diff];
 }
 
+function openChangeDiff(){
+  document.getElementById('diff-modal-sub').textContent='Changer la difficulté (génère un nouveau puzzle)';
+  document.getElementById('diff-modal').classList.add('show');
+}
+
 function askNewPuzzle(){
-  // If remember is on AND a diff is already chosen, generate directly
-  if(rememberDiff&&currentDiff){
-    startGeneration(currentDiff);
-  } else {
+  if(rememberDiff&&currentDiff){startGeneration(currentDiff);}
+  else{
     document.getElementById('diff-modal-sub').textContent='Quel niveau pour ce nouveau puzzle ?';
     document.getElementById('diff-modal').classList.add('show');
   }
@@ -572,50 +469,40 @@ function pickDiff(diff){
 
 function onWinNext(){
   document.getElementById('win-modal').classList.remove('show');
-  pendingAfterWin=false;
-  if(rememberDiff&&currentDiff){
-    startGeneration(currentDiff);
-  } else {
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  if(rememberDiff&&currentDiff){startGeneration(currentDiff);}
+  else{
     document.getElementById('diff-modal-sub').textContent='Quel niveau pour le prochain puzzle ?';
     document.getElementById('diff-modal').classList.add('show');
   }
 }
-function closeWin(){document.getElementById('win-modal').classList.remove('show');}
 
 function startGeneration(diff){
   if(generating)return;
-  generating=true;
-  setButtons(true);
+  generating=true;setButtons(true);
+  cancelErrors();
+  document.getElementById('grid-wrap').classList.remove('blurred');
   document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';
   document.getElementById('gen-modal').classList.add('show');
   resetTimer();hist=[];
-  document.getElementById('status').textContent='';
   document.getElementById('grid').innerHTML='';
-
   setTimeout(()=>{
-    let res=null;
-    for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
+    let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
     document.getElementById('gen-modal').classList.remove('show');
     generating=false;setButtons(false);
-    if(!res){document.getElementById('status').textContent='Erreur de génération, réessaie.';return;}
+    if(!res){return;}
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);
     fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
     setDiffBadge(diff);
-    const clues=puzzle.flat().filter(v=>v!==EMPTY).length;
-    const nC=Object.keys(ch).length+Object.keys(cv).length;
-    document.getElementById('status').textContent=clues+' indice'+(clues>1?'s':'')+' · '+nC+' contrainte'+(nC>1?'s':'')+' · Bonne chance !';
-    renderGrid();
+    renderGrid(false);
   },30);
 }
 
-function setButtons(d){
-  ['btn-undo','btn-reset','btn-new','btn-sol'].forEach(id=>document.getElementById(id).disabled=d);
-}
+function setButtons(d){['btn-undo','btn-reset','btn-new','btn-sol'].forEach(id=>document.getElementById(id).disabled=d);}
 
 /* ─── Init ─── */
 loadPrefs();
-// On first load: always ask difficulty
 document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quel niveau pour commencer ?';
 document.getElementById('diff-modal').classList.add('show');
 </script>

@@ -21,44 +21,51 @@ nav{max-width:760px;margin:0 auto;padding:1.4rem 0;display:flex;align-items:cent
 .nav-back{font-size:12px;color:var(--muted);text-decoration:none;transition:color .15s}
 .nav-back:hover{color:var(--text)}
 .nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600}
-
 main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direction:column;gap:2.5rem}
-
 .page-header{display:flex;flex-direction:column;gap:.6rem}
 .page-header h1{font-family:'Crimson Pro',serif;font-size:2rem;font-weight:600}
 .page-header p{font-size:12px;color:var(--muted);line-height:1.7;max-width:500px}
-
-/* Section */
 .section-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
 .tips-group{display:flex;flex-direction:column;gap:1rem}
 
-/* Tip card */
-.tip-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.5rem;display:grid;grid-template-columns:1fr auto;gap:1.2rem;align-items:start}
+/* Tip card — body left, grids right */
+.tip-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.5rem;display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:start}
 .tip-card.easy-card{border-left:3px solid var(--easy)}
 .tip-card.medium-card{border-left:3px solid var(--medium)}
 .tip-card.hard-card{border-left:3px solid var(--hard)}
-.tip-body{}
-.tip-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:.5rem;display:flex;align-items:center;gap:8px}
-.tip-badge{font-size:9px;padding:2px 8px;border-radius:99px;letter-spacing:.08em;text-transform:uppercase}
+.tip-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:.5rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tip-badge{font-size:9px;padding:2px 8px;border-radius:99px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .tip-badge.easy{background:rgba(109,187,138,.12);color:var(--easy);border:1px solid rgba(109,187,138,.25)}
 .tip-badge.medium{background:rgba(245,200,66,.10);color:var(--medium);border:1px solid rgba(245,200,66,.2)}
 .tip-badge.hard{background:rgba(216,122,80,.10);color:var(--hard);border:1px solid rgba(216,122,80,.2)}
 .tip-desc{font-size:12px;color:var(--muted);line-height:1.75}
 .tip-desc b{color:var(--text);font-weight:500}
 
-/* Mini grid */
-.mini-grid{flex-shrink:0}
-.mg{display:inline-grid;border:1.5px solid var(--border2);border-radius:6px;overflow:hidden;gap:0}
-.mg-row{display:contents}
-.mc{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:var(--surface2);border:0.5px solid var(--border);position:relative}
+/* Mini grid area — multiple grids side by side */
+.mini-grid{flex-shrink:0;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.mg-row-wrap{display:flex;flex-direction:row;gap:8px;align-items:flex-start}
+
+/* Grid table */
+.mg{display:inline-grid;border:1.5px solid var(--border2);border-radius:6px;overflow:visible;gap:0;flex-shrink:0}
+/* Each cell */
+.mc{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:.95rem;background:var(--surface2);border:0.5px solid var(--border);position:relative}
 .mc.filled{background:#1a1a1d}
 .mc.hi{background:rgba(143,168,212,.12);box-shadow:inset 0 0 0 2px var(--moon)}
 .mc.hi-sun{background:rgba(245,200,66,.10);box-shadow:inset 0 0 0 2px var(--sun)}
 .mc.result{background:rgba(109,187,138,.1);box-shadow:inset 0 0 0 2px var(--easy)}
-/* Constraint badge inside grid */
-.mc-cn{position:absolute;font-size:8px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:99px;width:12px;height:12px;display:flex;align-items:center;justify-content:center;z-index:2}
-.mc-cn.right{right:-7px;top:50%;transform:translateY(-50%)}
-.mc-cn.bottom{bottom:-7px;left:50%;transform:translateX(-50%)}
+.mc.bad{background:rgba(220,80,60,.15);box-shadow:inset 0 0 0 2px rgba(220,80,60,.7);opacity:.7}
+
+/* Constraint badges — VERTICAL only (below cell) */
+.mc-cn{
+  position:absolute;
+  font-size:8px;font-weight:600;
+  color:var(--muted);background:var(--bg);
+  border-radius:99px;width:12px;height:12px;
+  display:flex;align-items:center;justify-content:center;z-index:2;
+  bottom:-7px;left:50%;transform:translateX(-50%);
+}
+/* For horizontal constraint (between two cells in a row), place it below the LEFT cell */
+/* For vertical constraint (between two cells in a column), place it below the TOP cell */
 
 /* TOC */
 .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.4rem;font-size:12px}
@@ -85,7 +92,6 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
     <p>Toutes les déductions utilisables pour résoudre un puzzle Tango, classées par difficulté. Aucune technique ne requiert de deviner : chaque placement découle d'une règle logique.</p>
   </div>
 
-  <!-- TOC -->
   <div class="toc">
     <div class="toc-title">Sommaire</div>
     <div class="toc-list">
@@ -95,104 +101,113 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
     </div>
   </div>
 
-  <!-- BASIC -->
+  <!-- ═══ BASIC ═══ -->
   <div id="basic">
     <div class="section-label">Techniques de base · Facile</div>
     <div class="tips-group">
 
-      <!-- 1. Balance -->
+      <!-- 1. Équilibre -->
       <div class="tip-card easy-card">
         <div class="tip-body">
           <div class="tip-name">⚖ Équilibre forcé <span class="tip-badge easy">Facile</span></div>
           <div class="tip-desc">
-            Chaque ligne et chaque colonne doit contenir exactement <b>3 ☀ et 3 🌙</b>.<br>
-            Dès qu'une ligne ou colonne atteint 3 d'un symbole, <b>toutes les cases vides restantes</b> sont forcées vers l'autre symbole.
-            <br><br>
-            <b>Exemple :</b> une ligne contient déjà ☀ ☀ · 🌙 · ☀ — 3 soleils posés. Les deux cases vides deviennent obligatoirement 🌙.
+            Chaque ligne et colonne doit contenir exactement <b>3 ☀ et 3 🌙</b>.<br>
+            Dès qu'une ligne atteint 3 d'un symbole, <b>toutes les cases vides restantes</b> sont forcées vers l'autre symbole.<br><br>
+            <b>Exemple :</b> ☀ ☀ · 🌙 · ☀ — 3 soleils → les deux vides deviennent 🌙.
           </div>
         </div>
         <div class="mini-grid">
-          <!-- Row: S S _ M _ S → fill with M -->
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled">☀</div><div class="mc filled">☀</div>
-              <div class="mc hi result">🌙</div>
-              <div class="mc filled">🌙</div>
-              <div class="mc hi result">🌙</div>
-              <div class="mc filled">☀</div>
-            </div>
+          <div class="mg" style="grid-template-columns:repeat(6,34px)">
+            <div class="mc filled">☀</div><div class="mc filled">☀</div>
+            <div class="mc result">🌙</div>
+            <div class="mc filled">🌙</div>
+            <div class="mc result">🌙</div>
+            <div class="mc filled">☀</div>
           </div>
         </div>
       </div>
 
-      <!-- 2. No triplet — pair -->
+      <!-- 2. Paire -->
       <div class="tip-card easy-card">
         <div class="tip-body">
           <div class="tip-name">🚫 Paire bloque la voisine <span class="tip-badge easy">Facile</span></div>
           <div class="tip-desc">
-            Deux symboles identiques <b>côte à côte</b> (XX) forcent la case immédiatement adjacente à être l'autre symbole — sinon on obtiendrait trois identiques de suite, ce qui est interdit.
-            <br><br>
-            <b>Règle générale :</b> après une paire, la case suivante est toujours l'opposé.
+            Deux symboles identiques <b>côte à côte</b> forcent la case adjacente à être l'autre symbole — sinon on obtient trois identiques de suite, ce qui est interdit.<br><br>
+            S'applique aussi verticalement.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(4,34px)">
               <div class="mc filled">☀</div><div class="mc filled">☀</div>
-              <div class="mc hi result">🌙</div>
+              <div class="mc result">🌙</div>
+              <div class="mc">·</div>
+            </div>
+            <div class="mg" style="grid-template-columns:repeat(3,34px);grid-template-rows:repeat(4,34px)">
+              <div class="mc">·</div><div class="mc filled">🌙</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc filled">🌙</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc result">☀</div><div class="mc">·</div>
               <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. No triplet — sandwich -->
+      <!-- 3. Sandwich -->
       <div class="tip-card easy-card">
         <div class="tip-body">
           <div class="tip-name">🥪 Sandwich (X · X) <span class="tip-badge easy">Facile</span></div>
           <div class="tip-desc">
-            Si le même symbole apparaît de chaque côté d'une case vide (<b>X · X</b>), cette case doit être l'<b>opposé</b> — sinon on crée un triplet interdit en la remplissant avec X.
-            <br><br>
-            C'est le pattern le plus fréquent dans les grilles faciles.
+            Si le même symbole apparaît de chaque côté d'une case vide (<b>X · X</b>), cette case doit être l'<b>opposé</b> — sinon on crée un triplet interdit.<br><br>
+            Pattern le plus fréquent dans les grilles faciles.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(4,34px)">
+              <div class="mc filled">🌙</div>
+              <div class="mc result">☀</div>
+              <div class="mc filled">🌙</div>
               <div class="mc">·</div>
-              <div class="mc filled">🌙</div>
-              <div class="mc hi result">☀</div>
-              <div class="mc filled">🌙</div>
-              <div class="mc">·</div><div class="mc">·</div>
+            </div>
+            <div class="mg" style="grid-template-columns:repeat(3,34px);grid-template-rows:repeat(4,34px)">
+              <div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc result">🌙</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 4. Constraint direct -->
+      <!-- 4. Contrainte directe -->
       <div class="tip-card easy-card">
         <div class="tip-body">
           <div class="tip-name">🔗 Contrainte directe (= / ×) <span class="tip-badge easy">Facile</span></div>
           <div class="tip-desc">
-            Une contrainte <b>=</b> entre deux cases signifie qu'elles doivent porter le même symbole.<br>
-            Une contrainte <b>×</b> signifie qu'elles doivent porter des symboles opposés.<br><br>
-            Dès qu'une des deux cases est connue, l'autre est <b>immédiatement déductible</b>.
+            <b>=</b> entre deux cases : elles portent le même symbole.<br>
+            <b>×</b> entre deux cases : elles portent des symboles opposés.<br><br>
+            Dès qu'une des deux est connue, l'autre est <b>immédiatement déductible</b>. La contrainte peut être horizontale ou verticale.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled" style="position:relative">☀<span class="mc-cn right">=</span></div>
-              <div class="mc hi result">☀</div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+          <!-- two examples side by side: horizontal = and vertical × -->
+          <div class="mg-row-wrap">
+            <!-- horizontal = -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(2,34px)">
+                <div class="mc filled" style="position:relative">☀<span class="mc-cn">=</span></div>
+                <div class="mc result">☀</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">horizontal</span>
             </div>
-          </div>
-          <div style="height:8px"></div>
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled" style="position:relative">🌙<span class="mc-cn right">×</span></div>
-              <div class="mc hi result">☀</div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+            <!-- vertical × -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(1,34px);grid-template-rows:repeat(2,34px)">
+                <div class="mc filled" style="position:relative">🌙<span class="mc-cn">×</span></div>
+                <div class="mc result">☀</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">vertical</span>
             </div>
           </div>
         </div>
@@ -201,7 +216,7 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
     </div>
   </div>
 
-  <!-- INTERMEDIATE -->
+  <!-- ═══ INTERMEDIATE ═══ -->
   <div id="intermediate">
     <div class="section-label">Techniques intermédiaires · Moyen</div>
     <div class="tips-group">
@@ -211,81 +226,74 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
         <div class="tip-body">
           <div class="tip-name">↔ Distance 4 : la 6ᵉ case est forcée <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Si deux cases séparées de <b>4 positions</b> sont identiques — [0] et [4], ou [1] et [5] — alors la case à l'autre bout de la ligne est <b>forcée vers l'opposé</b>.<br><br>
-            <b>Pourquoi ?</b> Il n'existe que 3 lignes légales contenant ce pattern, et dans les trois, l'extrémité distante est toujours l'autre symbole. L'équilibre de la ligne (3+3) n'admet pas d'autre possibilité.<br><br>
-            <b>Exemple :</b> [0]=☀ et [4]=☀ → [5] = 🌙 obligatoirement.
+            Si deux cases séparées de <b>4 positions</b> sont identiques ([0] et [4], ou [1] et [5]), la case à l'autre bout de la ligne est <b>forcée vers l'opposé</b>.<br><br>
+            Il n'existe que 3 lignes légales contenant ce pattern, et dans les trois l'extrémité distante est toujours l'autre symbole.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
               <div class="mc filled">☀</div>
               <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
               <div class="mc filled">☀</div>
-              <div class="mc hi result">🌙</div>
+              <div class="mc result">🌙</div>
             </div>
           </div>
-          <div style="height:6px"></div>
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc">·</div>
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
+              <div class="mc result">🌙</div>
               <div class="mc filled">🌙</div>
               <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
               <div class="mc filled">🌙</div>
             </div>
           </div>
-          <div style="height:4px;font-size:10px;color:var(--muted);text-align:center">→ [0] = ☀</div>
         </div>
       </div>
 
       <!-- 5b. Dist5 -->
       <div class="tip-card medium-card">
         <div class="tip-body">
-          <div class="tip-name">↔↔ Extrémités identiques → cases 2 et 5 forcées <span class="tip-badge medium">Moyen</span></div>
+          <div class="tip-name">↔↔ Extrémités identiques → cases [1] et [4] forcées <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Si <b>[0] et [5] sont identiques</b>, alors les cases [1] et [4] sont toutes deux forcées vers le symbole opposé.<br><br>
-            <b>Pourquoi ?</b> Il n'existe que 2 lignes légales avec [0]=[5]=☀, et dans les deux, [1]=🌙 et [4]=🌙. Idem pour 🌙. C'est une conséquence combinée de l'anti-triplet et de l'équilibre.
+            Si <b>[0] et [5] sont identiques</b>, alors [1] et [4] sont tous deux forcés vers le symbole opposé.<br><br>
+            Il n'existe que 2 lignes légales avec [0]=[5]=☀, et dans les deux [1]=🌙 et [4]=🌙. Conséquence combinée de l'anti-triplet et de l'équilibre.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
               <div class="mc filled">☀</div>
-              <div class="mc hi result">🌙</div>
+              <div class="mc result">🌙</div>
               <div class="mc">·</div><div class="mc">·</div>
-              <div class="mc hi result">🌙</div>
+              <div class="mc result">🌙</div>
               <div class="mc filled">☀</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 5c. Pair at extremity -->
+      <!-- 5c. Pair-end -->
       <div class="tip-card medium-card">
         <div class="tip-body">
-          <div class="tip-name">XX en bord → extrémité opposée forcée <span class="tip-badge medium">Moyen</span></div>
+          <div class="tip-name">XX en bord → extrémité distante forcée <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Si une <b>paire identique</b> occupe les deux premières cases [0,1] ou les deux dernières [4,5], alors la case à l'autre extrémité de la ligne est <b>forcée vers l'opposé</b>.<br><br>
-            <b>Pourquoi ?</b> Une paire en bord ne laisse que 2 lignes légales possibles, et dans les deux, l'extrémité distante est toujours l'autre symbole.<br><br>
-            <b>Note :</b> les cas immédiats (case [2] après ☀☀ en [0,1]) sont déjà couverts par la règle anti-triplet. Ce tip couvre uniquement la case <em>distante</em> [5].
+            Une <b>paire identique en [0,1]</b> force [5] vers l'opposé — et inversement pour [4,5] → [0].<br><br>
+            La règle anti-triplet couvre déjà la case immédiate [2]. Ce tip couvre uniquement l'<em>extrémité distante</em>.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled">🌙</div>
-              <div class="mc filled">🌙</div>
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
+              <div class="mc filled">🌙</div><div class="mc filled">🌙</div>
               <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
-              <div class="mc hi result">☀</div>
+              <div class="mc result">☀</div>
             </div>
           </div>
-          <div style="height:6px"></div>
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc hi result">🌙</div>
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
+              <div class="mc result">🌙</div>
               <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
-              <div class="mc filled">☀</div>
-              <div class="mc filled">☀</div>
+              <div class="mc filled">☀</div><div class="mc filled">☀</div>
             </div>
           </div>
         </div>
@@ -296,17 +304,29 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
         <div class="tip-body">
           <div class="tip-name">🔗🔗 Chaîne = = (trio identique) <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Deux contraintes <b>= consécutives</b> (A = B = C) signifient que les trois cases sont identiques. Si l'une est connue, les deux autres sont forcées.<br><br>
-            Applicable aussi verticalement. Attention : trois symboles identiques consécutifs étant interdits, cette situation ne peut se produire qu'avec des cases non adjacentes physiquement — vérifiez qu'elles ne forment pas de triplet.
+            Deux contraintes <b>= consécutives</b> (A = B = C) : les trois cases sont identiques. Si l'une est connue, les deux autres sont forcées.<br><br>
+            Applicable horizontalement et verticalement.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled" style="position:relative">🌙<span class="mc-cn right">=</span></div>
-              <div class="mc hi result" style="position:relative">🌙<span class="mc-cn right">=</span></div>
-              <div class="mc hi result">🌙</div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+          <div class="mg-row-wrap">
+            <!-- horizontal -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(3,34px)">
+                <div class="mc filled" style="position:relative">🌙<span class="mc-cn">=</span></div>
+                <div class="mc result" style="position:relative">🌙<span class="mc-cn">=</span></div>
+                <div class="mc result">🌙</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">horizontal</span>
+            </div>
+            <!-- vertical -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(1,34px);grid-template-rows:repeat(3,34px)">
+                <div class="mc filled" style="position:relative">☀<span class="mc-cn">=</span></div>
+                <div class="mc result" style="position:relative">☀<span class="mc-cn">=</span></div>
+                <div class="mc result">☀</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">vertical</span>
             </div>
           </div>
         </div>
@@ -318,17 +338,27 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
           <div class="tip-name">🔗🔗 Chaîne × × (A et C identiques) <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
             Deux contraintes <b>× consécutives</b> : A × B × C.<br>
-            Si A ≠ B et B ≠ C, alors nécessairement <b>A = C</b> (tous deux différents de B, donc identiques entre eux).<br><br>
-            Si B est connu, A et C sont tous les deux forcés vers l'opposé de B.
+            A ≠ B et B ≠ C → <b>A = C</b> (tous deux différents de B).<br><br>
+            Si B est connu, A et C sont forcés vers l'opposé de B.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc hi result" style="position:relative">🌙<span class="mc-cn right">×</span></div>
-              <div class="mc filled" style="position:relative">☀<span class="mc-cn right">×</span></div>
-              <div class="mc hi result">🌙</div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+          <div class="mg-row-wrap">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(3,34px)">
+                <div class="mc result" style="position:relative">🌙<span class="mc-cn">×</span></div>
+                <div class="mc filled" style="position:relative">☀<span class="mc-cn">×</span></div>
+                <div class="mc result">🌙</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">horizontal</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="mg" style="grid-template-columns:repeat(1,34px);grid-template-rows:repeat(3,34px)">
+                <div class="mc result" style="position:relative">🌙<span class="mc-cn">×</span></div>
+                <div class="mc filled" style="position:relative">☀<span class="mc-cn">×</span></div>
+                <div class="mc result">🌙</div>
+              </div>
+              <span style="font-size:9px;color:var(--muted)">vertical</span>
             </div>
           </div>
         </div>
@@ -339,17 +369,18 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
         <div class="tip-body">
           <div class="tip-name">📦 Paire = comme unité <span class="tip-badge medium">Moyen</span></div>
           <div class="tip-desc">
-            Une paire liée par <b>=</b> contribue <b>deux fois le même symbole</b> à sa ligne. Si la ligne a déjà 2 ☀ et contient une paire =, cette paire doit obligatoirement être deux 🌙 (sinon on dépasserait 3 ☀).<br><br>
-            De même, une paire <b>×</b> apporte exactement un ☀ et un 🌙.
+            Une paire liée par <b>=</b> contribue <b>deux fois le même symbole</b> à sa ligne.<br>
+            Si la ligne a déjà 2 ☀ et contient une paire =, cette paire doit être deux 🌙.<br><br>
+            Une paire <b>×</b> apporte exactement un ☀ et un 🌙.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
               <div class="mc filled">☀</div>
               <div class="mc filled">☀</div>
-              <div class="mc hi result" style="position:relative">🌙<span class="mc-cn right">=</span></div>
-              <div class="mc hi result">🌙</div>
+              <div class="mc result" style="position:relative">🌙<span class="mc-cn">=</span></div>
+              <div class="mc result">🌙</div>
               <div class="mc">·</div><div class="mc">·</div>
             </div>
           </div>
@@ -359,51 +390,55 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
     </div>
   </div>
 
-  <!-- ADVANCED -->
+  <!-- ═══ ADVANCED ═══ -->
   <div id="advanced">
     <div class="section-label">Techniques avancées · Difficile</div>
     <div class="tips-group">
 
-      <!-- 9. Elimination -->
+      <!-- 9. Élimination -->
       <div class="tip-card hard-card">
         <div class="tip-body">
           <div class="tip-name">❌ Élimination par contradiction <span class="tip-badge hard">Difficile</span></div>
           <div class="tip-desc">
-            Suppose mentalement qu'une case vide reçoit le symbole X. Si cela mène <b>immédiatement</b> à une contradiction (triplet, dépassement d'équilibre, violation de contrainte), alors X est interdit et la case reçoit l'autre symbole.<br><br>
-            C'est une déduction d'un niveau au-dessus des patterns visuels : elle nécessite de raisonner sur les conséquences d'un placement.
+            Suppose mentalement qu'une case reçoit X. Si cela crée <b>immédiatement</b> une contradiction (triplet, déséquilibre, contrainte violée), X est interdit → la case reçoit l'autre symbole.<br><br>
+            <b>Exemple :</b> placer ☀ en [2] créerait un triplet ☀☀☀ — donc [2] = 🌙.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(3,36px)">
-            <div class="mg-row">
-              <div class="mc filled">☀</div><div class="mc filled">☀</div>
-              <div class="mc hi-sun" style="position:relative;opacity:.5">☀<span style="position:absolute;top:1px;right:2px;font-size:9px;color:#e24b4a">✗</span></div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+          <!-- compact: just 3 cells showing the contradiction -->
+          <div class="mg-row-wrap">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="mg" style="grid-template-columns:repeat(3,34px)">
+                <div class="mc filled">☀</div>
+                <div class="mc filled">☀</div>
+                <div class="mc bad">☀</div>
+              </div>
+              <span style="font-size:9px;color:rgba(220,80,60,.8)">triplet interdit ✗</span>
             </div>
-            <div class="mg-row" style="display:contents">
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div><div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
-            </div>
-            <div class="mg-row" style="display:contents">
-              <div class="mc">·</div><div class="mc">·</div>
-              <div class="mc result">🌙</div>
-              <div class="mc">·</div><div class="mc">·</div><div class="mc">·</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="mg" style="grid-template-columns:repeat(3,34px)">
+                <div class="mc filled">☀</div>
+                <div class="mc filled">☀</div>
+                <div class="mc result">🌙</div>
+              </div>
+              <span style="font-size:9px;color:var(--easy)">forcé ✓</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 10. Near-complete line -->
+      <!-- 10. Ligne quasi-complète -->
       <div class="tip-card hard-card">
         <div class="tip-body">
           <div class="tip-name">🏁 Ligne quasi-complète <span class="tip-badge hard">Difficile</span></div>
           <div class="tip-desc">
-            Une ligne avec <b>5 cases remplies</b> et 1 vide est trivialement forcée par l'équilibre (3 ☀ et 3 🌙 requis). Mais même avec 4 remplies, combiner l'équilibre avec la règle anti-triplet peut forcer les deux cases restantes sans ambiguïté.<br><br>
-            Cherchez les lignes où les cases vides restantes ne laissent qu'une seule combinaison légale.
+            Une ligne avec <b>5 cases remplies</b> est trivialement forcée par l'équilibre. Avec seulement 4 remplies, combiner équilibre + anti-triplet peut forcer les deux cases restantes sans ambiguïté.<br><br>
+            Cherchez les lignes où les cases vides ne laissent qu'une seule combinaison légale.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(6,34px)">
               <div class="mc filled">☀</div><div class="mc filled">🌙</div>
               <div class="mc filled">🌙</div><div class="mc filled">☀</div>
               <div class="mc filled">☀</div>
@@ -413,42 +448,43 @@ main{max-width:760px;margin:0 auto;padding:2.5rem 0 5rem;display:flex;flex-direc
         </div>
       </div>
 
-      <!-- 11. Cross-constraint deduction -->
+      <!-- 11. Déduction croisée -->
       <div class="tip-card hard-card">
         <div class="tip-body">
           <div class="tip-name">✚ Déduction croisée ligne × colonne <span class="tip-badge hard">Difficile</span></div>
           <div class="tip-desc">
-            Une case appartient à la fois à une ligne et à une colonne. Parfois ni la ligne seule ni la colonne seule ne force la case — mais en <b>combinant les deux contraintes</b>, une seule valeur est légale.<br><br>
-            Stratégie : quand une case semble libre, vérifiez si placer l'un ou l'autre symbole crée un problème dans la colonne (triplet ou déséquilibre) même si la ligne ne pose pas de problème.
+            Une case appartient à une ligne <em>et</em> à une colonne. Ni l'une ni l'autre seule ne force la case — mais en <b>combinant les deux</b>, une seule valeur est légale.<br><br>
+            Vérifiez si l'un des deux symboles crée un problème dans la colonne même si la ligne est neutre.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(3,36px)">
-            <div class="mg-row"><div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div></div>
-            <div class="mg-row" style="display:contents"><div class="mc filled">☀</div><div class="mc result">🌙</div><div class="mc">·</div></div>
-            <div class="mg-row" style="display:contents"><div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div></div>
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px)">
+              <div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div>
+              <div class="mc filled">☀</div><div class="mc result">🌙</div><div class="mc">·</div>
+              <div class="mc">·</div><div class="mc filled">☀</div><div class="mc">·</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 12. Constraint propagation chain -->
+      <!-- 12. Propagation en chaîne -->
       <div class="tip-card hard-card">
         <div class="tip-body">
           <div class="tip-name">🔄 Propagation en chaîne <span class="tip-badge hard">Difficile</span></div>
           <div class="tip-desc">
-            Plusieurs contraintes reliées peuvent former une <b>chaîne de déductions</b> : résoudre A force B via une contrainte, B force C via une autre, etc.<br><br>
-            Ces chaînes sont invisibles si on regarde les contraintes une par une. Il faut suivre le chemin : "si A = ☀, alors B = ☀ (car A = B), donc C = 🌙 (car B × C), donc D = 🌙 (car C = D)".<br><br>
+            Plusieurs contraintes reliées forment une <b>chaîne</b> : A force B, B force C, C force D…<br><br>
+            Invisible case par case. Il faut suivre le chemin : A=☀ → B=☀ (A=B) → C=🌙 (B×C) → D=🌙 (C=D).<br><br>
             Sur les grilles difficiles, certaines cases ne se résolvent que via des chaînes de 3 contraintes ou plus.
           </div>
         </div>
         <div class="mini-grid">
-          <div class="mg" style="grid-template-rows:repeat(1,36px)">
-            <div class="mg-row">
-              <div class="mc filled" style="position:relative">☀<span class="mc-cn right">=</span></div>
-              <div class="mc hi result" style="position:relative">☀<span class="mc-cn right">×</span></div>
-              <div class="mc hi result" style="position:relative">🌙<span class="mc-cn right">=</span></div>
-              <div class="mc hi result">🌙</div>
-              <div class="mc">·</div><div class="mc">·</div>
+          <div class="mg-row-wrap">
+            <div class="mg" style="grid-template-columns:repeat(4,34px)">
+              <div class="mc filled" style="position:relative">☀<span class="mc-cn">=</span></div>
+              <div class="mc result" style="position:relative">☀<span class="mc-cn">×</span></div>
+              <div class="mc result" style="position:relative">🌙<span class="mc-cn">=</span></div>
+              <div class="mc result">🌙</div>
             </div>
           </div>
         </div>

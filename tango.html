@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tango — Soleils &amp; Lunes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede6;
+    --muted: rgba(240,237,230,0.45);
+    --sun: #f5c842;
+    --moon: #8fa8d4;
+    --error: rgba(220,80,60,0.18);
+    --error-border: rgba(220,80,60,0.5);
+    --win: rgba(80,180,120,0.15);
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 0 1.5rem;
+  }
+
+  nav {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-back {
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .nav-back:hover { color: var(--text); }
+
+  .nav-title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2.5rem 0 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .game-header { text-align: center; }
+
+  h1 {
+    font-family: 'Crimson Pro', serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 360px;
+  }
+
+  .puzzle-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .puzzle-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .puzzle-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+  .puzzle-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+
+  .grid-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  table {
+    border-collapse: collapse;
+    border: 2px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  td {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    position: relative;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .cell-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: background 0.12s;
+    user-select: none;
+    background: var(--surface);
+  }
+
+  .cell-inner:hover { background: var(--surface2); }
+  .cell-inner.fixed { cursor: default; background: #1a1a1d; }
+  .cell-inner.error { background: var(--error); }
+  .cell-inner.win-cell { background: var(--win); }
+
+  .constraint {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    z-index: 3;
+    pointer-events: none;
+    background: var(--bg);
+    border-radius: 99px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .constraint.h { right: -9px; top: 50%; transform: translateY(-50%); }
+  .constraint.v { bottom: -9px; left: 50%; transform: translateX(-50%); }
+
+  .counters {
+    display: flex;
+    gap: 2rem;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .counter-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .counter-val { font-size: 1.2rem; color: var(--text); }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn:hover { background: var(--surface2); }
+  .btn.primary { border-color: var(--sun); color: var(--sun); }
+  .btn.primary:hover { background: rgba(245,200,66,0.08); }
+
+  .status-bar {
+    font-size: 13px;
+    color: var(--muted);
+    min-height: 1.5rem;
+    text-align: center;
+    transition: color 0.3s;
+  }
+
+  .status-bar.success { color: #6dbb8a; }
+
+  .rules-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .rules-box strong { color: var(--text); font-weight: 500; }
+
+  .rule-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .rule-row:last-child { margin-bottom: 0; }
+  .rule-icon { flex-shrink: 0; font-size: 14px; }
+
+  @keyframes pop { 0%{transform:scale(0.7);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+  .pop { animation: pop 0.25s ease forwards; }
+
+  @media (max-width: 480px) {
+    td { width: 52px; height: 52px; }
+    .cell-inner { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-back">← Accueil</a>
+  <span class="nav-title">☀ Tango 🌙</span>
+  <span style="font-size:11px;color:var(--muted)" id="puzzle-label">Puzzle 1</span>
+</nav>
+
+<main>
+  <div class="game-header">
+    <h1>Tango</h1>
+    <p class="subtitle">Remplis la grille avec des soleils ☀ et des lunes 🌙 en respectant les trois règles.</p>
+  </div>
+
+  <div class="puzzle-selector" id="puzzle-selector"></div>
+
+  <div class="grid-wrapper">
+    <table id="grid"></table>
+  </div>
+
+  <div class="status-bar" id="status"></div>
+
+  <div class="controls">
+    <button class="btn" onclick="resetPuzzle()">↺ Recommencer</button>
+    <button class="btn primary" onclick="showSolution()">Voir la solution</button>
+  </div>
+
+  <div class="rules-box">
+    <div class="rule-row"><span class="rule-icon">⚖</span><span><strong>Équilibre :</strong> chaque ligne et colonne doit contenir autant de ☀ que de 🌙.</span></div>
+    <div class="rule-row"><span class="rule-icon">🚫</span><span><strong>Pas de triplet :</strong> jamais 3 symboles identiques côte à côte (horizontalement ou verticalement).</span></div>
+    <div class="rule-row"><span class="rule-icon">🔗</span><span><strong>Contraintes = / ×</strong> entre deux cases : = même symbole, × symboles différents.</span></div>
+  </div>
+</main>
+
+<script>
+const SUN = 1, MOON = 2, EMPTY = 0;
+const S = ['', '☀', '🌙'];
+
+const PUZZLES = [
+  {
+    name: 'Puzzle 1',
+    size: 6,
+    fixed: [
+      [0,0,0,SUN,0,0],
+      [0,MOON,0,0,0,0],
+      [0,0,0,0,MOON,0],
+      [0,0,SUN,0,0,0],
+      [0,0,0,0,SUN,0],
+      [0,0,0,0,0,MOON],
+    ],
+    ch: { '0,2':'=', '1,4':'×', '3,1':'×', '4,3':'=' },
+    cv: { '0,2':'=', '2,1':'×', '3,4':'=', '1,5':'×' },
+    solution: [
+      [MOON,SUN,MOON,SUN,MOON,SUN],
+      [SUN,MOON,SUN,MOON,SUN,MOON],
+      [SUN,MOON,SUN,MOON,MOON,SUN],
+      [MOON,SUN,MOON,SUN,SUN,MOON],
+      [SUN,MOON,SUN,MOON,SUN,MOON],
+      [MOON,SUN,MOON,SUN,MOON,SUN],
+    ]
+  },
+  {
+    name: 'Puzzle 2',
+    size: 6,
+    fixed: [
+      [SUN,0,0,0,0,0],
+      [0,0,0,MOON,0,0],
+      [0,0,SUN,0,0,0],
+      [0,0,0,0,0,SUN],
+      [0,MOON,0,0,0,0],
+      [0,0,0,0,MOON,0],
+    ],
+    ch: { '0,1':'=', '2,3':'×', '4,2':'=', '1,4':'×' },
+    cv: { '0,3':'×', '1,2':'=', '3,1':'×', '2,4':'=' },
+    solution: [
+      [SUN,SUN,MOON,SUN,MOON,MOON],
+      [MOON,SUN,MOON,MOON,SUN,SUN],
+      [SUN,MOON,SUN,MOON,MOON,SUN],
+      [MOON,SUN,SUN,MOON,SUN,MOON],  
+      [SUN,MOON,MOON,SUN,MOON,SUN],
+      [MOON,SUN,SUN,MOON,MOON,SUN],
+    ]
+  },
+  {
+    name: 'Puzzle 3',
+    size: 6,
+    fixed: [
+      [0,0,MOON,0,0,SUN],
+      [0,SUN,0,0,0,0],
+      [MOON,0,0,0,0,0],
+      [0,0,0,0,SUN,0],
+      [0,0,0,MOON,0,0],
+      [SUN,0,0,0,0,0],
+    ],
+    ch: { '0,0':'=', '1,3':'=', '3,2':'×', '4,4':'×' },
+    cv: { '0,1':'×', '1,3':'=', '3,0':'×', '2,5':'=' },
+    solution: [
+      [MOON,MOON,MOON,SUN,SUN,SUN],
+      [SUN,SUN,MOON,MOON,SUN,MOON],
+      [MOON,SUN,SUN,MOON,MOON,SUN],
+      [SUN,MOON,SUN,SUN,SUN,MOON],
+      [MOON,SUN,MOON,MOON,SUN,SUN],
+      [SUN,MOON,SUN,SUN,MOON,MOON],
+    ]
+  }
+];
+
+let currentPuzzle = 0;
+let board = [];
+let fixed = [];
+
+function loadPuzzle(idx) {
+  currentPuzzle = idx;
+  const p = PUZZLES[idx];
+  board = p.fixed.map(r => [...r]);
+  fixed = p.fixed.map(r => r.map(v => v !== 0));
+  document.getElementById('puzzle-label').textContent = p.name;
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = 'status-bar';
+  document.querySelectorAll('.puzzle-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  renderGrid();
+}
+
+function renderGrid() {
+  const p = PUZZLES[currentPuzzle];
+  const N = p.size;
+  const tbl = document.getElementById('grid');
+  tbl.innerHTML = '';
+  const errors = getErrors();
+
+  for (let r = 0; r < N; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < N; c++) {
+      const td = document.createElement('td');
+      const inner = document.createElement('div');
+      const key = r+','+c;
+      inner.className = 'cell-inner' +
+        (fixed[r][c] ? ' fixed' : '') +
+        (errors.has(key) ? ' error' : '');
+      inner.textContent = S[board[r][c]];
+      if (!fixed[r][c]) {
+        inner.onclick = () => cycleCell(r, c);
+      }
+
+      if (p.ch[key] && c < N-1) {
+        const sp = document.createElement('span');
+        sp.className = 'constraint h';
+        sp.textContent = p.ch[key];
+        td.appendChild(sp);
+      }
+      if (p.cv[key] && r < N-1) {
+        const sp = document.createElement('span');
+        sp.className = 'constraint v';
+        sp.textContent = p.cv[key];
+        td.appendChild(sp);
+      }
+
+      td.appendChild(inner);
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+}
+
+function cycleCell(r, c) {
+  board[r][c] = (board[r][c] + 1) % 3;
+  renderGrid();
+  if (isFilled()) checkWin();
+}
+
+function getErrors() {
+  const p = PUZZLES[currentPuzzle];
+  const N = p.size;
+  const err = new Set();
+
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      if (board[r][c] === EMPTY) continue;
+      const v = board[r][c];
+      if (c+2 < N && board[r][c+1]===v && board[r][c+2]===v)
+        [c,c+1,c+2].forEach(ci => err.add(r+','+ci));
+      if (r+2 < N && board[r+1][c]===v && board[r+2][c]===v)
+        [r,r+1,r+2].forEach(ri => err.add(ri+','+c));
+
+      const key = r+','+c;
+      if (p.ch[key] && c+1 < N && board[r][c+1] !== EMPTY) {
+        const ok = p.ch[key]==='=' ? board[r][c]===board[r][c+1] : board[r][c]!==board[r][c+1];
+        if (!ok) { err.add(key); err.add(r+','+(c+1)); }
+      }
+      if (p.cv[key] && r+1 < N && board[r+1][c] !== EMPTY) {
+        const ok = p.cv[key]==='=' ? board[r][c]===board[r+1][c] : board[r][c]!==board[r+1][c];
+        if (!ok) { err.add(key); err.add((r+1)+','+c); }
+      }
+    }
+  }
+  return err;
+}
+
+function isFilled() {
+  return board.every(row => row.every(v => v !== EMPTY));
+}
+
+function checkWin() {
+  const p = PUZZLES[currentPuzzle];
+  const N = p.size;
+  if (getErrors().size > 0) return;
+
+  for (let r = 0; r < N; r++) {
+    const suns = board[r].filter(v => v===SUN).length;
+    if (suns !== N/2) return;
+  }
+  for (let c = 0; c < N; c++) {
+    const suns = board.map(row=>row[c]).filter(v=>v===SUN).length;
+    if (suns !== N/2) return;
+  }
+
+  const st = document.getElementById('status');
+  st.textContent = '🎉 Bravo ! Puzzle résolu !';
+  st.className = 'status-bar success';
+  document.querySelectorAll('.cell-inner:not(.fixed)').forEach(el => el.classList.add('win-cell'));
+}
+
+function resetPuzzle() {
+  loadPuzzle(currentPuzzle);
+}
+
+function showSolution() {
+  const p = PUZZLES[currentPuzzle];
+  board = p.solution.map(r => [...r]);
+  document.getElementById('status').textContent = 'Solution affichée.';
+  document.getElementById('status').className = 'status-bar';
+  renderGrid();
+}
+
+function buildSelector() {
+  const sel = document.getElementById('puzzle-selector');
+  PUZZLES.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'puzzle-btn' + (i===0 ? ' active' : '');
+    btn.textContent = p.name;
+    btn.onclick = () => loadPuzzle(i);
+    sel.appendChild(btn);
+  });
+}
+
+buildSelector();
+loadPuzzle(0);
+</script>
+</body>
+</html>

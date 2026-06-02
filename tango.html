@@ -110,6 +110,24 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .diff-opt.medium:hover{border-color:#f5c84266;background:rgba(245,200,66,.06)}
 .diff-opt.hard:hover{border-color:#d87a5066;background:rgba(216,122,80,.06)}
 
+/* Stats button */
+.stats-btn{font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.stats-btn:hover{background:var(--surface2);color:var(--text)}
+/* Stats modal */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:var(--surface2);border-radius:8px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:4px}
+.stat-label{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.stat-val{font-size:1.3rem;font-weight:500;color:var(--text);letter-spacing:.04em}
+.stat-val.best{color:var(--sun)}.stat-val.avg{color:var(--moon)}
+.stat-sep{border:none;border-top:1px solid var(--border);margin:.2rem 0}
+.stats-diff-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.stats-diff-pill{font-size:10px;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--muted);cursor:pointer;transition:all .15s;background:transparent;font-family:'DM Mono',monospace}
+.stats-diff-pill:hover{background:var(--surface2)}
+.stats-diff-pill.sel-easy{border-color:#6dbb8a66;color:#6dbb8a;background:rgba(109,187,138,.07)}
+.stats-diff-pill.sel-medium{border-color:#f5c84266;color:var(--sun);background:rgba(245,200,66,.06)}
+.stats-diff-pill.sel-hard{border-color:#d87a5066;color:#d87a50;background:rgba(216,122,80,.06)}
+.stats-reset{font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;width:100%;text-align:center}
+.stats-reset:hover{border-color:rgba(220,80,60,.4);color:rgba(220,80,60,.8)}
 @media(max-width:700px){.ci{width:52px!important;height:52px!important;font-size:1.5rem!important}.cn{font-size:9px;width:13px;height:13px}.cn.h{right:-7px}.cn.v{bottom:-7px}}
 </style>
 </head>
@@ -122,7 +140,10 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </nav>
 
 <main>
-  <p class="subtitle">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
+  <div style="display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="stats-btn" onclick="openStats()">📊 Stats</button>
+    <p class="subtitle" style="margin:0">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
+  </div>
 
   <div class="timer-bar">
     <span class="tdot" id="tdot"></span>
@@ -211,6 +232,25 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <div style="font-size:2rem">⏳</div>
     <div class="modal-title" style="font-size:1.2rem" id="gen-label">Génération…</div>
     <div class="modal-sub">Le puzzle est vérifié pour être solvable logiquement.</div>
+  </div>
+</div>
+
+<!-- Stats modal -->
+<div class="overlay" id="stats-modal" onclick="onOverlayClick(event,'stats-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-ico">📊</div>
+    <div class="modal-title">Statistiques</div>
+    <div class="stats-diff-row" id="stats-diff-tabs">
+      <button class="stats-diff-pill" onclick="setStatsDiff('all',this)">Toutes</button>
+      <button class="stats-diff-pill" onclick="setStatsDiff('easy',this)">🌱 Facile</button>
+      <button class="stats-diff-pill" onclick="setStatsDiff('medium',this)">🔥 Moyen</button>
+      <button class="stats-diff-pill" onclick="setStatsDiff('hard',this)">💀 Difficile</button>
+    </div>
+    <hr class="stat-sep">
+    <div class="stats-grid" id="stats-cards"></div>
+    <hr class="stat-sep">
+    <div style="font-size:11px;color:var(--muted);line-height:1.6" id="stats-prefs"></div>
+    <button class="stats-reset" onclick="confirmResetStats()">Réinitialiser les statistiques</button>
   </div>
 </div>
 
@@ -421,6 +461,7 @@ function checkWin(){
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   clearAllErrors();clearHintPreview();
   stopTimer();timerDone=true;
+  saveStats(currentDiff, timerSec);
   setTimeout(()=>{
     document.getElementById('grid-wrap').classList.add('blurred');
     document.getElementById('modal-time').textContent=fmt(timerSec);
@@ -471,6 +512,44 @@ function startGeneration(diff){
   },30);
 }
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
+
+
+/* ─── Stats (localStorage) ─── */
+const DIFFS_ALL=['easy','medium','hard'];
+const STATS_KEY='tango_stats';
+function loadStats(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
+function saveStats(diff,seconds){if(!diff||seconds<=0)return;const s=loadStats();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
+function clearStats(){try{localStorage.removeItem(STATS_KEY);}catch(e){}}
+let statsDiffFilter='all';
+function openStats(){statsDiffFilter='all';renderStatsModal();document.getElementById('stats-modal').classList.add('show');}
+function setStatsDiff(diff,btn){
+  statsDiffFilter=diff;
+  document.querySelectorAll('.stats-diff-pill').forEach(b=>{b.className='stats-diff-pill';});
+  btn.className='stats-diff-pill '+(diff==='all'?'sel-medium':'sel-'+diff);
+  renderStatsModal();
+}
+function renderStatsModal(){
+  const s=loadStats();
+  // Update tab highlights
+  const tabs=document.querySelectorAll('#stats-diff-tabs .stats-diff-pill');
+  const keys=['all','easy','medium','hard'];
+  tabs.forEach((b,i)=>{const d=keys[i];b.className='stats-diff-pill'+(d===statsDiffFilter?(d==='all'?' sel-medium':' sel-'+d):'');});
+  // Aggregate
+  let count=0,best=0,totalTime=0;
+  const scope=statsDiffFilter==='all'?DIFFS_ALL:[statsDiffFilter];
+  scope.forEach(d=>{count+=s[d].count;totalTime+=s[d].totalTime;if(s[d].best>0&&(best===0||s[d].best<best))best=s[d].best;});
+  const avg=count>0?Math.round(totalTime/count):0;
+  document.getElementById('stats-cards').innerHTML=
+    '<div class="stat-card"><span class="stat-label">Parties jouées</span><span class="stat-val">'+count+'</span></div>'+
+    '<div class="stat-card"><span class="stat-label">Meilleur temps</span><span class="stat-val best">'+(best>0?fmt(best):'—')+'</span></div>'+
+    '<div class="stat-card"><span class="stat-label">Temps moyen</span><span class="stat-val avg">'+(avg>0?fmt(avg):'—')+'</span></div>'+
+    '<div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">'+(totalTime>0?fmt(totalTime):'—')+'</span></div>';
+  const lastDiff=rememberDiff&&currentDiff?DIFF_LABELS[currentDiff]:'—';
+  document.getElementById('stats-prefs').innerHTML=
+    'Mémorisation : <b style="color:var(--text)">'+(rememberDiff?'activée':'désactivée')+'</b>'
+    +' &nbsp;·&nbsp; Dernière difficulté : <b style="color:var(--text)">'+lastDiff+'</b>';
+}
+function confirmResetStats(){if(confirm('Supprimer toutes les statistiques ?')){clearStats();renderStatsModal();}}
 
 loadPrefs();
 document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quel niveau pour commencer ?';

@@ -552,8 +552,12 @@ function renderStatsModal(){
 function confirmResetStats(){if(confirm('Supprimer toutes les statistiques ?')){clearStats();renderStatsModal();}}
 
 loadPrefs();
-document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quel niveau pour commencer ?';
-document.getElementById('diff-modal').classList.add('show');
+if(rememberDiff && currentDiff){
+  startGeneration(currentDiff);
+} else {
+  document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quel niveau pour commencer ?';
+  document.getElementById('diff-modal').classList.add('show');
+}
 </script>
 </body>
 </html>

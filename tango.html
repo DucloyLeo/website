@@ -160,7 +160,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       </div>
     </div>
   </div>
-  <span class="nav-title">☀ Tango 🌙</span>
+  <a href="https://ducloyleo.github.io/website/tango.html" class="nav-title" style="text-decoration:none;color:inherit">☀ Tango 🌙</a>
   <div class="nav-right">
     <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
     <span class="diff-badge" id="diff-badge" onclick="openChangeDiff()">—</span>
@@ -306,13 +306,19 @@ function makePRNG(seed){
     return((t^(t>>>14))>>>0)/4294967296;
   };
 }
-function genNumSeed(){return Math.floor(Math.random()*2176782336);}
-function seedToStr(diff,n){return diff[0]+n.toString(36).padStart(7,'0');}
+function genNumSeed(){return Math.floor(Math.random()*0x100000000);}
+function seedToStr(diff,numSeed){
+  const d={easy:0,medium:1,hard:2}[diff];
+  const n=numSeed>>>0;
+  const bytes=new Uint8Array(5);
+  bytes[0]=(n>>>24)&0xFF;bytes[1]=(n>>>16)&0xFF;bytes[2]=(n>>>8)&0xFF;bytes[3]=n&0xFF;bytes[4]=d<<6;
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
 function strToSeed(str){
-  const letter=str[0];
-  const diffMap={e:'easy',m:'medium',h:'hard'};
-  const diff=diffMap[letter];
-  const numSeed=parseInt(str.slice(1),36);
+  const b64=str.replace(/-/g,'+').replace(/_/g,'/');
+  const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));
+  const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;
+  const diff=['easy','medium','hard'][bytes[4]>>6];
   return{diff,numSeed};
 }
 
@@ -627,7 +633,7 @@ function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=
 const DIFFS_ALL=['easy','medium','hard'];
 const STATS_KEY='tango_stats';
 function loadStats(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
-function saveStats(diff,seconds){if(!diff||seconds<=0)return;const s=loadStats();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
+function saveStats(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard'].includes(diff))return;const s=loadStats();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
 function clearStats(){try{localStorage.removeItem(STATS_KEY);}catch(e){}}
 function openStats(){renderStatsModal();document.getElementById('stats-modal').classList.add('show');}
 function renderStatsModal(){
@@ -645,7 +651,7 @@ function confirmResetStats(){if(confirm('Supprimer toutes les statistiques ?')){
 
 /* ─── Custom seed (from seed-creator.html) ─── */
 function decodeCustomSeed(seedStr){
-  const b64=seedStr.slice(1).replace(/-/g,'+').replace(/_/g,'/');
+  const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');
   const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
   let pos=0;
   function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}
@@ -680,16 +686,14 @@ const urlParams=new URLSearchParams(window.location.search);
 const seedParam=urlParams.get('seed');
 if(seedParam){
   try{
-    if(seedParam.startsWith('c')){
+    if(seedParam.length===32){
       const decoded=decodeCustomSeed(seedParam);
       startGameFromCustomSeed(decoded,seedParam);
-    }else{
+    }else if(seedParam.length===7){
       const{diff,numSeed}=strToSeed(seedParam);
-      if(diff&&!isNaN(numSeed)){
-        currentDiff=diff;
-        startGeneration(diff,numSeed);
-      }else throw new Error('invalid');
-    }
+      if(diff&&!isNaN(numSeed)){currentDiff=diff;startGeneration(diff,numSeed);}
+      else throw new Error('invalid');
+    }else throw new Error('invalid length');
   }catch(e){
     document.getElementById('diff-modal-sub').textContent='Seed invalide. Quel niveau pour commencer ?';
     document.getElementById('diff-modal').classList.add('show');

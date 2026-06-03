@@ -149,7 +149,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       <button class="nav-menu-item" onclick="menuStats()">📊 Statistiques</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <div class="nav-menu-sep"></div>
-      <div class="nav-menu-item menu-pref-row">
+      <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
         <span>Mémoriser la difficulté</span>
         <label class="toggle" onclick="event.stopPropagation()">
           <input type="checkbox" id="pref-remember" onchange="onPrefChange()">
@@ -220,7 +220,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </div>
 
 <!-- Win modal -->
-<div class="overlay" id="win-modal">
+<div class="overlay" id="win-modal" onclick="onWinOverlayClick(event)">
   <div class="modal">
     <div class="modal-ico">🎉</div>
     <div class="modal-title">Puzzle résolu !</div>
@@ -347,6 +347,7 @@ function onOverlayClick(e,id){if(e.target===document.getElementById(id))document
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}}catch(e){}}
 function savePrefs(){try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff)localStorage.setItem('tango_diff',currentDiff);}catch(e){}}
 function onPrefChange(){rememberDiff=document.getElementById('pref-remember').checked;savePrefs();}
+function toggleRememberDiff(e){const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 
 /* ─── Timer ─── */
 function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
@@ -509,6 +510,13 @@ function resetPuzzle(){
   // Timer : reprend si arrêté après victoire, continue si en cours, reste à 0 si jamais démarré
   if(timerDone){resumeTimer();}
   renderGrid();
+}
+function onWinOverlayClick(e){
+  if(e.target===document.getElementById('win-modal')){
+    document.getElementById('win-modal').classList.remove('show');
+    document.getElementById('grid-wrap').classList.remove('blurred');
+    // gameWon reste true : grille visible mais non modifiable
+  }
 }
 function onWinNext(){
   document.getElementById('win-modal').classList.remove('show');

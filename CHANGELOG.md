@@ -1,58 +1,53 @@
 # ☀ Changelog — Tango · Soleils & Lunes 🌙
 
 > Journal de développement du jeu Tango, construit conversation après conversation avec Claude.
-> Chaque version correspond à une session de travail, une idée, une friction résolue.
+> Chaque entrée correspond à une idée, une friction résolue, une feature ajoutée.
 
 ---
 
-## [v0.1] — Naissance de la grille
+## [v0.1] — Première version jouable
 
-**Le point de départ : faire tourner le jeu.**
+**Tout ce qui constitue le jeu aujourd'hui.**
+
+### 🎮 Grille & Interaction
 
 - Grille 6×6 cliquable avec des cases vides
 - Cycle au clic gauche : `vide → ☀ → 🌙 → vide`
 - Clic droit pour le sens inverse
-- Affichage des symboles fixes (cases pré-remplies)
-- Contraintes `=` et `×` entre cases adjacentes
-- Les trois règles du jeu posées :
-  - ⚖ **Équilibre** : 3 ☀ et 3 🌙 par ligne et colonne
-  - 🚫 **Triplet** : jamais 3 symboles identiques côte à côte
-  - **= / ×** : égalité ou différence forcée entre voisins
+- Affichage des symboles fixes (cases pré-remplies, non modifiables)
+- Contraintes `=` et `×` entre cases adjacentes affichées sur la grille
 
----
+### 📐 Règles du jeu
 
-## [v0.2] — Le moteur derrière les indices
+- ⚖ **Équilibre** : 3 ☀ et 3 🌙 par ligne et colonne
+- 🚫 **Triplet** : jamais 3 symboles identiques côte à côte
+- **= / ×** : égalité ou différence forcée entre voisins
 
-**Faire en sorte que le jeu puisse "réfléchir".**
+### 🧠 Solveur logique
 
-Introduction du solveur logique humain — la colonne vertébrale de tout le reste :
+Le cœur du jeu — utilisé pour valider les puzzles ET donner des indices :
 
-- `tBalance` — détecte quand une ligne/colonne est saturée → force les cases vides
-- `tTriple` — repère deux symboles côte à côte → bloque le troisième
+- `tBalance` — ligne/colonne saturée → force les cases vides restantes
+- `tTriple` — deux symboles côte à côte → bloque le troisième adjacent
 - `tConstraints` — propage les contraintes `=` / `×` depuis une case connue
+- `tEnds` — trois techniques sur les extrémités de ligne/colonne :
+  - **dist4** : `[0]` et `[4]` identiques → `[5]` est forcé à l'opposé
+  - **dist5** : `[0]` et `[5]` identiques → `[1]` et `[4]` sont tous les deux forcés
+  - **pair-end** : paire en `[0-1]` → `[5]` à l'opposé (et vice versa)
+- `tChain` — chaînes de contraintes consécutives :
+  - **chain-eq** : `A = B = C` → si l'un est connu, les deux autres sont identiques
+  - **chain-x** : `A ≠ B ≠ C` → A et C sont nécessairement identiques
+- `tElim` — élimination par contradiction : l'autre symbole mènerait à une impossibilité
 
-> Ce solveur est utilisé à la fois pour **valider les puzzles** et pour **donner des indices** au joueur.
+### ⚙️ Générateur de puzzles
 
----
-
-## [v0.3] — Générateur de puzzles
-
-**Sortir des puzzles codés en dur.**
-
-- Génération aléatoire d'une solution valide par backtracking (`genSolution`)
+- Génération aléatoire d'une solution valide par backtracking
 - Placement aléatoire des contraintes `=` / `×`
-- Suppression progressive des cases pour créer le puzzle de départ
-- Vérification que le puzzle reste **solvable uniquement par logique**
-- Unicité de la solution garantie (`countBT` limite à 1 solution backtrack)
+- Suppression progressive des cases pour créer le puzzle
+- Vérification : le puzzle doit rester **solvable uniquement par logique humaine**
+- Unicité garantie : une seule solution possible
 
----
-
-## [v0.4] — Niveaux de difficulté
-
-**Facile, Moyen, Difficile — pas juste un label.**
-
-- Modale de sélection au démarrage
-- Difficulté pilotée par densité de contraintes et complexité logique requise
+### 🎯 Niveaux de difficulté
 
 | Niveau       | Contraintes | Déductions avancées |
 |--------------|-------------|---------------------|
@@ -60,98 +55,56 @@ Introduction du solveur logique humain — la colonne vertébrale de tout le res
 | 🔥 Moyen     | ~30%        | 2–6                 |
 | 💀 Difficile | ~14%        | 6+                  |
 
+- Modale de sélection au démarrage et entre les puzzles
 - Badge de difficulté dans la navbar, cliquable pour changer
 - Overlay de génération animé pendant le calcul
 
----
+### ⏱ Chronomètre
 
-## [v0.5] — Chronomètre
-
-**Mesurer le temps, ressentir la progression.**
-
-- Timer qui démarre au **premier clic** sur la grille
-- Indicateur visuel (point) : inactif → 🟡 en cours → 🟢 terminé
+- Démarre au **premier clic** sur la grille
+- Indicateur visuel : inactif → 🟡 en cours → 🟢 terminé
 - Affichage `m:ss` en temps réel
 - Reset automatique à chaque nouveau puzzle
 
----
+### ❌ Détection d'erreurs
 
-## [v0.6] — Détection d'erreurs
-
-**Voir ses erreurs sans se faire gronder immédiatement.**
-
-- Détection des contradictions en temps réel (triplets, contraintes violées)
-- Mise en évidence rouge des cases concernées **après 2 secondes**
-- Effacement automatique dès que l'erreur est résolue
+- Détection en temps réel des triplets et contraintes violées
+- Mise en évidence rouge **après 2 secondes** (le temps de se corriger soi-même)
+- Effacement automatique dès que l'erreur disparaît
 - Les erreurs bloquent la détection de victoire
 
----
+### ↩ Annuler
 
-## [v0.7] — Annuler / Historique
+- Bouton Annuler : revient case par case en arrière
+- Pile d'historique enregistrant chaque action
+- Désactivé quand l'historique est vide
 
-**Le droit à l'erreur.**
+### 💡 Système d'indices
 
-- Bouton ↩ **Annuler** : revient case par case en arrière
-- Pile d'historique (`hist`) enregistrant chaque action joueur
-- Désactivé automatiquement quand l'historique est vide
+- Trouve la prochaine case déductible logiquement
+- Prévisualisation sur la grille : symbole semi-transparent + bordure en pointillés
+- Bulle explicative avec le raisonnement derrière l'indice
+- Clic sur la case prévisualisée → confirme l'indice
+- Clic droit → efface sans valider
 
----
+### 📊 Statistiques
 
-## [v0.8] — Système d'indices
+- Parties jouées, meilleur temps, temps moyen, temps total
+- Filtrables par niveau de difficulté
+- Persistées en `localStorage`
+- Réinitialisation avec confirmation
 
-**Ne pas laisser le joueur seul face au vide.**
+### ⚙️ Préférences
 
-- Bouton 💡 **Indice** : trouve la prochaine case déductible
-- Prévisualisation sur la grille : symbole semi-transparent avec bordure en pointillés
-- Bulle explicative entre la grille et les boutons
-- Clic sur la case prévisualisée : confirme l'indice dans la grille
-- Clic droit : efface la prévisualisation sans valider
-
----
-
-## [v0.9] — Techniques avancées du solveur
-
-**Pour les puzzles difficiles, il fallait aller plus loin.**
-
-Quatre nouvelles techniques logiques :
-
-- **`dist4`** — si `[0]` et `[4]` sont identiques, `[5]` est forcé à l'opposé
-- **`dist5`** — si `[0]` et `[5]` sont identiques, `[1]` et `[4]` sont tous les deux forcés
-- **`pair-end`** — une paire en `[0-1]` force `[5]` à l'opposé (et vice versa)
-- **`chain-eq/x`** — propagation de chaînes de contraintes consécutives
-- **`tElim`** — élimination par contradiction : l'autre symbole mène à une impossibilité
-
-Chaque technique a un texte explicatif affiché dans la bulle d'indice.
-
----
-
-## [v1.0] — Statistiques & Préférences
-
-**Garder une trace, personnaliser l'expérience.**
-
-- 📊 Modal **Statistiques** :
-  - Parties jouées, meilleur temps, temps moyen, temps total
-  - Filtrables par niveau de difficulté
-  - Stockées en `localStorage`
-  - Réinitialisation avec confirmation
 - Toggle **Mémoriser la difficulté** : relance automatiquement au même niveau
-- Sauvegarde des préférences entre les sessions
+- Sauvegardées entre les sessions
 
----
+### 📖 Page de techniques
 
-## [v1.1] — Page de techniques de résolution
-
-**Apprendre à jouer sans chercher ailleurs.**
-
-- Création de `tips.html` : guide complet des stratégies de résolution
+- `tips.html` : guide complet des stratégies de résolution
 - Lien depuis la section règles de la page de jeu
-- Navigation cohérente avec la page d'accueil
 
----
-
-## [v1.2] — Design & Responsive
-
-**Un jeu qui ressemble à quelque chose, sur tous les écrans.**
+### 🎨 Design & Responsive
 
 - Palette sombre : `#0e0e0f` fond · `#f5c842` soleil · `#8fa8d4` lune
 - Typographies : *Crimson Pro* (titres) + *DM Mono* (interface)

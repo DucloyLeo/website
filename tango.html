@@ -347,7 +347,7 @@ function onOverlayClick(e,id){if(e.target===document.getElementById(id))document
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}}catch(e){}}
 function savePrefs(){try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff)localStorage.setItem('tango_diff',currentDiff);}catch(e){}}
 function onPrefChange(){rememberDiff=document.getElementById('pref-remember').checked;savePrefs();}
-function toggleRememberDiff(e){const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
+function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 
 /* ─── Timer ─── */
 function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}

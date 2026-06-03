@@ -353,7 +353,7 @@ function onOverlayClick(e,id){if(e.target===document.getElementById(id))document
 
 /* ─── Prefs ─── */
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}}catch(e){}}
-function savePrefs(){try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff)localStorage.setItem('tango_diff',currentDiff);}catch(e){}}
+function savePrefs(){try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff&&currentDiff!=='custom')localStorage.setItem('tango_diff',currentDiff);}catch(e){}}
 function onPrefChange(){rememberDiff=document.getElementById('pref-remember').checked;savePrefs();}
 function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 
@@ -562,7 +562,12 @@ document.addEventListener('keydown',e=>{
 /* ─── Difficulty ─── */
 function setDiffBadge(diff){const el=document.getElementById('diff-badge');el.textContent=DIFF_LABELS[diff];el.className='diff-badge '+diff;}
 function openChangeDiff(){document.getElementById('diff-modal-sub').textContent='Changer la difficulté (génère un nouveau puzzle)';document.getElementById('diff-modal').classList.add('show');}
-function askNewPuzzle(){if(rememberDiff&&currentDiff)startGeneration(currentDiff);else{document.getElementById('diff-modal-sub').textContent='Quel niveau pour ce nouveau puzzle ?';document.getElementById('diff-modal').classList.add('show');}}
+function askNewPuzzle(){
+  const validDiffs=['easy','medium','hard'];
+  const storedDiff=rememberDiff?localStorage.getItem('tango_diff'):null;
+  if(storedDiff&&validDiffs.includes(storedDiff)){startGeneration(storedDiff);}
+  else{document.getElementById('diff-modal-sub').textContent='Quel niveau pour ce nouveau puzzle ?';document.getElementById('diff-modal').classList.add('show');}
+}
 function pickDiff(diff){currentDiff=diff;if(rememberDiff)savePrefs();document.getElementById('diff-modal').classList.remove('show');startGeneration(diff);}
 
 /* ─── Generator ─── */
@@ -651,6 +656,7 @@ function confirmResetStats(){if(confirm('Supprimer toutes les statistiques ?')){
 
 /* ─── Custom seed (from seed-creator.html) ─── */
 function decodeCustomSeed(seedStr){
+  // 16 chars → 12 bytes → 96 bits : solution(36) + h-presence(30) + v-presence(30)
   const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');
   const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
   let pos=0;
@@ -658,10 +664,18 @@ function decodeCustomSeed(seedStr){
   const sol=Array.from({length:N},()=>Array(N).fill(SUN));
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;
   const sCh={},sCv={};
-  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){const has=nb(),isX=nb();if(has)sCh[r+','+c]=isX?'×':'=';}
-  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){const has=nb(),isX=nb();if(has)sCv[r+','+c]=isX?'×':'=';}
+  // constraint type derived from solution (= if same symbol, × if different)
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}
+  // fixed cells derived deterministically (same row-major order as creator)
+  const puz=sol.map(r=>[...r]);
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const sv=puz[r][c];puz[r][c]=EMPTY;
+    const{solved}=humanSolve(puz,sCh,sCv);
+    if(!solved)puz[r][c]=sv;
+  }
   const fix=Array.from({length:N},()=>Array(N).fill(false));
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++)fix[r][c]=nb()===1;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(puz[r][c]!==EMPTY)fix[r][c]=true;
   return{sol,sCh,sCv,fix};
 }
 function startGameFromCustomSeed(decoded,seedStr){
@@ -686,7 +700,7 @@ const urlParams=new URLSearchParams(window.location.search);
 const seedParam=urlParams.get('seed');
 if(seedParam){
   try{
-    if(seedParam.length===32){
+    if(seedParam.length===16){
       const decoded=decodeCustomSeed(seedParam);
       startGameFromCustomSeed(decoded,seedParam);
     }else if(seedParam.length===7){

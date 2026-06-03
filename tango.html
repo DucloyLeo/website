@@ -56,6 +56,7 @@ main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direc
 .diff-badge.easy{border-color:#6dbb8a66;color:#6dbb8a}
 .diff-badge.medium{border-color:#f5c84266;color:var(--sun)}
 .diff-badge.hard{border-color:#d87a5066;color:#d87a50}
+.diff-badge.custom{border-color:rgba(143,168,212,.4);color:var(--moon)}
 
 /* ── Grid ── */
 .grid-outer{position:relative}
@@ -148,6 +149,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
       <button class="nav-menu-item" onclick="menuStats()">📊 Statistiques</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
+      <a href="seed-creator.html" class="nav-menu-item">🎨 Créateur de grille</a>
       <div class="nav-menu-sep"></div>
       <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
         <span>Mémoriser la difficulté</span>
@@ -279,7 +281,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <script>
 const SUN=1,MOON=2,EMPTY=0,N=6;
 const S=['','☀','🌙'];
-const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile'};
+const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile',custom:'Perso'};
 
 let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
 let hist=[];
@@ -641,17 +643,53 @@ function renderStatsModal(){
 }
 function confirmResetStats(){if(confirm('Supprimer toutes les statistiques ?')){clearStats();renderStatsModal();}}
 
+/* ─── Custom seed (from seed-creator.html) ─── */
+function decodeCustomSeed(seedStr){
+  const b64=seedStr.slice(1).replace(/-/g,'+').replace(/_/g,'/');
+  const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  let pos=0;
+  function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}
+  const sol=Array.from({length:N},()=>Array(N).fill(SUN));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;
+  const sCh={},sCv={};
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){const has=nb(),isX=nb();if(has)sCh[r+','+c]=isX?'×':'=';}
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){const has=nb(),isX=nb();if(has)sCv[r+','+c]=isX?'×':'=';}
+  const fix=Array.from({length:N},()=>Array(N).fill(false));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)fix[r][c]=nb()===1;
+  return{sol,sCh,sCv,fix};
+}
+function startGameFromCustomSeed(decoded,seedStr){
+  const{sol,sCh,sCv,fix}=decoded;
+  const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fix[r][c])puz[r][c]=sol[r][c];
+  clearAllErrors();clearHintPreview();gameWon=false;
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('gen-modal').classList.remove('show');
+  resetTimer();hist=[];
+  puzzle=puz;solution=sol;ch=sCh;cv=sCv;
+  board=puz.map(r=>[...r]);
+  fixed=puz.map(r=>r.map(v=>v!==EMPTY));
+  currentDiff='custom';currentSeedStr=seedStr;
+  setDiffBadge('custom');
+  renderGrid();
+}
+
 /* ─── Init ─── */
 loadPrefs();
 const urlParams=new URLSearchParams(window.location.search);
 const seedParam=urlParams.get('seed');
 if(seedParam){
   try{
-    const{diff,numSeed}=strToSeed(seedParam);
-    if(diff&&!isNaN(numSeed)){
-      currentDiff=diff;
-      startGeneration(diff,numSeed);
-    }else throw new Error('invalid');
+    if(seedParam.startsWith('c')){
+      const decoded=decodeCustomSeed(seedParam);
+      startGameFromCustomSeed(decoded,seedParam);
+    }else{
+      const{diff,numSeed}=strToSeed(seedParam);
+      if(diff&&!isNaN(numSeed)){
+        currentDiff=diff;
+        startGeneration(diff,numSeed);
+      }else throw new Error('invalid');
+    }
   }catch(e){
     document.getElementById('diff-modal-sub').textContent='Seed invalide. Quel niveau pour commencer ?';
     document.getElementById('diff-modal').classList.add('show');

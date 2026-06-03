@@ -16,22 +16,29 @@
   --radius:10px;
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding:0 1.5rem}
-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:relative}
-.nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600}
+nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
+.nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;text-align:center}
 main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem}
 
 /* ── Hamburger ── */
-.nav-right{display:flex;align-items:center;gap:8px;position:relative}
+.nav-left{display:flex;align-items:center;position:relative}
+.nav-right{display:flex;align-items:center;gap:8px;justify-content:flex-end}
 .hamburger{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px;border-radius:6px;transition:background .15s}
 .hamburger:hover{background:var(--surface2)}
 .hline{display:block;width:20px;height:2px;background:var(--text);border-radius:2px}
-.nav-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;min-width:230px;overflow:hidden;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.nav-menu{display:none;position:absolute;top:calc(100% + 8px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;min-width:230px;overflow:hidden;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .nav-menu.open{display:block}
 .nav-menu-item{display:flex;align-items:center;width:100%;padding:.7rem 1rem;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);background:none;border:none;cursor:pointer;text-align:left;text-decoration:none;transition:background .1s;gap:8px}
 .nav-menu-item:hover{background:var(--surface2)}
 .nav-menu-sep{height:1px;background:var(--border);margin:4px 0}
 .menu-pref-row{justify-content:space-between;cursor:default}
 .menu-pref-row:hover{background:none}
+
+/* ── Commands modal ── */
+.cmd-section{display:flex;flex-direction:column;gap:4px}
+.cmd-section-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:0 0 4px}
+.cmd-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;font-size:11px;color:var(--muted)}
+.cmd-key{font-family:'DM Mono',monospace;font-size:10px;color:var(--text);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0}
 
 /* ── Seed button ── */
 .seed-btn{background:none;border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace;letter-spacing:.03em}
@@ -131,9 +138,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <body>
 
 <nav>
-  <span class="nav-title">☀ Tango 🌙</span>
-  <div class="nav-right">
-    <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
+  <div class="nav-left">
     <button class="hamburger" id="hamburger-btn" onclick="toggleMenu(event)" aria-label="Menu">
       <span class="hline"></span><span class="hline"></span><span class="hline"></span>
     </button>
@@ -142,6 +147,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
       <button class="nav-menu-item" onclick="menuStats()">📊 Statistiques</button>
+      <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <div class="nav-menu-sep"></div>
       <div class="nav-menu-item menu-pref-row">
         <span>Mémoriser la difficulté</span>
@@ -152,6 +158,11 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       </div>
     </div>
   </div>
+  <span class="nav-title">☀ Tango 🌙</span>
+  <div class="nav-right">
+    <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
+    <span class="diff-badge" id="diff-badge" onclick="openChangeDiff()">—</span>
+  </div>
 </nav>
 
 <main>
@@ -160,7 +171,6 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
   <div class="timer-bar">
     <span class="tdot" id="tdot"></span>
     <span class="timer-val" id="tval">0:00</span>
-    <span class="diff-badge" id="diff-badge" onclick="openChangeDiff()">—</span>
   </div>
 
   <div class="grid-outer">
@@ -185,10 +195,6 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
         <div class="rule-item"><b style="color:var(--text);font-weight:500">⚖ Équilibre :</b> 3 ☀ et 3 🌙 par ligne &amp; colonne</div>
         <div class="rule-item"><b style="color:var(--text);font-weight:500">🚫 Triplet :</b> jamais 3 symboles identiques côte à côte</div>
         <div class="rule-item"><b style="color:var(--text);font-weight:500">= / ×</b> contrainte entre deux cases adjacentes</div>
-      </div>
-      <div class="rules">
-        <div class="rule-item"><b style="color:var(--text);font-weight:500">Clic gauche :</b> vide → ☀ → 🌙 → vide</div>
-        <div class="rule-item"><b style="color:var(--text);font-weight:500">Clic droit :</b> sens inverse</div>
       </div>
       <div class="rules" style="text-align:center">
         <a href="tips.html" style="color:var(--moon);text-decoration:none;font-size:11px;letter-spacing:.04em">
@@ -222,7 +228,6 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <div class="modal-sub" id="win-sub">Bravo !</div>
     <div class="modal-btns">
       <button class="btn sun" style="justify-content:center;padding:11px" onclick="onWinNext()">✦ Nouveau puzzle</button>
-      <button class="btn" style="justify-content:center;padding:11px" onclick="onWinReplay()">↺ Rejouer ce puzzle</button>
     </div>
   </div>
 </div>
@@ -233,6 +238,29 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <div style="font-size:2rem">⏳</div>
     <div class="modal-title" style="font-size:1.2rem" id="gen-label">Génération…</div>
     <div class="modal-sub">Le puzzle est vérifié pour être solvable logiquement.</div>
+  </div>
+</div>
+
+<!-- Commands modal -->
+<div class="overlay" id="commands-modal" onclick="onOverlayClick(event,'commands-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-ico">⌨️</div>
+    <div class="modal-title">Commandes</div>
+    <div class="cmd-section">
+      <div class="cmd-section-title">Clavier</div>
+      <div class="cmd-row"><span>Annuler le dernier coup</span><span class="cmd-key">Ctrl+Z</span></div>
+      <div class="cmd-row"><span>Afficher l'indice (virtuel)</span><span class="cmd-key">H</span></div>
+      <div class="cmd-row"><span>Placer l'indice directement</span><span class="cmd-key">Ctrl+H</span></div>
+      <div class="cmd-row"><span>Recommencer le puzzle</span><span class="cmd-key">R</span></div>
+      <div class="cmd-row"><span>Nouveau puzzle</span><span class="cmd-key">W</span></div>
+    </div>
+    <hr class="stat-sep">
+    <div class="cmd-section">
+      <div class="cmd-section-title">Souris</div>
+      <div class="cmd-row"><span>Vide → ☀ → 🌙 → vide</span><span class="cmd-key">Clic gauche</span></div>
+      <div class="cmd-row"><span>Sens inverse</span><span class="cmd-key">Clic droit</span></div>
+      <div class="cmd-row"><span>Confirmer l'indice affiché</span><span class="cmd-key">Clic sur case</span></div>
+    </div>
   </div>
 </div>
 
@@ -293,6 +321,7 @@ document.addEventListener('click',closeMenu);
 function menuDiff(){closeMenu();openChangeDiff();}
 function menuNew(){closeMenu();askNewPuzzle();}
 function menuStats(){closeMenu();openStats();}
+function menuCommands(){closeMenu();document.getElementById('commands-modal').classList.add('show');}
 
 /* ─── Rules toggle ─── */
 function toggleRules(){document.getElementById('rules-collapsible').classList.toggle('open');}
@@ -486,10 +515,33 @@ function onWinNext(){
   document.getElementById('grid-wrap').classList.remove('blurred');
   askNewPuzzle();
 }
-function onWinReplay(){
-  document.getElementById('win-modal').classList.remove('show');
-  resetPuzzle();
+
+/* ─── Apply hint directly (Ctrl+H) ─── */
+function applyHintDirect(){
+  if(gameWon)return;
+  if(!hintCell){
+    const b=board.map(r=>[...r]);
+    const moves=[...tBalance(b),...tTriple(b),...tConstraints(b,ch,cv),...tEnds(b),...tChain(b,ch,cv),...tElim(b,ch,cv)];
+    const candidates=moves.filter(({r,c,val})=>board[r][c]===EMPTY&&val===solution[r][c]);
+    if(!candidates.length){
+      for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(board[r][c]===EMPTY){candidates.push({r,c,val:solution[r][c],tip:'elim'});break;}if(candidates.length)break;}
+    }
+    if(!candidates.length)return;
+    hintCell=candidates[0];
+  }
+  confirmHint();
 }
+
+/* ─── Keyboard shortcuts ─── */
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement&&document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  else if(e.ctrlKey&&(e.key==='h'||e.key==='H')){e.preventDefault();applyHintDirect();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='h'||e.key==='H')){e.preventDefault();giveHint();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='r'||e.key==='R')){e.preventDefault();resetPuzzle();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='w'||e.key==='W')){e.preventDefault();askNewPuzzle();}
+});
 
 /* ─── Difficulty ─── */
 function setDiffBadge(diff){const el=document.getElementById('diff-badge');el.textContent=DIFF_LABELS[diff];el.className='diff-badge '+diff;}

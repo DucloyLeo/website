@@ -248,16 +248,35 @@ function cycleConstraintH(r,c){const k=r+','+c;if(!cCh[k])cCh[k]='=';else if(cCh
 function cycleConstraintV(r,c){const k=r+','+c;if(!cCv[k])cCv[k]='=';else if(cCv[k]==='=')cCv[k]='×';else delete cCv[k];updateState();}
 
 /* ─── Status ─── */
+function isHumanSolvable(){
+  const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(cFixed[r][c])puz[r][c]=cBoard[r][c];
+  return humanSolve(puz,cCh,cCv).solved;
+}
 function updateStatus(){
   const dot=document.getElementById('sdot'),txt=document.getElementById('status-text');
   const filled=cBoard.flat().filter(v=>v!==EMPTY).length;
   const full=isFull(),hasErr=cErrors.size>0;
   const fixedCount=cFixed.flat().filter(Boolean).length;
-  if(filled===0){dot.className='sdot';txt.textContent='Grille vide — clique sur les cases pour placer des symboles';}
-  else if(hasErr){dot.className='sdot err';txt.textContent=cErrors.size+' erreur'+(cErrors.size>1?'s':'')+' détectée'+(cErrors.size>1?'s':'');}
-  else if(!full){dot.className='sdot warn';txt.textContent=filled+'/36 cases remplies';}
-  else if(!fixedCount){dot.className='sdot warn';txt.textContent='Grille valide ✓ — définis les cases de départ (clic droit)';}
-  else{dot.className='sdot ok';txt.textContent='Puzzle prêt ✓ — '+fixedCount+' case'+(fixedCount>1?'s':'')+' de départ';}
+  if(filled===0){
+    dot.className='sdot';txt.textContent='Grille vide — clique sur les cases pour placer des symboles';
+  }else if(hasErr){
+    dot.className='sdot err';txt.textContent=cErrors.size+' erreur'+(cErrors.size>1?'s':'')+' — corrige les cases en rouge';
+  }else if(!full){
+    dot.className='sdot warn';txt.textContent=filled+'/36 cases remplies';
+  }else if(!fixedCount){
+    const{solved}=humanSolve(Array.from({length:N},()=>Array(N).fill(EMPTY)),cCh,cCv);
+    if(solved){dot.className='sdot ok';txt.textContent='Grille solvable par les contraintes seules ✓ — aucune case de départ nécessaire';}
+    else{dot.className='sdot warn';txt.textContent='Grille valide ✓ mais non solvable par la logique seule — définis les cases de départ';}
+  }else{
+    if(!isHumanSolvable()){
+      dot.className='sdot err';txt.textContent='⚠ Non solvable avec ces cases de départ — ajoute des contraintes ou plus de cases';
+    }else if(fixedCount>4){
+      dot.className='sdot warn';txt.textContent='Solvable ✓ mais '+fixedCount+' cases de départ (objectif : 1–4) — ajoute des contraintes pour réduire';
+    }else{
+      dot.className='sdot ok';txt.textContent='Puzzle prêt ✓ — '+fixedCount+' case'+(fixedCount>1?'s':'')+' de départ';
+    }
+  }
 }
 
 function updateButtons(){
@@ -278,13 +297,15 @@ function updateButtons(){
 /* ─── Seed ─── */
 function encodeSeed(){
   if(!isFull()||cErrors.size>0)return null;
+  // 36 (solution) + 30 (h-constraints presence) + 30 (v-constraints presence) = 96 bits = 12 bytes → 16 chars
+  // constraint TYPE is derived from the solution (no need to store it)
+  // fixed cells are derived deterministically (same row-major order as decoder)
   const bits=[];
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cBoard[r][c]===MOON?1:0);
-  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){const v=cCh[r+','+c];bits.push(v?1:0,v==='×'?1:0);}
-  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){const v=cCv[r+','+c];bits.push(v?1:0,v==='×'?1:0);}
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cFixed[r][c]?1:0);
-  const bytes=new Uint8Array(24);
-  for(let i=0;i<192;i++)bytes[Math.floor(i/8)]|=bits[i]<<(7-(i%8));
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cCh[r+','+c]?1:0);
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(cCv[r+','+c]?1:0);
+  const bytes=new Uint8Array(12);
+  for(let i=0;i<96;i++)bytes[Math.floor(i/8)]|=bits[i]<<(7-(i%8));
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 
@@ -334,6 +355,7 @@ function autoFillSymbols(){
 }
 function autoFillConstraints(){
   if(!isFull()||cErrors.size>0)return;
+  cCh={};cCv={}; // efface les anciennes contraintes avant d'en générer de nouvelles
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(Math.random()<0.4)cCh[r+','+c]=cBoard[r][c]===cBoard[r][c+1]?'=':'×';}
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(Math.random()<0.4)cCv[r+','+c]=cBoard[r][c]===cBoard[r+1][c]?'=':'×';}
   updateState();
@@ -341,9 +363,12 @@ function autoFillConstraints(){
 function autoSelectFixed(){
   if(!isFull()||cErrors.size>0)return;
   const puz=cBoard.map(r=>[...r]);
-  const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
-  cells.sort(()=>Math.random()-.5);
-  for(const[r,c]of cells){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,cCh,cCv);if(!solved)puz[r][c]=sv;}
+  // Ordre déterministe ligne par ligne (identique au décodeur de seed)
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const sv=puz[r][c];puz[r][c]=EMPTY;
+    const{solved}=humanSolve(puz,cCh,cCv);
+    if(!solved)puz[r][c]=sv;
+  }
   cFixed=Array.from({length:N},()=>Array(N).fill(false));
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(puz[r][c]!==EMPTY)cFixed[r][c]=true;
   updateState();

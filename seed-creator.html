@@ -59,6 +59,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .btn:disabled{opacity:.28;cursor:not-allowed}
 .btn-ghost{font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
 .btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-ghost.active{border-color:var(--border2);color:var(--text)}
 
 /* Status */
 .status-bar{max-width:560px;width:100%;padding:.6rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -87,7 +88,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
       <a href="index.html" class="nav-menu-item">🏠 Accueil</a>
     </div>
   </div>
-  <span class="nav-title">☀ Créateur 🌙</span>
+  <a href="https://ducloyleo.github.io/website/tango.html" class="nav-title" style="text-decoration:none;color:inherit">☀ Tango 🌙</a>
   <div class="nav-right"></div>
 </nav>
 
@@ -113,7 +114,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     </div>
     <div class="controls">
       <button class="btn" onclick="autoFillSymbols()">🎲 Remplir auto</button>
-      <button class="btn-ghost" onclick="clearSymbols()">↺ Effacer</button>
+      <button class="btn-ghost" id="btn-clear-s" onclick="clearSymbols()" disabled>↺ Effacer</button>
     </div>
   </div>
 
@@ -125,7 +126,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     </div>
     <div class="controls">
       <button class="btn" id="btn-auto-c" onclick="autoFillConstraints()" disabled>🔗 Générer auto</button>
-      <button class="btn-ghost" onclick="clearConstraints()">↺ Effacer</button>
+      <button class="btn-ghost" id="btn-clear-c" onclick="clearConstraints()" disabled>↺ Effacer</button>
     </div>
   </div>
 
@@ -137,7 +138,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     </div>
     <div class="controls">
       <button class="btn moon" id="btn-auto-f" onclick="autoSelectFixed()" disabled>⭐ Choisir auto</button>
-      <button class="btn-ghost" onclick="clearFixed()">↺ Effacer</button>
+      <button class="btn-ghost" id="btn-clear-f" onclick="clearFixed()" disabled>↺ Effacer</button>
     </div>
   </div>
 
@@ -263,6 +264,15 @@ function updateButtons(){
   const ok=isFull()&&cErrors.size===0;
   document.getElementById('btn-auto-c').disabled=!ok;
   document.getElementById('btn-auto-f').disabled=!ok;
+  const hasS=cBoard.flat().some(v=>v!==EMPTY);
+  const hasC=Object.keys(cCh).length>0||Object.keys(cCv).length>0;
+  const hasF=cFixed.flat().some(Boolean);
+  const bs=document.getElementById('btn-clear-s');
+  const bc=document.getElementById('btn-clear-c');
+  const bf=document.getElementById('btn-clear-f');
+  bs.disabled=!hasS; bs.classList.toggle('active',hasS);
+  bc.disabled=!hasC; bc.classList.toggle('active',hasC);
+  bf.disabled=!hasF; bf.classList.toggle('active',hasF);
 }
 
 /* ─── Seed ─── */
@@ -275,7 +285,7 @@ function encodeSeed(){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cFixed[r][c]?1:0);
   const bytes=new Uint8Array(24);
   for(let i=0;i<192;i++)bytes[Math.floor(i/8)]|=bits[i]<<(7-(i%8));
-  return 'c'+btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 
 function updateSeed(){

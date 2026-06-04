@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tango — Puzzle Platform</title>
+<title>Tangoléo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
@@ -59,7 +59,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
 .toggle input:checked~.toggle-track .toggle-thumb{transform:translateX(16px);background:var(--moon)}
 
-.game-sub-bar{max-width:900px;margin:0 auto;display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:.55rem 0}
+.game-sub-bar{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:.55rem 0}
 .rules-section{max-width:560px;width:100%;display:flex;flex-direction:column;gap:6px}
 .rules-toggle-btn{font-family:'DM Mono',monospace;font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;width:100%;text-align:center}
 .rules-toggle-btn:hover{background:var(--surface2);color:var(--text)}
@@ -105,19 +105,20 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
       </div>
     </div>
   </div>
-  <span class="nav-title">☀ Tango 🌙</span>
+  <span class="nav-title">☀ Tangoléo 🌙</span>
   <div class="nav-right">
     <div id="nav-auth"></div>
   </div>
 </nav>
 <div class="game-sub-bar">
-  <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
-  <button class="diff-badge-btn" id="diff-badge" onclick="openChangeDiff()">—</button>
+  <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
+    <button class="diff-badge-btn" id="diff-badge" onclick="openChangeDiff()">—</button>
+  </div>
 </div>
 
 <main class="game-main">
-  <p style="font-size:12px;color:var(--muted);line-height:1.7;max-width:340px;text-align:center">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
-
   <div class="timer-bar">
     <span class="tdot" id="tdot"></span>
     <span class="timer-val" id="tval">0:00</span>

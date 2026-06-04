@@ -230,13 +230,7 @@ async function toggleBadge(userId, badgeId, hasIt) {
     await db.from('player_badges').insert({ user_id: userId, badge_id: badgeId });
     await logAdminAction('grant_badge', userId, { badge_id: badgeId });
   }
-  const nowHasIt = !hasIt;
-  const chip = document.getElementById('badge-chip-' + badgeId);
-  if (chip) {
-    chip.classList.toggle('earned', nowHasIt);
-    chip.title = nowHasIt ? 'Cliquez pour retirer' : 'Cliquez pour attribuer';
-    chip.setAttribute('onclick', `toggleBadge("${userId}","${badgeId}",${nowHasIt})`);
-  }
+  await openUserModal(userId);
   loadUsers();
 }
 

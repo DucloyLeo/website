@@ -71,8 +71,17 @@
     display: flex;
     align-items: center;
     line-height: 1;
+    z-index: 2;
   }
   .pwd-eye:hover { color: var(--text); }
+  /* Masque l'icône native de Chrome/Edge sur les champs mot de passe */
+  input[type="password"]::-webkit-credentials-auto-fill-button,
+  input[type="password"]::-webkit-strong-password-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+    position: absolute;
+  }
+  input[type="password"]::-ms-reveal { display: none; }
 </style>
 </head>
 <body>

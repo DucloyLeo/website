@@ -87,13 +87,6 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .diff-opt.medium:hover{border-color:#f5c84266;background:rgba(245,200,66,.06)}
 .diff-opt.hard:hover{border-color:#d87a5066;background:rgba(216,122,80,.06)}
 
-.stats-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat-card2{background:var(--surface2);border-radius:8px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:4px}
-.stat-label2{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.stat-val2{font-size:1.3rem;font-weight:500;color:var(--text);letter-spacing:.04em}
-.stat-val2.best{color:var(--sun)}.stat-val2.avg{color:var(--moon)}
-.stats-reset-btn{font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;width:100%;text-align:center}
-.stats-reset-btn:hover{border-color:rgba(220,80,60,.4);color:rgba(220,80,60,.8)}
 
 .modal-time{font-size:1.7rem;font-weight:500;color:var(--sun);text-align:center;letter-spacing:.06em}
 .modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:.3rem}
@@ -113,7 +106,6 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
       <a href="index.html" class="nav-menu-item">🏠 Accueil</a>
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
-      <button class="nav-menu-item" onclick="menuStats()">📊 Statistiques</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <div id="menu-auth-item"></div>
       <div class="nav-menu-sep"></div>
@@ -227,17 +219,6 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   </div>
 </div>
 
-<!-- Stats modal -->
-<div class="overlay" id="stats-modal" onclick="onOverlayClick(event,'stats-modal')">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-ico">📊</div>
-    <div class="modal-title">Statistiques</div>
-    <hr class="sep">
-    <div class="stats-grid2" id="stats-cards"></div>
-    <hr class="sep">
-    <button class="stats-reset-btn" onclick="confirmResetStats()">Réinitialiser les statistiques locales</button>
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
@@ -268,7 +249,6 @@ function closeMenu(){document.getElementById('nav-menu').classList.remove('open'
 document.addEventListener('click',closeMenu);
 function menuDiff(){closeMenu();openChangeDiff();}
 function menuNew(){closeMenu();askNewPuzzle();}
-function menuStats(){closeMenu();openStats();}
 function menuCommands(){closeMenu();document.getElementById('commands-modal').classList.add('show');}
 function toggleRules(){document.getElementById('rules-collapsible').classList.toggle('open');}
 
@@ -425,18 +405,6 @@ const STATS_KEY='tango_stats_v2';
 function loadStatsLocal(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
 function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard'].includes(diff))return;const s=loadStatsLocal();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
 function clearStatsLocal(){try{localStorage.removeItem(STATS_KEY);}catch(e){}}
-function openStats(){renderStatsModal();document.getElementById('stats-modal').classList.add('show');}
-function renderStatsModal(){
-  const s=loadStatsLocal();let count=0,best=0,totalTime=0;
-  ['easy','medium','hard'].forEach(d=>{count+=s[d].count;totalTime+=s[d].totalTime;if(s[d].best>0&&(best===0||s[d].best<best))best=s[d].best;});
-  const avg=count>0?Math.round(totalTime/count):0;
-  document.getElementById('stats-cards').innerHTML=
-    '<div class="stat-card2"><span class="stat-label2">Parties jouées</span><span class="stat-val2">'+count+'</span></div>'+
-    '<div class="stat-card2"><span class="stat-label2">Meilleur temps</span><span class="stat-val2 best">'+(best>0?fmt(best):'—')+'</span></div>'+
-    '<div class="stat-card2"><span class="stat-label2">Temps moyen</span><span class="stat-val2 avg">'+(avg>0?fmt(avg):'—')+'</span></div>'+
-    '<div class="stat-card2"><span class="stat-label2">Temps total</span><span class="stat-val2">'+(totalTime>0?fmt(totalTime):'—')+'</span></div>';
-}
-function confirmResetStats(){if(confirm('Supprimer les statistiques locales ?')){clearStatsLocal();renderStatsModal();}}
 
 /* ── Custom seed ── */
 function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{sol,sCh,sCv};}

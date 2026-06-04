@@ -215,17 +215,36 @@ function fmtDate(iso) {
 async function initNavAuth(opts = {}) {
   const user = await getCurrentUser();
   const el   = document.getElementById('nav-auth');
-  if (!el) return user;
+  const mel  = document.getElementById('menu-auth-item');
+  if (!el && !mel) return user;
 
   if (user) {
     const profile = await getCurrentProfile();
-    el.innerHTML = `
+    if (el) el.innerHTML = `
       <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
       ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
+    if (mel) mel.innerHTML = `
+      <div class="nav-menu-sep"></div>
+      <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}</a>
+      ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
+      <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
-    el.innerHTML = `<a href="/login.html" class="nav-auth-btn">Connexion</a>`;
+    if (el) el.innerHTML = `<a href="/login.html" class="nav-auth-btn">Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   return user;
 }
+
+// ─── Hamburger ───────────────────────────────────────
+
+function toggleMenu(e) {
+  e.stopPropagation();
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+function closeMenu() {
+  const m = document.getElementById('nav-menu');
+  if (m) m.classList.remove('open');
+}
+document.addEventListener('click', closeMenu);

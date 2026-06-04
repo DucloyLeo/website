@@ -21,8 +21,15 @@
 </head>
 <body>
 <nav class="site-nav">
-  <a href="../index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
-  <div id="nav-auth"></div>
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/index.html" class="nav-menu-item">🎮 Jouer</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
 </nav>
 
 <div class="legal-wrap">

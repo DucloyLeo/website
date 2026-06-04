@@ -25,8 +25,20 @@
 <body>
 
 <nav class="site-nav" style="max-width:1100px">
-  <a href="../index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
-  <div id="nav-auth"></div>
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
+      <div class="nav-menu-sep"></div>
+      <a href="/index.html" class="nav-menu-item">← Site public</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
 </nav>
 
 <div class="admin-layout">

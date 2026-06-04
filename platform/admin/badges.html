@@ -35,7 +35,7 @@
     <a href="levels.html" class="admin-nav-item">🎮 Niveaux</a>
     <a href="badges.html" class="admin-nav-item active">🏅 Badges</a>
     <hr class="sep">
-    <a href="index.html"        class="admin-nav-item">← Site public</a>
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
   </aside>
 
   <div class="admin-content">
@@ -119,7 +119,7 @@ const CTYPE_LABELS = { games_played:'Parties ≥', best_time:'Temps ≤ (s)' };
 const DIFF_LABELS  = { easy:'Facile', medium:'Moyen', hard:'Difficile', '':'Toutes' };
 
 async function loadBadges() {
-  const ok = await requireAdmin('index.html');
+  const ok = await requireAdmin('/index.html');
   if (!ok) return;
 
   const [badgesRes, playerBadgesRes] = await Promise.all([

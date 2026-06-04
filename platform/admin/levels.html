@@ -36,7 +36,7 @@
     <a href="levels.html" class="admin-nav-item active">🎮 Niveaux</a>
     <a href="badges.html" class="admin-nav-item">🏅 Badges</a>
     <hr class="sep">
-    <a href="index.html"        class="admin-nav-item">← Site public</a>
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
   </aside>
 
   <div class="admin-content">
@@ -106,7 +106,7 @@ const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', 
 let adminId = null;
 
 async function loadLevels() {
-  const ok = await requireAdmin('index.html');
+  const ok = await requireAdmin('/index.html');
   if (!ok) return;
 
   const user = await getCurrentUser();

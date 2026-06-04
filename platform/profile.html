@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Profil — Puzzle Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/platform/css/common.css">
+<style>
+  .profile-header { display:flex; align-items:center; gap:1.5rem; padding:2.5rem 0 2rem; border-bottom:1px solid var(--border); }
+  .profile-avatar { width:64px; height:64px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0; }
+  .profile-name { font-family:'Crimson Pro',serif; font-size:1.8rem; font-weight:600; }
+  .profile-meta { font-size:11px; color:var(--muted); margin-top:3px; }
+  .diff-section { margin-top:2rem; }
+  .diff-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+  .badges-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .badge-item {
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:.6rem 1rem; font-size:12px;
+    transition:border-color .15s;
+  }
+  .badge-item.earned { border-color:rgba(245,200,66,.3); }
+  .badge-item.locked { opacity:.35; }
+  .badge-ico { font-size:1.4rem; }
+  .badge-name { color:var(--text); font-weight:500; margin-bottom:2px; }
+  .badge-desc { font-size:10px; color:var(--muted); }
+  .danger-zone { margin-top:3rem; border-top:1px solid rgba(220,80,60,.2); padding-top:2rem; }
+  .danger-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(220,80,60,.6); margin-bottom:1rem; }
+  .danger-actions { display:flex; gap:8px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="page-wrap">
+  <div id="loading" style="color:var(--muted);font-size:13px;padding:3rem 0">Chargement…</div>
+  <div id="profile-content" style="display:none">
+
+    <div class="profile-header">
+      <div class="profile-avatar" id="profile-avatar">👤</div>
+      <div>
+        <div class="profile-name" id="profile-name">—</div>
+        <div class="profile-meta" id="profile-meta">—</div>
+      </div>
+    </div>
+
+    <!-- Stats globales -->
+    <div class="diff-section">
+      <p class="diff-title">Statistiques globales</p>
+      <div class="stats-grid" id="global-stats"></div>
+    </div>
+
+    <!-- Stats par difficulté -->
+    <div class="diff-section" id="diff-stats-section">
+      <p class="diff-title">Par difficulté</p>
+      <div id="diff-stats"></div>
+    </div>
+
+    <!-- Badges -->
+    <div class="diff-section">
+      <p class="diff-title">Badges</p>
+      <div class="badges-grid" id="badges-grid"></div>
+    </div>
+
+    <!-- Zone RGPD -->
+    <div class="danger-zone">
+      <p class="danger-title">Mes données</p>
+      <div class="danger-actions">
+        <button class="btn" onclick="handleExport()">⬇ Exporter mes données</button>
+        <button class="btn danger" onclick="handleDeleteAccount()">Supprimer mon compte</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:.75rem;line-height:1.6">
+        Conformément au RGPD, vous pouvez exporter ou supprimer l'intégralité de vos données.
+        La suppression est irréversible.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span>Puzzle Platform</span>
+  <span style="display:flex;gap:1.2rem">
+    <a href="/platform/legal/mentions-legales.html">Mentions légales</a>
+    <a href="/platform/legal/politique-confidentialite.html">Confidentialité</a>
+    <a href="/platform/legal/cgu.html">CGU</a>
+  </span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/platform/js/supabase-client.js"></script>
+<script src="/platform/js/auth.js"></script>
+<script>
+const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
+
+async function loadProfile() {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const [profileRes, statsRes, badgesRes, earnedRes] = await Promise.all([
+    db.from('profiles').select('*').eq('id', user.id).single(),
+    db.from('player_stats').select('*').eq('user_id', user.id),
+    db.from('badges').select('*').order('sort_order'),
+    db.from('player_badges').select('badge_id, earned_at').eq('user_id', user.id)
+  ]);
+
+  const profile  = profileRes.data;
+  const stats    = statsRes.data || [];
+  const badges   = badgesRes.data || [];
+  const earnedMap = Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at]));
+
+  // Header
+  document.getElementById('profile-name').textContent = profile.username;
+  document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
+  if (profile.role === 'admin') {
+    document.getElementById('profile-meta').textContent += ' · Administrateur';
+  }
+
+  // Global stats
+  const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
+  const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);
+  const allBests   = stats.filter(r => r.best_time > 0).map(r => r.best_time);
+  const globalBest = allBests.length ? Math.min(...allBests) : 0;
+
+  document.getElementById('global-stats').innerHTML = `
+    <div class="stat-card"><span class="stat-label">Parties jouées</span><span class="stat-val">${totalGames}</span></div>
+    <div class="stat-card"><span class="stat-label">Badges obtenus</span><span class="stat-val green">${Object.keys(earnedMap).length}/${badges.length}</span></div>
+    <div class="stat-card"><span class="stat-label">Meilleur temps</span><span class="stat-val best">${fmtTime(globalBest)}</span></div>
+    <div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">${fmtTime(totalTime)}</span></div>
+  `;
+
+  // Stats par difficulté
+  const diffHtml = ['easy', 'medium', 'hard'].map(diff => {
+    const s = stats.find(r => r.difficulty === diff) || { games_played: 0, best_time: 0, total_time: 0 };
+    const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
+    return `
+      <div style="margin-bottom:1.2rem">
+        <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>
+          <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmtTime(s.best_time)}</span></div>
+          <div class="stat-card"><span class="stat-label">Moyenne</span><span class="stat-val avg">${fmtTime(avg)}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('diff-stats').innerHTML = diffHtml;
+
+  // Badges
+  const badgesHtml = badges.map(badge => {
+    const earned = earnedMap[badge.id];
+    return `
+      <div class="badge-item ${earned ? 'earned' : 'locked'}">
+        <span class="badge-ico">${badge.icon}</span>
+        <div>
+          <div class="badge-name">${badge.name}</div>
+          <div class="badge-desc">${badge.description}${earned ? ' · ' + fmtDate(earned) : ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('badges-grid').innerHTML = badgesHtml || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('profile-content').style.display = '';
+  initNavAuth();
+}
+
+async function handleExport() {
+  const user = await getCurrentUser();
+  if (user) await exportUserData(user.id);
+}
+
+async function handleDeleteAccount() {
+  const user = await getCurrentUser();
+  if (!user) return;
+  if (!confirm('Supprimer définitivement votre compte et toutes vos données ? Cette action est irréversible.')) return;
+  if (!confirm('Dernière confirmation : tout sera effacé.')) return;
+  await deleteAccount(user.id);
+  window.location.href = '/platform/index.html';
+}
+
+loadProfile();
+</script>
+</body>
+</html>

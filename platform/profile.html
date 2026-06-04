@@ -6,7 +6,7 @@
 <title>Mon Profil — Puzzle Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/platform/css/common.css">
+<link rel="stylesheet" href="css/common.css">
 <style>
   .profile-header { display:flex; align-items:center; gap:1.5rem; padding:2.5rem 0 2rem; border-bottom:1px solid var(--border); }
   .profile-avatar { width:64px; height:64px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0; }
@@ -34,7 +34,7 @@
 <body>
 
 <nav class="site-nav">
-  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <a href="index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
   <div id="nav-auth"></div>
 </nav>
 
@@ -87,15 +87,15 @@
 <footer class="site-footer">
   <span>Puzzle Platform</span>
   <span style="display:flex;gap:1.2rem">
-    <a href="/platform/legal/mentions-legales.html">Mentions légales</a>
-    <a href="/platform/legal/politique-confidentialite.html">Confidentialité</a>
-    <a href="/platform/legal/cgu.html">CGU</a>
+    <a href="legal/mentions-legales.html">Mentions légales</a>
+    <a href="legal/politique-confidentialite.html">Confidentialité</a>
+    <a href="legal/cgu.html">CGU</a>
   </span>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/platform/js/supabase-client.js"></script>
-<script src="/platform/js/auth.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
@@ -182,7 +182,7 @@ async function handleDeleteAccount() {
   if (!confirm('Supprimer définitivement votre compte et toutes vos données ? Cette action est irréversible.')) return;
   if (!confirm('Dernière confirmation : tout sera effacé.')) return;
   await deleteAccount(user.id);
-  window.location.href = '/platform/index.html';
+  window.location.href = 'index.html';
 }
 
 loadProfile();

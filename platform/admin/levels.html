@@ -6,25 +6,25 @@
 <title>Admin — Niveaux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/platform/css/common.css">
+<link rel="stylesheet" href="../css/common.css">
 </style>
 </head>
 <body>
 
 <nav class="site-nav" style="max-width:1100px">
-  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <a href="../index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
   <div id="nav-auth"></div>
 </nav>
 
 <div class="admin-layout">
   <aside class="admin-sidebar">
     <p class="admin-nav-label">Navigation</p>
-    <a href="/platform/admin/index.html"  class="admin-nav-item">📊 Dashboard</a>
-    <a href="/platform/admin/users.html"  class="admin-nav-item">👥 Utilisateurs</a>
-    <a href="/platform/admin/levels.html" class="admin-nav-item active">🎮 Niveaux</a>
-    <a href="/platform/admin/badges.html" class="admin-nav-item">🏅 Badges</a>
+    <a href="index.html"  class="admin-nav-item">📊 Dashboard</a>
+    <a href="users.html"  class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="levels.html" class="admin-nav-item active">🎮 Niveaux</a>
+    <a href="badges.html" class="admin-nav-item">🏅 Badges</a>
     <hr class="sep">
-    <a href="/platform/index.html"        class="admin-nav-item">← Site public</a>
+    <a href="index.html"        class="admin-nav-item">← Site public</a>
   </aside>
 
   <div class="admin-content">
@@ -86,15 +86,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/platform/js/supabase-client.js"></script>
-<script src="/platform/js/auth.js"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/auth.js"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', custom:'Perso' };
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', custom:'var(--moon)' };
 let adminId = null;
 
 async function loadLevels() {
-  const ok = await requireAdmin('/platform/index.html');
+  const ok = await requireAdmin('index.html');
   if (!ok) return;
 
   const user = await getCurrentUser();
@@ -189,7 +189,7 @@ async function deleteLevel(id, name) {
 }
 
 function copySeed(seed) {
-  const url = window.location.origin + '/platform/tango.html?seed=' + seed;
+  const url = window.location.origin + 'tango.html?seed=' + seed;
   navigator.clipboard?.writeText(url) || prompt('Lien :', url);
 }
 

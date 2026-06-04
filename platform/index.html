@@ -6,7 +6,7 @@
 <title>Puzzle Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/platform/css/common.css">
+<link rel="stylesheet" href="css/common.css">
 <style>
   .hero { padding: 4rem 0 3rem; border-bottom: 1px solid var(--border); }
   .hero-desc { font-size: 13px; color: var(--muted); line-height: 1.7; max-width: 420px; margin-top: .5rem; }
@@ -51,7 +51,7 @@
 <body>
 
 <nav class="site-nav">
-  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <a href="index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
   <div id="nav-auth"></div>
 </nav>
 
@@ -64,7 +64,7 @@
 
   <p class="eyebrow" style="margin-top:2.5rem">Jeux disponibles</p>
   <div class="games-grid">
-    <a href="/platform/tango.html" class="game-card">
+    <a href="tango.html" class="game-card">
       <span class="game-card-arrow">↗</span>
       <div class="game-card-ico">☀🌙</div>
       <div class="game-card-title">Tango</div>
@@ -83,15 +83,15 @@
 <footer class="site-footer">
   <span>Puzzle Platform</span>
   <span style="display:flex;gap:1.2rem">
-    <a href="/platform/legal/mentions-legales.html">Mentions légales</a>
-    <a href="/platform/legal/politique-confidentialite.html">Confidentialité</a>
-    <a href="/platform/legal/cgu.html">CGU</a>
+    <a href="legal/mentions-legales.html">Mentions légales</a>
+    <a href="legal/politique-confidentialite.html">Confidentialité</a>
+    <a href="legal/cgu.html">CGU</a>
   </span>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/platform/js/supabase-client.js"></script>
-<script src="/platform/js/auth.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
 <script>initNavAuth();</script>
 </body>
 </html>

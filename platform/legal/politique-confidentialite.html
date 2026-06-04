@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Politique de confidentialité — Puzzle Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/platform/css/common.css">
+<style>
+  .legal-wrap { max-width:680px; margin:0 auto; padding:3rem 0 6rem; }
+  .legal-section { margin-bottom:2rem; }
+  p, li { font-size:13px; color:var(--muted); line-height:1.8; }
+  li { margin-left:1.2rem; margin-bottom:.3rem; }
+  strong { color:var(--text); }
+  table.legal-table { width:100%; border-collapse:collapse; font-size:12px; margin:.75rem 0; }
+  table.legal-table th { text-align:left; padding:6px 10px; border-bottom:1px solid var(--border); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  table.legal-table td { padding:8px 10px; border-bottom:1px solid var(--border); color:var(--muted); }
+  table.legal-table td:first-child { color:var(--text); }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+</nav>
+
+<div class="legal-wrap">
+  <p class="eyebrow">Légal</p>
+  <h1 style="margin-bottom:.5rem">Politique de confidentialité</h1>
+  <p style="margin-bottom:2rem;font-size:11px;color:var(--muted)">Dernière mise à jour : [DATE]</p>
+
+  <div class="legal-section">
+    <h2>Responsable du traitement</h2>
+    <p>[VOTRE NOM] — [VOTRE EMAIL]</p>
+  </div>
+
+  <div class="legal-section">
+    <h2>Données collectées</h2>
+    <p>Lorsque vous créez un compte, nous collectons :</p>
+    <table class="legal-table">
+      <thead><tr><th>Donnée</th><th>Finalité</th><th>Base légale</th><th>Durée de conservation</th></tr></thead>
+      <tbody>
+        <tr><td>Adresse email</td><td>Authentification, récupération de mot de passe</td><td>Exécution du contrat (CGU)</td><td>Jusqu'à suppression du compte</td></tr>
+        <tr><td>Pseudo</td><td>Identification dans le jeu</td><td>Exécution du contrat</td><td>Jusqu'à suppression du compte</td></tr>
+        <tr><td>Statistiques de jeu</td><td>Suivi des performances</td><td>Intérêt légitime</td><td>3 ans après la dernière connexion</td></tr>
+        <tr><td>Badges obtenus</td><td>Récompenses, gamification</td><td>Exécution du contrat</td><td>Jusqu'à suppression du compte</td></tr>
+        <tr><td>Logs de connexion (user-agent hashé)</td><td>Sécurité du service</td><td>Intérêt légitime</td><td>12 mois</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Note :</strong> Nous ne collectons pas votre adresse IP directement. Le user-agent est
+      transformé en empreinte anonyme (hash SHA-256 tronqué) pour des raisons de sécurité.
+    </p>
+  </div>
+
+  <div class="legal-section">
+    <h2>Sous-traitants</h2>
+    <ul>
+      <li><strong>Supabase</strong> (base de données, authentification) — Singapore/États-Unis — <a href="https://supabase.com/privacy" style="color:var(--moon)">Politique de confidentialité</a></li>
+      <li><strong>[Hébergeur frontend]</strong> — [localisation] — à compléter</li>
+      <li><strong>Google Fonts</strong> — polices de caractères — les polices sont servies directement par Google si non auto-hébergées</li>
+    </ul>
+  </div>
+
+  <div class="legal-section">
+    <h2>Vos droits (RGPD)</h2>
+    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants :</p>
+    <ul>
+      <li><strong>Droit d'accès</strong> : obtenir une copie de vos données (bouton "Exporter mes données" dans votre profil)</li>
+      <li><strong>Droit de rectification</strong> : modifier votre pseudo depuis votre profil</li>
+      <li><strong>Droit à l'effacement</strong> : supprimer votre compte et toutes vos données (bouton "Supprimer mon compte" dans votre profil)</li>
+      <li><strong>Droit à la portabilité</strong> : export au format JSON depuis votre profil</li>
+      <li><strong>Droit d'opposition</strong> : contacter [VOTRE EMAIL]</li>
+    </ul>
+    <p>
+      Pour exercer ces droits ou pour toute question, contactez : <strong>[VOTRE EMAIL]</strong><br>
+      Vous avez également le droit de déposer une réclamation auprès de la
+      <a href="https://www.cnil.fr" style="color:var(--moon)">CNIL</a>.
+    </p>
+  </div>
+
+  <div class="legal-section">
+    <h2>Cookies</h2>
+    <p>
+      Ce site utilise uniquement un cookie de session pour maintenir votre connexion (cookie technique nécessaire).
+      Aucun cookie publicitaire ou de tracking n'est utilisé. Ce cookie disparaît à la fermeture de votre navigateur.
+    </p>
+  </div>
+
+  <p style="margin-top:3rem">
+    <a href="/platform/index.html" style="color:var(--moon);text-decoration:none;font-size:12px">← Retour à l'accueil</a>
+  </p>
+</div>
+</body>
+</html>

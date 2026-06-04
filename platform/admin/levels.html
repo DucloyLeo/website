@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Niveaux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/platform/css/common.css">
+</style>
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="/platform/admin/index.html"  class="admin-nav-item">📊 Dashboard</a>
+    <a href="/platform/admin/users.html"  class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="/platform/admin/levels.html" class="admin-nav-item active">🎮 Niveaux</a>
+    <a href="/platform/admin/badges.html" class="admin-nav-item">🏅 Badges</a>
+    <hr class="sep">
+    <a href="/platform/index.html"        class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 style="font-size:1.8rem;margin-bottom:1.5rem">Niveaux personnalisés</h1>
+
+      <!-- Ajouter un niveau -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <h3 style="margin-bottom:1rem">Ajouter un niveau</h3>
+        <form onsubmit="addLevel(event)" style="display:flex;flex-direction:column;gap:.8rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+            <div class="form-group">
+              <label class="form-label">Nom du niveau</label>
+              <input class="form-input" type="text" id="level-name" placeholder="Ex: Niveau Expert 1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Difficulté</label>
+              <select class="form-input" id="level-diff">
+                <option value="easy">Facile</option>
+                <option value="medium" selected>Moyen</option>
+                <option value="hard">Difficile</option>
+                <option value="custom">Personnalisé</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seed (7 caractères pour générée, 16 pour personnalisée)</label>
+            <input class="form-input" type="text" id="level-seed" placeholder="Seed du puzzle" required minlength="7" maxlength="16">
+          </div>
+          <div class="alert error" id="add-error"></div>
+          <div class="alert success" id="add-success"></div>
+          <button type="submit" class="btn sun" style="align-self:flex-start">+ Ajouter le niveau</button>
+        </form>
+      </div>
+
+      <!-- Liste des niveaux -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table" id="levels-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Difficulté</th>
+              <th>Seed</th>
+              <th>Statut</th>
+              <th>Créé le</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="levels-body"></tbody>
+        </table>
+        <div id="levels-empty" style="padding:2rem;text-align:center;font-size:12px;color:var(--muted);display:none">
+          Aucun niveau personnalisé. Ajoutez-en un ci-dessus.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/platform/js/supabase-client.js"></script>
+<script src="/platform/js/auth.js"></script>
+<script>
+const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', custom:'Perso' };
+const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', custom:'var(--moon)' };
+let adminId = null;
+
+async function loadLevels() {
+  const ok = await requireAdmin('/platform/index.html');
+  if (!ok) return;
+
+  const user = await getCurrentUser();
+  adminId = user.id;
+
+  const { data: levels } = await db.from('custom_levels')
+    .select('*, profiles(username)')
+    .order('created_at', { ascending: false });
+
+  renderLevels(levels || []);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+  initNavAuth();
+}
+
+function renderLevels(levels) {
+  if (!levels.length) {
+    document.getElementById('levels-body').innerHTML = '';
+    document.getElementById('levels-empty').style.display = '';
+    document.getElementById('levels-table').style.display = 'none';
+    return;
+  }
+  document.getElementById('levels-empty').style.display = 'none';
+  document.getElementById('levels-table').style.display = '';
+  document.getElementById('levels-body').innerHTML = levels.map(l => `
+    <tr>
+      <td style="font-weight:500">${escHtml(l.name)}</td>
+      <td style="color:${DIFF_COLORS[l.difficulty]}">${DIFF_LABELS[l.difficulty] || l.difficulty}</td>
+      <td>
+        <code style="font-size:10px;color:var(--muted)">${escHtml(l.seed)}</code>
+        <button onclick="copySeed('${escHtml(l.seed)}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;margin-left:4px" title="Copier le lien">🔗</button>
+      </td>
+      <td>
+        <span style="font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid ${l.is_active ? 'rgba(109,187,138,.4)' : 'var(--border)'};color:${l.is_active ? 'var(--green)' : 'var(--muted)'}">
+          ${l.is_active ? 'Actif' : 'Inactif'}
+        </span>
+      </td>
+      <td style="color:var(--muted)">${new Date(l.created_at).toLocaleDateString('fr-FR')}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button onclick='toggleLevel("${l.id}",${l.is_active})' style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer">
+            ${l.is_active ? 'Désactiver' : 'Activer'}
+          </button>
+          <button onclick='deleteLevel("${l.id}","${escHtml(l.name)}")' style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid rgba(220,80,60,.3);background:none;color:rgba(220,80,60,.7);cursor:pointer">
+            Supprimer
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function addLevel(e) {
+  e.preventDefault();
+  const err = document.getElementById('add-error');
+  const ok  = document.getElementById('add-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  const name   = document.getElementById('level-name').value.trim();
+  const diff   = document.getElementById('level-diff').value;
+  const seed   = document.getElementById('level-seed').value.trim();
+
+  if (seed.length !== 7 && seed.length !== 16) {
+    err.textContent = 'La seed doit faire 7 caractères (générée) ou 16 (personnalisée)';
+    err.classList.add('show'); return;
+  }
+
+  const { error } = await db.from('custom_levels').insert({
+    name, difficulty: diff, seed, created_by: adminId, is_active: true
+  });
+
+  if (error) {
+    err.textContent = error.message.includes('unique') ? 'Cette seed existe déjà.' : error.message;
+    err.classList.add('show'); return;
+  }
+
+  ok.textContent = `Niveau "${name}" ajouté avec succès.`;
+  ok.classList.add('show');
+  document.getElementById('level-name').value = '';
+  document.getElementById('level-seed').value = '';
+  await loadLevels();
+}
+
+async function toggleLevel(id, isActive) {
+  await db.from('custom_levels').update({ is_active: !isActive }).eq('id', id);
+  await loadLevels();
+}
+
+async function deleteLevel(id, name) {
+  if (!confirm(`Supprimer le niveau "${name}" ?`)) return;
+  await db.from('custom_levels').delete().eq('id', id);
+  await loadLevels();
+}
+
+function copySeed(seed) {
+  const url = window.location.origin + '/platform/tango.html?seed=' + seed;
+  navigator.clipboard?.writeText(url) || prompt('Lien :', url);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadLevels();
+</script>
+</body>
+</html>

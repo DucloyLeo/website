@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Badges</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/platform/css/common.css">
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="/platform/admin/index.html"  class="admin-nav-item">📊 Dashboard</a>
+    <a href="/platform/admin/users.html"  class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="/platform/admin/levels.html" class="admin-nav-item">🎮 Niveaux</a>
+    <a href="/platform/admin/badges.html" class="admin-nav-item active">🏅 Badges</a>
+    <hr class="sep">
+    <a href="/platform/index.html"        class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 style="font-size:1.8rem;margin-bottom:1.5rem">Badges</h1>
+
+      <!-- Créer un badge -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <h3 style="margin-bottom:1rem">Créer un badge</h3>
+        <form onsubmit="createBadge(event)" style="display:flex;flex-direction:column;gap:.8rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem">
+            <div class="form-group">
+              <label class="form-label">ID (unique, ex: speed-master)</label>
+              <input class="form-input" type="text" id="b-id" placeholder="mon-badge" required pattern="[a-z0-9\-]+">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom</label>
+              <input class="form-input" type="text" id="b-name" placeholder="Nom du badge" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Icône (emoji)</label>
+              <input class="form-input" type="text" id="b-icon" placeholder="🏆" required maxlength="4">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input class="form-input" type="text" id="b-desc" placeholder="Condition visible par le joueur" required>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.8rem">
+            <div class="form-group">
+              <label class="form-label">Condition</label>
+              <select class="form-input" id="b-ctype">
+                <option value="games_played">Parties jouées</option>
+                <option value="best_time">Meilleur temps (s)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valeur</label>
+              <input class="form-input" type="number" id="b-cval" placeholder="10" required min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Difficulté (optionnel)</label>
+              <select class="form-input" id="b-cdiff">
+                <option value="">Toutes</option>
+                <option value="easy">Facile</option>
+                <option value="medium">Moyen</option>
+                <option value="hard">Difficile</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ordre d'affichage</label>
+              <input class="form-input" type="number" id="b-order" placeholder="10" value="10" min="0">
+            </div>
+          </div>
+          <div class="alert error"   id="badge-error"></div>
+          <div class="alert success" id="badge-success"></div>
+          <button type="submit" class="btn sun" style="align-self:flex-start">+ Créer le badge</button>
+        </form>
+      </div>
+
+      <!-- Liste des badges -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead>
+            <tr><th>Badge</th><th>Condition</th><th>Difficulté</th><th>Joueurs</th><th>Action</th></tr>
+          </thead>
+          <tbody id="badges-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/platform/js/supabase-client.js"></script>
+<script src="/platform/js/auth.js"></script>
+<script>
+const CTYPE_LABELS = { games_played:'Parties ≥', best_time:'Temps ≤ (s)' };
+const DIFF_LABELS  = { easy:'Facile', medium:'Moyen', hard:'Difficile', '':'Toutes' };
+
+async function loadBadges() {
+  const ok = await requireAdmin('/platform/index.html');
+  if (!ok) return;
+
+  const [badgesRes, playerBadgesRes] = await Promise.all([
+    db.from('badges').select('*').order('sort_order'),
+    db.from('player_badges').select('badge_id')
+  ]);
+
+  const badges = badgesRes.data || [];
+  const countMap = {};
+  (playerBadgesRes.data || []).forEach(b => {
+    countMap[b.badge_id] = (countMap[b.badge_id] || 0) + 1;
+  });
+
+  document.getElementById('badges-body').innerHTML = badges.map(b => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.4rem">${b.icon}</span>
+          <div>
+            <div style="font-weight:500">${escHtml(b.name)}</div>
+            <div style="font-size:10px;color:var(--muted)">${escHtml(b.description)}</div>
+          </div>
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:11px">${CTYPE_LABELS[b.condition_type] || b.condition_type} ${b.condition_value}</td>
+      <td style="color:var(--muted);font-size:11px">${DIFF_LABELS[b.condition_diff || ''] || b.condition_diff || 'Toutes'}</td>
+      <td>${countMap[b.id] || 0}</td>
+      <td>
+        <button onclick='deleteBadge("${b.id}","${escHtml(b.name)}")' style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid rgba(220,80,60,.3);background:none;color:rgba(220,80,60,.7);cursor:pointer">
+          Supprimer
+        </button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+  initNavAuth();
+}
+
+async function createBadge(e) {
+  e.preventDefault();
+  const err = document.getElementById('badge-error');
+  const ok  = document.getElementById('badge-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  const cdiff = document.getElementById('b-cdiff').value;
+  const { error } = await db.from('badges').insert({
+    id:              document.getElementById('b-id').value.trim(),
+    name:            document.getElementById('b-name').value.trim(),
+    description:     document.getElementById('b-desc').value.trim(),
+    icon:            document.getElementById('b-icon').value.trim(),
+    condition_type:  document.getElementById('b-ctype').value,
+    condition_value: parseInt(document.getElementById('b-cval').value),
+    condition_diff:  cdiff || null,
+    sort_order:      parseInt(document.getElementById('b-order').value) || 0
+  });
+
+  if (error) {
+    err.textContent = error.message.includes('unique') ? 'Cet ID de badge existe déjà.' : error.message;
+    err.classList.add('show'); return;
+  }
+
+  ok.textContent = 'Badge créé avec succès.';
+  ok.classList.add('show');
+  e.target.reset();
+  await loadBadges();
+}
+
+async function deleteBadge(id, name) {
+  if (!confirm(`Supprimer le badge "${name}" ? Tous les joueurs l'ayant obtenu le perdront.`)) return;
+  await db.from('player_badges').delete().eq('badge_id', id);
+  await db.from('badges').delete().eq('id', id);
+  await loadBadges();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadBadges();
+</script>
+</body>
+</html>

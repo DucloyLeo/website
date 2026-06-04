@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/platform/css/common.css">
+<style>
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:2rem; }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1.2rem; }
+  .kpi-val  { font-size:2rem; font-weight:500; color:var(--text); letter-spacing:.04em; }
+  .kpi-label{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
+  .chart-bar-wrap { display:flex; flex-direction:column; gap:6px; }
+  .chart-row { display:flex; align-items:center; gap:10px; font-size:11px; }
+  .chart-label { width:60px; color:var(--muted); flex-shrink:0; text-align:right; }
+  .chart-track { flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+  .chart-fill  { height:100%; border-radius:99px; background:var(--moon); transition:width .4s ease; }
+  .chart-fill.sun  { background:var(--sun); }
+  .chart-fill.green{ background:var(--green); }
+  .chart-count { width:36px; color:var(--muted); font-size:10px; text-align:right; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <a href="/platform/index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="/platform/admin/index.html"  class="admin-nav-item active">📊 Dashboard</a>
+    <a href="/platform/admin/users.html"  class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="/platform/admin/levels.html" class="admin-nav-item">🎮 Niveaux</a>
+    <a href="/platform/admin/badges.html" class="admin-nav-item">🏅 Badges</a>
+    <hr class="sep">
+    <a href="/platform/index.html"        class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Vérification des droits…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 style="font-size:1.8rem;margin-bottom:2rem">Dashboard</h1>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <!-- Connexions sur 7 jours -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <h3 style="margin-bottom:1rem">Connexions — 7 derniers jours</h3>
+        <div class="chart-bar-wrap" id="logins-chart"></div>
+      </div>
+
+      <!-- Parties par difficulté -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+        <div class="card">
+          <h3 style="margin-bottom:1rem">Parties par difficulté</h3>
+          <div class="chart-bar-wrap" id="diff-chart"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:1rem">Dernières inscriptions</h3>
+          <div id="recent-users"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/platform/js/supabase-client.js"></script>
+<script src="/platform/js/auth.js"></script>
+<script>
+async function loadDashboard() {
+  const ok = await requireAdmin('/platform/index.html');
+  if (!ok) return;
+
+  const now   = new Date();
+  const day7  = new Date(now - 7*24*3600*1000).toISOString();
+  const day30 = new Date(now - 30*24*3600*1000).toISOString();
+
+  const [
+    usersRes, gamesRes, statsRes, loginsRes, recentUsersRes
+  ] = await Promise.all([
+    db.from('profiles').select('id', { count: 'exact', head: true }),
+    db.from('completed_levels').select('id', { count: 'exact', head: true }),
+    db.from('player_stats').select('difficulty, games_played'),
+    db.from('login_logs').select('logged_at').gte('logged_at', day7),
+    db.from('profiles').select('username, role, created_at').order('created_at', { ascending: false }).limit(5)
+  ]);
+
+  const totalUsers  = usersRes.count || 0;
+  const totalGames  = gamesRes.count || 0;
+  const logins7     = loginsRes.data || [];
+  const stats       = statsRes.data || [];
+
+  // Actifs ce mois (approximation depuis login_logs)
+  const { count: activeMonth } = await db.from('login_logs')
+    .select('user_id', { count: 'exact', head: true })
+    .gte('logged_at', day30);
+
+  // KPIs
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-val">${totalUsers}</div><div class="kpi-label">Joueurs inscrits</div></div>
+    <div class="kpi-card"><div class="kpi-val">${totalGames}</div><div class="kpi-label">Parties jouées</div></div>
+    <div class="kpi-card"><div class="kpi-val">${logins7.length}</div><div class="kpi-label">Connexions 7j</div></div>
+    <div class="kpi-card"><div class="kpi-val">${activeMonth || 0}</div><div class="kpi-label">Connexions 30j</div></div>
+  `;
+
+  // Graphe connexions 7 jours
+  const days = Array.from({length:7}, (_,i) => {
+    const d = new Date(now - (6-i)*24*3600*1000);
+    return d.toISOString().slice(0,10);
+  });
+  const loginsByDay = Object.fromEntries(days.map(d => [d, 0]));
+  logins7.forEach(l => {
+    const day = l.logged_at.slice(0,10);
+    if (loginsByDay[day] !== undefined) loginsByDay[day]++;
+  });
+  const maxLogins = Math.max(...Object.values(loginsByDay), 1);
+  document.getElementById('logins-chart').innerHTML = days.map(d => `
+    <div class="chart-row">
+      <span class="chart-label">${d.slice(5)}</span>
+      <div class="chart-track"><div class="chart-fill" style="width:${(loginsByDay[d]/maxLogins*100).toFixed(1)}%"></div></div>
+      <span class="chart-count">${loginsByDay[d]}</span>
+    </div>`).join('');
+
+  // Graphe par difficulté
+  const diffMap = { easy:0, medium:0, hard:0 };
+  stats.forEach(s => { if (diffMap[s.difficulty] !== undefined) diffMap[s.difficulty] += s.games_played; });
+  const maxDiff = Math.max(...Object.values(diffMap), 1);
+  const diffColors = { easy:'green', medium:'sun', hard:'moon' };
+  const diffLabels = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+  document.getElementById('diff-chart').innerHTML = Object.entries(diffMap).map(([d, n]) => `
+    <div class="chart-row">
+      <span class="chart-label">${diffLabels[d]}</span>
+      <div class="chart-track"><div class="chart-fill ${diffColors[d]}" style="width:${(n/maxDiff*100).toFixed(1)}%"></div></div>
+      <span class="chart-count">${n}</span>
+    </div>`).join('');
+
+  // Derniers inscrits
+  const recentUsers = recentUsersRes.data || [];
+  document.getElementById('recent-users').innerHTML = recentUsers.length
+    ? `<table class="data-table">
+        <thead><tr><th>Pseudo</th><th>Rôle</th><th>Date</th></tr></thead>
+        <tbody>${recentUsers.map(u => `
+          <tr>
+            <td>${u.username}</td>
+            <td><span class="role-chip ${u.role}">${u.role}</span></td>
+            <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
+          </tr>`).join('')}
+        </tbody>
+       </table>`
+    : '<p style="font-size:12px;color:var(--muted)">Aucun utilisateur</p>';
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+  initNavAuth();
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

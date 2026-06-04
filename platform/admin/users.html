@@ -200,7 +200,7 @@ async function openUserModal(userId) {
     </div>`).join('') : '<p style="font-size:12px;color:var(--muted)">Aucune partie jouée.</p>';
 
   const badgesHtml = allBadges.map(b => `
-    <span class="badge-chip ${earnedIds.has(b.id) ? 'earned' : ''}" style="cursor:pointer" onclick='toggleBadge("${userId}","${b.id}",${earnedIds.has(b.id)})' title="${earnedIds.has(b.id) ? 'Cliquez pour retirer' : 'Cliquez pour attribuer'}">
+    <span id="badge-chip-${b.id}" class="badge-chip ${earnedIds.has(b.id) ? 'earned' : ''}" style="cursor:pointer" onclick='toggleBadge("${userId}","${b.id}",${earnedIds.has(b.id)})' title="${earnedIds.has(b.id) ? 'Cliquez pour retirer' : 'Cliquez pour attribuer'}">
       ${b.icon} ${escHtml(b.name)}
     </span>`).join('');
 
@@ -230,8 +230,14 @@ async function toggleBadge(userId, badgeId, hasIt) {
     await db.from('player_badges').insert({ user_id: userId, badge_id: badgeId });
     await logAdminAction('grant_badge', userId, { badge_id: badgeId });
   }
-  closeModal();
-  await loadUsers();
+  const nowHasIt = !hasIt;
+  const chip = document.getElementById('badge-chip-' + badgeId);
+  if (chip) {
+    chip.classList.toggle('earned', nowHasIt);
+    chip.title = nowHasIt ? 'Cliquez pour retirer' : 'Cliquez pour attribuer';
+    chip.setAttribute('onclick', `toggleBadge("${userId}","${badgeId}",${nowHasIt})`);
+  }
+  loadUsers();
 }
 
 async function promoteUser(userId, username) {

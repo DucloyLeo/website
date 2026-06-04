@@ -6,7 +6,7 @@
 <title>Tango — Puzzle Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/platform/css/common.css">
+<link rel="stylesheet" href="css/common.css">
 <style>
 nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
 .nav-left{display:flex;align-items:center;position:relative}
@@ -110,7 +110,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
       <span class="hline"></span><span class="hline"></span><span class="hline"></span>
     </button>
     <div class="nav-menu" id="nav-menu">
-      <a href="/platform/index.html" class="nav-menu-item">🏠 Accueil</a>
+      <a href="index.html" class="nav-menu-item">🏠 Accueil</a>
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
       <button class="nav-menu-item" onclick="menuStats()">📊 Statistiques</button>
@@ -240,8 +240,8 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/platform/js/supabase-client.js"></script>
-<script src="/platform/js/auth.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
 <script>
 // ═══ GAME ENGINE (identique à tango.html original) ═══════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
@@ -275,7 +275,7 @@ function toggleRules(){document.getElementById('rules-collapsible').classList.to
 /* ── Seed ── */
 function copySeed(){
   if(!currentSeedStr)return;
-  const url=window.location.origin+'/platform/tango.html?seed='+currentSeedStr;
+  const url=window.location.origin+'tango.html?seed='+currentSeedStr;
   if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>{const btn=document.getElementById('seed-btn');const orig=btn.textContent;btn.textContent='✓ Copié !';setTimeout(()=>{btn.textContent=orig;},1800);}).catch(()=>prompt('Lien :',url));}else{prompt('Lien :',url);}
 }
 
@@ -451,9 +451,9 @@ async function init(){
   const menuAuthItem=document.getElementById('menu-auth-item');
   if(user){
     const profile=await getCurrentProfile();
-    menuAuthItem.innerHTML=`<a href="/platform/profile.html" class="nav-menu-item">👤 ${profile?.username||'Profil'}</a><button class="nav-menu-item" onclick="signOut()">🚪 Déconnexion</button>`;
+    menuAuthItem.innerHTML=`<a href="profile.html" class="nav-menu-item">👤 ${profile?.username||'Profil'}</a><button class="nav-menu-item" onclick="signOut()">🚪 Déconnexion</button>`;
   }else{
-    menuAuthItem.innerHTML=`<a href="/platform/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    menuAuthItem.innerHTML=`<a href="login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   const urlParams=new URLSearchParams(window.location.search);

@@ -17,13 +17,13 @@ async function isAdmin() {
   return profile?.role === 'admin';
 }
 
-async function requireAdmin(redirectTo = '/platform/index.html') {
+async function requireAdmin(redirectTo = '/index.html') {
   const admin = await isAdmin();
   if (!admin) { window.location.href = redirectTo; return false; }
   return true;
 }
 
-async function requireAuth(redirectTo = '/platform/login.html') {
+async function requireAuth(redirectTo = '/login.html') {
   const user = await getCurrentUser();
   if (!user) { window.location.href = redirectTo + '?redirect=' + encodeURIComponent(window.location.pathname); return null; }
   return user;
@@ -64,7 +64,7 @@ async function signIn(email, password) {
 
 async function signOut() {
   await db.auth.signOut();
-  window.location.href = '/platform/index.html';
+  window.location.href = '/index.html';
 }
 
 // ─── Sauvegarde d'une partie ─────────────────────────
@@ -220,11 +220,11 @@ async function initNavAuth(opts = {}) {
   if (user) {
     const profile = await getCurrentProfile();
     el.innerHTML = `
-      <a href="/platform/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
-      ${profile?.role === 'admin' ? '<a href="/platform/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
+      <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
+      ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
   } else {
-    el.innerHTML = `<a href="/platform/login.html" class="nav-auth-btn">Connexion</a>`;
+    el.innerHTML = `<a href="/login.html" class="nav-auth-btn">Connexion</a>`;
   }
 
   return user;

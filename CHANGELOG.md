@@ -1,6 +1,6 @@
-# ☀ Changelog — Tangoléo 🌙
+# ☀ Changelog — Tango · Soleils & Lunes 🌙
 
-> Journal de développement du jeu Tangoléo, construit conversation après conversation avec Claude.
+> Journal de développement du jeu Tango, construit conversation après conversation avec Claude.
 > Chaque entrée correspond à une idée, une friction résolue, une feature ajoutée.
 
 ---

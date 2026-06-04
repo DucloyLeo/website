@@ -57,7 +57,7 @@ async function signIn(email, password) {
   await db.from('login_logs').insert({
     user_id: data.user.id,
     ua_hash: await hashString(navigator.userAgent.substring(0, 100))
-  }).catch(() => {});
+  });
 
   return data;
 }
@@ -97,7 +97,9 @@ async function saveGameResult(userId, diff, timeSeconds, seed) {
     if (insErr) console.warn('player_stats insert:', insErr.message);
   }
 
-  const newBadges = await checkAndAwardBadges(userId, diff, timeSeconds).catch(e => { console.warn('badges:', e); return []; });
+  let newBadges = [];
+  try { newBadges = await checkAndAwardBadges(userId, diff, timeSeconds) || []; }
+  catch(e) { console.warn('badges:', e); }
   return newBadges || [];
 }
 

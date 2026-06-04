@@ -59,7 +59,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
 .toggle input:checked~.toggle-track .toggle-thumb{transform:translateX(16px);background:var(--moon)}
 
-.game-sub-bar{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:.55rem 0}
+.game-sub-bar{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:.55rem 0}
 .rules-section{max-width:560px;width:100%;display:flex;flex-direction:column;gap:6px}
 .rules-toggle-btn{font-family:'DM Mono',monospace;font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;width:100%;text-align:center}
 .rules-toggle-btn:hover{background:var(--surface2);color:var(--text)}
@@ -91,8 +91,8 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
       <span class="hline"></span><span class="hline"></span><span class="hline"></span>
     </button>
     <div class="nav-menu" id="nav-menu">
-      <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
+      <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <div id="menu-auth-item"></div>
       <div class="nav-menu-sep"></div>
@@ -111,8 +111,9 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   </div>
 </nav>
 <div class="game-sub-bar">
-  <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
-  <div style="display:flex;gap:8px;flex-shrink:0">
+  <div></div>
+  <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0;text-align:center">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
     <button class="diff-badge-btn" id="diff-badge" onclick="openChangeDiff()">—</button>
   </div>

@@ -1,7 +1,108 @@
-# ☀ Changelog — Tango · Soleils & Lunes 🌙
+# ☀ Changelog — Tangoléo 🌙
 
-> Journal de développement du jeu Tango, construit conversation après conversation avec Claude.
+> Journal de développement du jeu Tangoléo, construit conversation après conversation avec Claude.
 > Chaque entrée correspond à une idée, une friction résolue, une feature ajoutée.
+
+---
+
+## [v0.2] — Plateforme complète & mise en ligne
+
+### 🔐 Comptes utilisateurs
+
+- Inscription avec pseudo, email, mot de passe (validation côté client + serveur)
+- Connexion / déconnexion
+- Toggle visibilité mot de passe (œil) dans les deux formulaires — icône native Chrome masquée via CSS
+- Redirection automatique si déjà connecté
+- Nom du profil + bouton déconnexion affichés dans la navbar sur toutes les pages
+
+### 👤 Profil utilisateur (`/profile.html`)
+
+- Statistiques globales : parties jouées, badges obtenus, meilleur temps, temps total
+- Statistiques par difficulté (Facile / Moyen / Difficile) : parties, meilleur temps, moyenne
+- Galerie de badges obtenus et verrouillés
+- **Réinitialiser les statistiques** : efface parties, stats et badges sans supprimer le compte
+- Export RGPD des données personnelles au format JSON
+- Suppression de compte avec double confirmation
+
+### 🏅 Système de badges
+
+9 badges automatiques débloqués en jeu :
+
+| Badge | Condition |
+|-------|-----------|
+| 🌱 Première Partie | Terminer 1 partie |
+| 🔥 Habitué | Terminer 10 parties |
+| ⭐ Vétéran | Terminer 50 parties |
+| 💎 Centurion | Terminer 100 parties |
+| 💀 Intrépide | Terminer 1 partie difficile |
+| 🏆 Maître du Puzzle | Terminer 10 parties difficiles |
+| ⚡ Éclair | Facile en moins de 60 s |
+| 🌩 Foudre | Moyen en moins de 90 s |
+| 🚀 Supersonique | Difficile en moins de 3 min |
+
+### ⏱ Améliorations du chronomètre
+
+- Le timer démarre maintenant au **premier indice** (touche H) en plus du premier clic
+- **Mode assisté** (CTRL+H) : la partie est marquée assistée → comptée en parties jouées et temps total, mais **exclue du meilleur temps** et des badges de rapidité
+
+### 🌱 Seed & partage
+
+- Bouton **🔗 Seed** dans la sous-barre du jeu : copie l'URL du puzzle en cours
+- Format 7 caractères (puzzle généré, difficulté encodée) ou 16 caractères (puzzle personnalisé)
+- Paramètre `?seed=XXXXXXX` dans l'URL pour charger directement un puzzle partagé
+
+### ⚙️ Panel d'administration (`/admin/`)
+
+- **Dashboard** : KPIs (joueurs, parties, connexions 7j/30j), graphes activité, dernières inscriptions
+- **Utilisateurs** : liste avec recherche, détail (stats + badges), promotion/rétrogradation admin, suppression
+- **Niveaux** : ajout/activation/désactivation de seeds personnalisées
+- **Badges** : création et suppression de badges custom
+- Accès réservé aux comptes `role = 'admin'`
+
+### 💡 Page Conseils (`/tips.html`)
+
+- Les 3 règles illustrées avec exemples visuels
+- 9 techniques de résolution classées Facile / Moyen / Difficile
+- Conseils généraux
+- Accessible depuis le menu hamburger sur toutes les pages
+
+### 🗂 Navigation & UX
+
+- Menu hamburger disponible sur **toutes les pages** (jeu, connexion, profil, légal, admin)
+- Lien **💡 Conseils** ajouté dans tous les hamburgers
+- Le titre "☀ Tangoléo 🌙" sur la page de jeu est un lien cliquable vers l'accueil
+- `tango.html` redirige automatiquement vers `/` (compatibilité ancienne URL)
+
+### 📄 Pages légales (conformité RGPD)
+
+- CGU (Conditions Générales d'Utilisation)
+- Politique de confidentialité avec tableau des données collectées
+- Mentions légales
+- Informations renseignées : Ducloy Léo · ducloy.leo@gmail.com · Yvetot · tangoleo.fr
+
+### 🗄 Base de données Supabase
+
+- 8 tables : `profiles`, `player_stats`, `completed_levels`, `badges`, `player_badges`, `login_logs`, `admin_logs`, `custom_levels`
+- Row Level Security (RLS) sur toutes les tables
+- Trigger `on_auth_user_created` → création automatique du profil à l'inscription
+- Fonction `is_admin()` (security definer) utilisée dans les policies admin
+- Logs de connexion avec user-agent hashé (SHA-256 tronqué, conformité RGPD)
+
+### 🌐 Déploiement & Infrastructure
+
+- **Renommage** : "Tango" → **"Tangoléo"** (nom, titres, meta, légal)
+- Hébergement initial sur Netlify → migré sur **Cloudflare Workers** (crédit Netlify épuisé)
+- Domaine personnalisé **tangoleo.fr** acheté chez OVH, DNS géré par Cloudflare
+- SSL automatique Cloudflare, proxy activé (orange cloud)
+
+### 🐛 Corrections de bugs
+
+- `db.from(...).catch is not a function` : Supabase JS v2 `PostgrestBuilder` n'a pas `.catch()` — remplacé par destructuring `{ error }` partout
+- Stats non sauvegardées : policy RLS `FOR ALL USING` ne couvre pas INSERT → ajout de policies `FOR INSERT WITH CHECK` explicites
+- Popup de victoire bloquée : `saveGameResult` en erreur bloquait le `setTimeout` → encapsulé dans try/catch
+- Boucle de redirection admin : `requireAdmin('index.html')` (relatif) → `requireAdmin('/index.html')` (absolu)
+- Lien "← Site public" dans la sidebar admin pointait vers `/admin/index.html` → corrigé vers `/index.html`
+- Bouton œil du mot de passe invisible dans l'onglet Connexion : icône native Chrome masquée + `z-index: 2`
 
 ---
 

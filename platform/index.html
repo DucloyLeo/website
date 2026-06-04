@@ -339,7 +339,8 @@ async function checkWin(){
 
   let newBadges=[];
   if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
-    newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr)||[];
+    try{newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr)||[];}
+    catch(e){console.error('saveGameResult:',e);}
   }
 
   setTimeout(()=>{

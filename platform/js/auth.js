@@ -70,7 +70,7 @@ async function signOut() {
 // ─── Sauvegarde d'une partie ─────────────────────────
 
 async function saveGameResult(userId, diff, timeSeconds, seed) {
-  if (!userId || !['easy', 'medium', 'hard'].includes(diff) || timeSeconds <= 0) return;
+  if (!userId || !['easy', 'medium', 'hard'].includes(diff) || timeSeconds <= 0) return [];
 
   await db.from('completed_levels').insert({
     user_id: userId,
@@ -92,7 +92,7 @@ async function saveGameResult(userId, diff, timeSeconds, seed) {
       total_time:   existing.total_time + timeSeconds,
       best_time:    existing.best_time === 0 ? timeSeconds : Math.min(existing.best_time, timeSeconds),
       updated_at:   new Date().toISOString()
-    }).eq('id', existing.id);
+    }).eq('id', existing.id).catch(() => {});
   } else {
     await db.from('player_stats').insert({
       user_id:      userId,
@@ -100,11 +100,11 @@ async function saveGameResult(userId, diff, timeSeconds, seed) {
       games_played: 1,
       total_time:   timeSeconds,
       best_time:    timeSeconds
-    });
+    }).catch(() => {});
   }
 
-  const newBadges = await checkAndAwardBadges(userId, diff, timeSeconds);
-  return newBadges;
+  const newBadges = await checkAndAwardBadges(userId, diff, timeSeconds).catch(() => []);
+  return newBadges || [];
 }
 
 // ─── Badges ──────────────────────────────────────────

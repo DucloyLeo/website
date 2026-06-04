@@ -145,6 +145,38 @@ CREATE POLICY "Stats delete" ON player_stats FOR DELETE USING (auth.uid() = user
 
 ---
 
+## Emails transactionnels (Resend + Supabase)
+
+### Configuration SMTP Supabase
+- **Fournisseur** : Resend — smtp.resend.com:465, username: `resend`
+- **Expéditeur** : `noreply@tangoleo.fr`
+- **Limite** : 3000 emails/mois, 100/jour (plan gratuit Resend)
+- **Domaine vérifié** : tangoleo.fr dans Resend → DNS Records tous en **Verified** ✅
+
+### DNS d'authentification email (dans Cloudflare DNS)
+| Type | Name | Contenu | Statut |
+|------|------|---------|--------|
+| TXT | `resend._domainkey` | `p=MIGf...` (clé DKIM Resend) | ✅ Verified |
+| MX | `send` | `feedback-smtp.[...].amazonses.com` (priorité 10) | ✅ Verified |
+| TXT | `send` | `v=spf1 include:[...].nses.com ~all` | ✅ Verified |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:ducloy.leo@gmail.com` | (optionnel, à ajouter) |
+
+### URL Configuration Supabase (important)
+- **Supabase → Authentication → URL Configuration**
+- **Site URL** → `https://tangoleo.fr`
+- **Redirect URLs** → `https://tangoleo.fr/**` et `https://www.tangoleo.fr/**`
+- ⚠️ Si non configuré, les liens dans les emails de confirmation pointent vers l'ancienne URL Netlify
+
+### Templates emails (français)
+Les 4 templates Supabase (Confirmation, Invitation, Magic Link, Reset Password) ont été traduits en français avec branding Tangoléo. À configurer dans Supabase → Authentication → Email Templates.
+
+### Fix comptes non confirmés (SQL à exécuter si besoin)
+```sql
+UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NULL;
+```
+
+---
+
 ## Bugs connus / non résolus
 - **Toggle badge admin** : re-render de la modale fonctionne mais la surbrillance ne se met pas à jour visuellement en temps réel (workaround : fermer et rouvrir la modale). Décidé de laisser pour l'instant.
 

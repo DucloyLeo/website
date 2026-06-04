@@ -55,6 +55,7 @@
 
 <nav class="site-nav">
   <a href="index.html" class="nav-logo">☀ Puzzle Platform 🌙</a>
+  <div id="nav-auth"></div>
 </nav>
 
 <div class="auth-wrap">
@@ -169,6 +170,7 @@ async function handleRegister(e) {
   }
 }
 
+initNavAuth();
 // Redirige si déjà connecté
 getCurrentUser().then(u => {
   if (u) window.location.href = '/index.html';

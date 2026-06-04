@@ -69,7 +69,7 @@ async function signOut() {
 
 // ─── Sauvegarde d'une partie ─────────────────────────
 
-async function saveGameResult(userId, diff, timeSeconds, seed) {
+async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false) {
   if (!userId || !['easy', 'medium', 'hard'].includes(diff) || timeSeconds <= 0) return [];
 
   const { error: levErr } = await db.from('completed_levels').insert({
@@ -82,30 +82,33 @@ async function saveGameResult(userId, diff, timeSeconds, seed) {
   if (selErr) console.warn('player_stats select:', selErr.message);
 
   if (existing) {
-    const { error: updErr } = await db.from('player_stats').update({
+    const update = {
       games_played: existing.games_played + 1,
       total_time:   existing.total_time + timeSeconds,
-      best_time:    existing.best_time === 0 ? timeSeconds : Math.min(existing.best_time, timeSeconds),
       updated_at:   new Date().toISOString()
-    }).eq('id', existing.id);
+    };
+    if (!assisted) {
+      update.best_time = existing.best_time === 0 ? timeSeconds : Math.min(existing.best_time, timeSeconds);
+    }
+    const { error: updErr } = await db.from('player_stats').update(update).eq('id', existing.id);
     if (updErr) console.warn('player_stats update:', updErr.message);
   } else {
     const { error: insErr } = await db.from('player_stats').insert({
       user_id: userId, difficulty: diff, games_played: 1,
-      total_time: timeSeconds, best_time: timeSeconds
+      total_time: timeSeconds, best_time: assisted ? 0 : timeSeconds
     });
     if (insErr) console.warn('player_stats insert:', insErr.message);
   }
 
   let newBadges = [];
-  try { newBadges = await checkAndAwardBadges(userId, diff, timeSeconds) || []; }
+  try { newBadges = await checkAndAwardBadges(userId, diff, timeSeconds, assisted) || []; }
   catch(e) { console.warn('badges:', e); }
   return newBadges || [];
 }
 
 // ─── Badges ──────────────────────────────────────────
 
-async function checkAndAwardBadges(userId, diff, timeSeconds) {
+async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) {
   const [statsRes, badgesRes, earnedRes] = await Promise.all([
     db.from('player_stats').select('*').eq('user_id', userId),
     db.from('badges').select('*').order('sort_order'),
@@ -130,7 +133,7 @@ async function checkAndAwardBadges(userId, diff, timeSeconds) {
       } else {
         earned = totalGames >= badge.condition_value;
       }
-    } else if (badge.condition_type === 'best_time') {
+    } else if (badge.condition_type === 'best_time' && !assisted) {
       const targetDiff = badge.condition_diff || diff;
       if (targetDiff === diff) {
         earned = timeSeconds <= badge.condition_value;

@@ -72,38 +72,32 @@ async function signOut() {
 async function saveGameResult(userId, diff, timeSeconds, seed) {
   if (!userId || !['easy', 'medium', 'hard'].includes(diff) || timeSeconds <= 0) return [];
 
-  await db.from('completed_levels').insert({
-    user_id: userId,
-    seed: seed || null,
-    difficulty: diff,
-    time_seconds: timeSeconds
-  }).catch(() => {});
+  const { error: levErr } = await db.from('completed_levels').insert({
+    user_id: userId, seed: seed || null, difficulty: diff, time_seconds: timeSeconds
+  });
+  if (levErr) console.warn('completed_levels insert:', levErr.message);
 
-  const { data: existing } = await db
-    .from('player_stats')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('difficulty', diff)
-    .maybeSingle();
+  const { data: existing, error: selErr } = await db
+    .from('player_stats').select('*').eq('user_id', userId).eq('difficulty', diff).maybeSingle();
+  if (selErr) console.warn('player_stats select:', selErr.message);
 
   if (existing) {
-    await db.from('player_stats').update({
+    const { error: updErr } = await db.from('player_stats').update({
       games_played: existing.games_played + 1,
       total_time:   existing.total_time + timeSeconds,
       best_time:    existing.best_time === 0 ? timeSeconds : Math.min(existing.best_time, timeSeconds),
       updated_at:   new Date().toISOString()
-    }).eq('id', existing.id).catch(() => {});
+    }).eq('id', existing.id);
+    if (updErr) console.warn('player_stats update:', updErr.message);
   } else {
-    await db.from('player_stats').insert({
-      user_id:      userId,
-      difficulty:   diff,
-      games_played: 1,
-      total_time:   timeSeconds,
-      best_time:    timeSeconds
-    }).catch(() => {});
+    const { error: insErr } = await db.from('player_stats').insert({
+      user_id: userId, difficulty: diff, games_played: 1,
+      total_time: timeSeconds, best_time: timeSeconds
+    });
+    if (insErr) console.warn('player_stats insert:', insErr.message);
   }
 
-  const newBadges = await checkAndAwardBadges(userId, diff, timeSeconds).catch(() => []);
+  const newBadges = await checkAndAwardBadges(userId, diff, timeSeconds).catch(e => { console.warn('badges:', e); return []; });
   return newBadges || [];
 }
 

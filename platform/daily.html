@@ -747,16 +747,12 @@ async function _changeToPrevMonth(){
   let m=calMonth-1,y=calYear;
   if(m<0){m=11;y--;}
   calMonth=m;calYear=y;
-  selectedCalDate=null;
   await loadMonthData();
-  await autoSelectFirstUnresolved();
 }
 
 async function _changeToNextMonth(){
   calMonth++;if(calMonth>11){calMonth=0;calYear++;}
-  selectedCalDate=null;
   await loadMonthData();
-  await autoSelectFirstUnresolved();
 }
 
 async function prevCalMonth(){

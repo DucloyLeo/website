@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistiques — Tangoléo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+  .diff-section { margin-top:2rem; }
+  .diff-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+  .local-notice { display:flex; align-items:flex-start; gap:.7rem; background:rgba(143,168,212,.07); border:1px solid rgba(143,168,212,.2); border-radius:10px; padding:.9rem 1.1rem; font-size:12px; color:var(--muted); line-height:1.6; margin-top:2.5rem; }
+  .local-notice a { color:var(--moon); text-decoration:none; }
+  .local-notice a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/index.html" class="nav-menu-item">🎮 Jouer</a>
+      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="page-wrap">
+  <h1>Statistiques</h1>
+
+  <div class="local-notice">
+    <span>💾</span>
+    <span>Ces statistiques sont sauvegardées localement sur cet appareil. <a href="/login.html">Créez un compte</a> pour les conserver en ligne, les retrouver sur tous vos appareils et débloquer des badges.</span>
+  </div>
+
+  <div id="stats-content">
+
+    <div class="diff-section">
+      <p class="diff-title">Statistiques globales</p>
+      <div class="stats-grid" id="global-stats"></div>
+    </div>
+
+    <div class="diff-section">
+      <p class="diff-title">Par difficulté</p>
+      <div id="diff-stats"></div>
+    </div>
+
+    <div style="margin-top:2.5rem;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="handleReset()" style="border-color:rgba(245,160,50,.4);color:rgba(245,160,50,.9)">↺ Réinitialiser les statistiques</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span>Tangoléo</span>
+  <span style="display:flex;gap:1.2rem">
+    <a href="legal/mentions-legales.html">Mentions légales</a>
+    <a href="legal/politique-confidentialite.html">Confidentialité</a>
+    <a href="legal/cgu.html">CGU</a>
+  </span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const STATS_KEY = 'tango_stats_v2';
+const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
+
+function fmt(s) {
+  if (!s || s === 0) return '—';
+  const m = Math.floor(s / 60), ss = s % 60;
+  return m + ':' + (ss < 10 ? '0' : '') + ss;
+}
+
+function loadStatsLocal() {
+  try { const r = localStorage.getItem(STATS_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  return { easy:{count:0,best:0,totalTime:0}, medium:{count:0,best:0,totalTime:0}, hard:{count:0,best:0,totalTime:0} };
+}
+
+function render() {
+  const stats = loadStatsLocal();
+
+  const totalGames = Object.values(stats).reduce((s, d) => s + d.count, 0);
+  const totalTime  = Object.values(stats).reduce((s, d) => s + d.totalTime, 0);
+  const bests      = Object.values(stats).filter(d => d.best > 0).map(d => d.best);
+  const globalBest = bests.length ? Math.min(...bests) : 0;
+
+  document.getElementById('global-stats').innerHTML = `
+    <div class="stat-card"><span class="stat-label">Parties jouées</span><span class="stat-val">${totalGames}</span></div>
+    <div class="stat-card"><span class="stat-label">Meilleur temps</span><span class="stat-val best">${fmt(globalBest)}</span></div>
+    <div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">${fmt(totalTime)}</span></div>
+  `;
+
+  const diffHtml = ['easy', 'medium', 'hard'].map(diff => {
+    const d = stats[diff] || { count:0, best:0, totalTime:0 };
+    const avg = d.count > 0 ? Math.round(d.totalTime / d.count) : 0;
+    return `
+      <div style="margin-bottom:1.2rem">
+        <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${d.count}</span></div>
+          <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmt(d.best)}</span></div>
+          <div class="stat-card"><span class="stat-label">Moyenne</span><span class="stat-val avg">${fmt(avg)}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('diff-stats').innerHTML = diffHtml;
+}
+
+function handleReset() {
+  if (!confirm('Réinitialiser toutes vos statistiques locales ?')) return;
+  localStorage.removeItem(STATS_KEY);
+  render();
+}
+
+initNavAuth();
+render();
+</script>
+</body>
+</html>

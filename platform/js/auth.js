@@ -229,8 +229,8 @@ async function initNavAuth(opts = {}) {
       ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
-    if (el) el.innerHTML = `<a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (el) el.innerHTML = `<a href="/stats.html" class="nav-auth-link">Statistiques</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   return user;

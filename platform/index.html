@@ -20,6 +20,15 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .seed-btn{background:none;border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace}
 .seed-btn:hover{background:var(--surface2);color:var(--text)}
 
+.theme-toggle{background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0}
+.theme-toggle-track{position:relative;width:54px;height:28px;border-radius:99px;background:#111113;overflow:hidden;transition:background .3s}
+.theme-toggle-icon{position:absolute;left:7px;top:50%;transform:translateY(-50%);color:#fff;display:flex;align-items:center;justify-content:center;width:14px;height:14px;transition:opacity .15s}
+.theme-icon-sun{opacity:0}
+.theme-toggle-thumb{position:absolute;right:4px;top:4px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:right .3s}
+[data-theme="light"] .theme-toggle-track{background:#f5a623}
+[data-theme="light"] .theme-icon-moon{opacity:0}
+[data-theme="light"] .theme-icon-sun{opacity:1}
+
 .timer-bar{display:flex;align-items:center;gap:10px}
 .timer-val{font-size:1.35rem;font-weight:500;color:var(--text);min-width:64px;text-align:center;letter-spacing:.06em}
 .tdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
@@ -113,7 +122,15 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   </div>
 </nav>
 <div class="game-sub-bar">
-  <div><button class="seed-btn" id="theme-btn" onclick="toggleTheme()">☀ Clair</button></div>
+  <div>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Changer de thème">
+      <span class="theme-toggle-track">
+        <span class="theme-toggle-icon theme-icon-moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+        <span class="theme-toggle-icon theme-icon-sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg></span>
+        <span class="theme-toggle-thumb"></span>
+      </span>
+    </button>
+  </div>
   <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0;text-align:center">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
@@ -239,7 +256,7 @@ function seedToStr(diff,n){const d={easy:0,medium:1,hard:2}[diff];const nb=n>>>0
 function strToSeed(str){const b64=str.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;const diff=['easy','medium','hard'][bytes[4]>>6];return{diff,numSeed};}
 
 /* ── Theme ── */
-function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='light'?'🌙 Sombre':'☀ Clair';try{localStorage.setItem('tango_theme',t);}catch(e){}}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('tango_theme',t);}catch(e){}}
 function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');}
 
 /* ── Menu ── */

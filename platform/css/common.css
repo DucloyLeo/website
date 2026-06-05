@@ -29,6 +29,18 @@
 [data-theme="light"] .btn:hover { background: var(--surface2); }
 [data-theme="light"] .btn.primary { background: var(--surface2); }
 
+/* ── Theme toggle slider ── */
+.theme-toggle{background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0}
+.theme-toggle-track{position:relative;width:54px;height:28px;border-radius:99px;background:#1e1e21;border:1px solid var(--border2);overflow:hidden;transition:background .3s,border-color .3s}
+.theme-toggle-thumb{position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:translateX(25px);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.theme-toggle-icon{position:absolute;top:50%;transform:translateY(-50%);color:var(--bg);width:14px;height:14px;display:flex;align-items:center;justify-content:center}
+.theme-icon-moon{left:6px;opacity:1;transition:opacity .15s .25s}
+.theme-icon-sun{right:6px;opacity:0;transition:opacity .15s 0s}
+[data-theme="light"] .theme-toggle-track{background:#f5a623;border-color:rgba(0,0,0,.15)}
+[data-theme="light"] .theme-toggle-thumb{transform:translateX(0)}
+[data-theme="light"] .theme-icon-moon{opacity:0;transition:opacity .15s 0s}
+[data-theme="light"] .theme-icon-sun{opacity:1;transition:opacity .15s .25s}
+
 body {
   background: var(--bg);
   color: var(--text);

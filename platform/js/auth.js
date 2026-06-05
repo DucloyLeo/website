@@ -247,3 +247,31 @@ function closeMenu() {
   if (m) m.classList.remove('open');
 }
 document.addEventListener('click', closeMenu);
+
+// ─── Theme ───────────────────────────────────────────
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('tango_theme', t); } catch(e) {}
+}
+
+function toggleTheme() {
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+}
+
+(function initThemeToggle() {
+  const navLeft = document.querySelector('.nav-left');
+  if (!navLeft) return;
+  const btn = document.createElement('button');
+  btn.className = 'theme-toggle';
+  btn.id = 'theme-btn';
+  btn.setAttribute('aria-label', 'Changer de thème');
+  btn.onclick = function(e) { e.stopPropagation(); toggleTheme(); };
+  btn.innerHTML = '<span class="theme-toggle-track">'
+    + '<span class="theme-toggle-icon theme-icon-moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>'
+    + '<span class="theme-toggle-icon theme-icon-sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg></span>'
+    + '<span class="theme-toggle-thumb"></span></span>';
+  const hamburger = navLeft.querySelector('.hamburger');
+  if (hamburger) hamburger.after(btn);
+  else navLeft.prepend(btn);
+})();

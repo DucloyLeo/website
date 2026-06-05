@@ -86,8 +86,8 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 
 
 [data-tooltip]{position:relative}
-[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10}
-[data-tooltip]:hover::after{opacity:1}
+[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s 0s;z-index:10}
+[data-tooltip]:hover::after{opacity:1;transition:opacity .15s 2s}
 
 .modal-time{font-size:1.7rem;font-weight:500;color:var(--sun);text-align:center;letter-spacing:.06em}
 .modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:.3rem}

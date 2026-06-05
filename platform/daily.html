@@ -81,21 +81,25 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .mini-start-btn:hover{background:var(--surface2)}
 
 /* Calendar */
-.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;overflow:hidden;cursor:grab}
-.cal-wrap:active{cursor:grabbing}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
-.cal-month-label{font-family:'Crimson Pro',serif;font-size:1.2rem;font-weight:600}
-.cal-completion{font-size:11px;color:var(--muted)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-weekday{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:4px 0}
-.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid transparent;transition:all .15s;position:relative}
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.cal-header{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:1rem;position:relative}
+.cal-month-label{font-family:'Crimson Pro',serif;font-size:1.2rem;font-weight:600;text-align:center;min-width:160px}
+.cal-completion{position:absolute;right:0;font-size:11px;color:var(--muted)}
+.cal-nav-btn{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-size:1rem;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.cal-nav-btn:hover:not(:disabled){background:var(--surface2);color:var(--text)}
+.cal-nav-btn:disabled{opacity:.3;cursor:default}
+.cal-weekdays-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-weekdays-row>div{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:4px 0;user-select:none}
+.cal-slider-outer{overflow:hidden}
+.cal-slider{display:flex;transform:translateX(-100%);will-change:transform}
+.cal-slide{flex:0 0 100%;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid transparent;transition:border-color .15s,background .15s;user-select:none}
 .cal-day:hover:not(.future):not(.empty){background:var(--surface2);border-color:var(--border2)}
 .cal-day.selected{border-color:var(--moon);background:rgba(143,168,212,.1)}
 .cal-day.done{background:rgba(109,187,138,.12);border-color:rgba(109,187,138,.3);color:var(--green)}
 .cal-day.today:not(.done){border-color:var(--border2);font-weight:500;color:var(--text)}
 .cal-day.future{color:var(--muted);opacity:.4;cursor:default}
 .cal-day.empty{cursor:default}
-.cal-day.future:hover{background:none;border-color:transparent}
 </style>
 </head>
 <body>
@@ -170,12 +174,23 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     </div>
 
     <!-- Calendar -->
-    <div class="cal-wrap" id="cal-wrap">
+    <div class="cal-wrap">
       <div class="cal-header">
+        <button class="cal-nav-btn" id="btn-prev-cal" onclick="prevCalMonth()">‹</button>
         <span class="cal-month-label" id="cal-label"></span>
+        <button class="cal-nav-btn" onclick="nextCalMonth()">›</button>
         <span class="cal-completion" id="cal-completion"></span>
       </div>
-      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-weekdays-row">
+        <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+      </div>
+      <div class="cal-slider-outer" id="cal-slider-outer">
+        <div class="cal-slider" id="cal-slider">
+          <div class="cal-slide" id="slide-prev"></div>
+          <div class="cal-slide" id="slide-curr"></div>
+          <div class="cal-slide" id="slide-next"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -309,6 +324,7 @@ function getParisNow(){return new Date(new Date().toLocaleString('en-US',{timeZo
 
 async function init(){
   const user=await initNavAuth();
+  _initCalDrag();
   currentUserId=user?.id||null;
 
   const today=getParisTodayStr();
@@ -517,7 +533,7 @@ async function loadCatalogue(selectDate){
   const now=getParisNow();
   calYear=now.getFullYear();calMonth=now.getMonth();
   await loadMonthData();
-  if(selectDate)await selectCalDay(selectDate);
+  await selectCalDay(selectDate||getParisTodayStr());
 }
 
 async function loadMonthData(){
@@ -533,37 +549,102 @@ async function loadMonthData(){
   renderCalendar();
 }
 
+const MIN_CAL_YEAR=2026, MIN_CAL_MONTH=4; // Mai 2026
+
 function renderCalendar(){
-  document.getElementById('cal-label').textContent=`${MONTHS_FR[calMonth]} ${calYear}`;
   const today=getParisTodayStr();
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  let firstWeekday=new Date(calYear,calMonth,1).getDay();
-  firstWeekday=firstWeekday===0?6:firstWeekday-1;
+  document.getElementById('cal-label').textContent=`${MONTHS_FR[calMonth]} ${calYear}`;
 
+  // Prev/next month data
+  let pm=calMonth-1,py=calYear; if(pm<0){pm=11;py--;}
+  let nm=calMonth+1,ny=calYear; if(nm>11){nm=0;ny++;}
+
+  renderMonthSlide('slide-prev',py,pm);
+  renderMonthSlide('slide-curr',calYear,calMonth);
+  renderMonthSlide('slide-next',ny,nm);
+
+  // Completion counter (current month only, playable days = past+today with a level)
   let done=0,total=0;
-  const weekdays=['L','M','M','J','V','S','D'];
-  let html=weekdays.map(d=>`<div class="cal-day" style="font-size:10px;color:var(--muted);cursor:default;aspect-ratio:unset;padding:4px 0">${d}</div>`).join('');
-  for(let i=0;i<firstWeekday;i++)html+=`<div class="cal-day empty"></div>`;
-
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(dateStr>today)break;
+    const level=levelsCache[dateStr];
+    if(level){total++;if(completionsCache[level.id])done++;}
+  }
+  document.getElementById('cal-completion').textContent=currentUserId?`${done} / ${total}`:'';
+
+  // Prev button disabled at min month
+  const prevBtn=document.getElementById('btn-prev-cal');
+  if(prevBtn)prevBtn.disabled=(calYear<=MIN_CAL_YEAR&&calMonth<=MIN_CAL_MONTH);
+}
+
+function renderMonthSlide(slideId,year,month){
+  const today=getParisTodayStr();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  let firstWeekday=new Date(year,month,1).getDay();
+  firstWeekday=firstWeekday===0?6:firstWeekday-1;
+  let html='';
+  for(let i=0;i<firstWeekday;i++)html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const level=levelsCache[dateStr];
     const isFuture=dateStr>today;
-    const isToday=dateStr===today;
-    const isSelected=dateStr===selectedCalDate;
     const comp=level?completionsCache[level.id]:null;
-    if(!isFuture&&level)total++;
-    if(comp)done++;
+    const isSelected=dateStr===selectedCalDate;
     let cls='cal-day';
     if(isFuture)cls+=' future';
     else if(comp)cls+=' done';
-    else if(isToday)cls+=' today';
+    else if(dateStr===today)cls+=' today';
     if(isSelected)cls+=' selected';
     const click=!isFuture?`onclick="selectCalDay('${dateStr}')"` :'';
     html+=`<div class="${cls}" ${click}>${d}</div>`;
   }
-  document.getElementById('cal-grid').innerHTML=html;
-  document.getElementById('cal-completion').textContent=currentUserId?`${done} / ${total}`:'';
+  const el=document.getElementById(slideId);
+  if(el)el.innerHTML=html;
+}
+
+let _calDragging=false,_calDragX=0,_calAnimating=false;
+
+function _initCalDrag(){
+  const outer=document.getElementById('cal-slider-outer');
+  const slider=document.getElementById('cal-slider');
+
+  function onStart(clientX){
+    if(_calAnimating)return;
+    _calDragging=true;_calDragX=clientX;
+    slider.style.transition='none';
+  }
+  function onMove(clientX){
+    if(!_calDragging)return;
+    const dx=clientX-_calDragX;
+    slider.style.transform=`translateX(calc(-100% + ${dx}px))`;
+  }
+  function onEnd(clientX){
+    if(!_calDragging)return;
+    _calDragging=false;
+    const dx=clientX-_calDragX;
+    const outerW=outer.offsetWidth||300;
+    if(Math.abs(dx)<8){slider.style.transition='';slider.style.transform='translateX(-100%)';return;}
+    _calAnimating=true;
+    slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
+    if(dx>60){
+      slider.style.transform='translateX(0%)';
+      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;prevCalMonth(true);},340);
+    }else if(dx<-60){
+      slider.style.transform='translateX(-200%)';
+      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;nextCalMonth(true);},340);
+    }else{
+      slider.style.transform='translateX(-100%)';
+      setTimeout(()=>{_calAnimating=false;},340);
+    }
+  }
+  outer.addEventListener('mousedown',e=>{onStart(e.clientX);e.preventDefault();});
+  document.addEventListener('mousemove',e=>{if(_calDragging)onMove(e.clientX);});
+  document.addEventListener('mouseup',e=>{if(_calDragging)onEnd(e.clientX);});
+  outer.addEventListener('touchstart',e=>{onStart(e.touches[0].clientX);},{passive:true});
+  document.addEventListener('touchmove',e=>{if(_calDragging)onMove(e.touches[0].clientX);},{passive:true});
+  document.addEventListener('touchend',e=>{if(_calDragging)onEnd(e.changedTouches[0].clientX);});
 }
 
 async function selectCalDay(dateStr){
@@ -644,8 +725,22 @@ function loadAndRenderMiniPuzzle(level){
 }
 
 /* Calendar navigation */
-async function prevCalMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}selectedCalDate=null;document.getElementById('detail-panel').style.display='none';await loadMonthData();}
-async function nextCalMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}selectedCalDate=null;document.getElementById('detail-panel').style.display='none';await loadMonthData();}
+async function prevCalMonth(skipAnim=false){
+  let m=calMonth-1,y=calYear;
+  if(m<0){m=11;y--;}
+  if(y<MIN_CAL_YEAR||(y===MIN_CAL_YEAR&&m<MIN_CAL_MONTH))return;
+  calMonth=m;calYear=y;
+  selectedCalDate=null;
+  document.getElementById('detail-panel').style.display='none';
+  await loadMonthData();
+}
+
+async function nextCalMonth(skipAnim=false){
+  calMonth++;if(calMonth>11){calMonth=0;calYear++;}
+  selectedCalDate=null;
+  document.getElementById('detail-panel').style.display='none';
+  await loadMonthData();
+}
 
 // Keyboard navigation
 document.addEventListener('keydown',e=>{
@@ -661,22 +756,6 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// Drag to change month
-let dragStartX=0,isDragging=false;
-const calWrap=document.getElementById('cal-wrap');
-calWrap.addEventListener('mousedown',e=>{dragStartX=e.clientX;isDragging=true;});
-calWrap.addEventListener('mousemove',e=>{if(!isDragging)return;});
-calWrap.addEventListener('mouseup',e=>{
-  if(!isDragging)return;isDragging=false;
-  const dx=e.clientX-dragStartX;
-  if(Math.abs(dx)>80){dx>0?prevCalMonth():nextCalMonth();}
-});
-calWrap.addEventListener('mouseleave',()=>{isDragging=false;});
-calWrap.addEventListener('touchstart',e=>{dragStartX=e.touches[0].clientX;},{passive:true});
-calWrap.addEventListener('touchend',e=>{
-  const dx=e.changedTouches[0].clientX-dragStartX;
-  if(Math.abs(dx)>60){dx>0?prevCalMonth():nextCalMonth();}
-});
 
 /* Utils */
 function formatDate(dateStr){

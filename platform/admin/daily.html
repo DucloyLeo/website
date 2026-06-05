@@ -10,7 +10,7 @@
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
 .admin-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
-.admin-cal-nav{display:flex;align-items:center;gap:12px}
+.admin-cal-nav{display:flex;align-items:center;justify-content:center;gap:16px}
 .admin-cal-nav button{background:none;border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 12px;cursor:pointer;transition:background .15s}
 .admin-cal-nav button:hover{background:var(--surface2)}
 .admin-cal-month{font-family:'Crimson Pro',serif;font-size:1.3rem;font-weight:600}
@@ -71,7 +71,7 @@
 
       <div class="admin-cal-header">
         <div class="admin-cal-nav">
-          <button onclick="prevMonth()">‹</button>
+          <button id="btn-prev" onclick="prevMonth()">‹</button>
           <span class="admin-cal-month" id="cal-label"></span>
           <button onclick="nextMonth()">›</button>
         </div>
@@ -149,6 +149,8 @@ async function loadMonth() {
 
 function renderCalendar() {
   document.getElementById('cal-label').textContent = `${MONTHS_FR[calMonth]} ${calYear}`;
+  const prevBtn=document.getElementById('btn-prev');
+  if(prevBtn)prevBtn.disabled=(calYear<=ADMIN_MIN_YEAR&&calMonth<=ADMIN_MIN_MONTH);
   const grid = document.getElementById('cal-grid');
   const days = ['L','M','M','J','V','S','D'];
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -193,6 +195,12 @@ function selectDay(dateStr) {
   document.getElementById('edit-name').value = level?.name || '';
   document.getElementById('edit-diff').value = level?.difficulty || 'medium';
   document.getElementById('edit-seed').value = level?.is_manual ? (level?.seed || '') : '';
+  const isPastWithLevel = dateStr < getParisTodayStr() && !!level;
+  const seedInput = document.getElementById('edit-seed');
+  seedInput.disabled = isPastWithLevel;
+  seedInput.title = isPastWithLevel ? 'Seed verrouillée — niveau déjà passé' : '';
+  if(isPastWithLevel){ seedInput.value = level.seed; seedInput.style.opacity='.45'; }
+  else { seedInput.style.opacity=''; }
   document.getElementById('edit-error').classList.remove('show');
   document.getElementById('delete-btn').style.display = level ? '' : 'none';
   panel.classList.add('show');
@@ -285,8 +293,14 @@ function generateSeedForDate(dateStr, diff) {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 
-function prevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } closeEdit(); loadMonth(); }
-function nextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } closeEdit(); loadMonth(); }
+const ADMIN_MIN_YEAR=2026, ADMIN_MIN_MONTH=4;
+function prevMonth(){
+  let m=calMonth-1,y=calYear;
+  if(m<0){m=11;y--;}
+  if(y<ADMIN_MIN_YEAR||(y===ADMIN_MIN_YEAR&&m<ADMIN_MIN_MONTH))return;
+  calMonth=m;calYear=y;closeEdit();loadMonth();
+}
+function nextMonth(){ calMonth++;if(calMonth>11){calMonth=0;calYear++;}closeEdit();loadMonth(); }
 
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') prevMonth();

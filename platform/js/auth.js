@@ -342,6 +342,26 @@ function showBadgeToast(badges) {
 
 onNotification('badge', ({ badges }) => { if (badges?.length) showBadgeToast(badges); });
 
+function showAdminToast(message) {
+  document.querySelectorAll('.admin-toast').forEach(el => el.remove());
+  const toast = document.createElement('div');
+  toast.className = 'badge-toast admin-toast';
+  toast.style.cssText = 'border-color:rgba(143,168,212,.45);';
+  toast.innerHTML = `
+    <span class="badge-toast-label" style="color:var(--moon)">📢 Message de l'équipe</span>
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">📣</span>
+      <div style="color:var(--text);font-size:13px">${message}</div>
+    </div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'toastout .3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 7000);
+}
+
+onNotification('admin_message', ({ message }) => { if (message) showAdminToast(message); });
+
 // ─── Theme ───────────────────────────────────────────
 
 function applyTheme(t) {

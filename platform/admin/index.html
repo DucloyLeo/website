@@ -79,6 +79,15 @@
           <div id="recent-users"></div>
         </div>
       </div>
+
+      <hr class="sep" style="margin:2rem 0">
+
+      <h2 style="font-size:1.1rem;margin-bottom:1rem">📢 Broadcast</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6">Envoie un message instantané à tous les joueurs actuellement connectés sur le site.</p>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="broadcast-msg" type="text" placeholder="Message à diffuser…" style="flex:1" onkeydown="if(event.key==='Enter')sendBroadcast()">
+        <button class="btn" id="broadcast-btn" onclick="sendBroadcast()">Envoyer</button>
+      </div>
     </div>
   </div>
 </div>
@@ -172,6 +181,23 @@ async function loadDashboard() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
   initNavAuth();
+}
+
+async function sendBroadcast() {
+  const input = document.getElementById('broadcast-msg');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('broadcast-btn');
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  const { error } = await sendAdminNotification('admin_message', { message: msg });
+  if (error) {
+    btn.textContent = 'Erreur';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Envoyer'; }, 2000);
+  } else {
+    input.value = '';
+    btn.textContent = '✓ Envoyé';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Envoyer'; }, 2000);
+  }
 }
 
 loadDashboard();

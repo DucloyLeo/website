@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
 nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
 .nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;text-align:center;text-decoration:none;color:var(--text)}
@@ -112,7 +113,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   </div>
 </nav>
 <div class="game-sub-bar">
-  <div></div>
+  <div><button class="seed-btn" id="theme-btn" onclick="toggleTheme()">☀ Clair</button></div>
   <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0;text-align:center">Remplis la grille avec des ☀ et des 🌙 en respectant les trois règles.</p>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
@@ -236,6 +237,10 @@ function makePRNG(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;le
 function genNumSeed(){return Math.floor(Math.random()*0x100000000);}
 function seedToStr(diff,n){const d={easy:0,medium:1,hard:2}[diff];const nb=n>>>0;const bytes=new Uint8Array(5);bytes[0]=(nb>>>24)&0xFF;bytes[1]=(nb>>>16)&0xFF;bytes[2]=(nb>>>8)&0xFF;bytes[3]=nb&0xFF;bytes[4]=d<<6;return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
 function strToSeed(str){const b64=str.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;const diff=['easy','medium','hard'][bytes[4]>>6];return{diff,numSeed};}
+
+/* ── Theme ── */
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='light'?'🌙 Sombre':'☀ Clair';try{localStorage.setItem('tango_theme',t);}catch(e){}}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');}
 
 /* ── Menu ── */
 function menuDiff(){closeMenu();openChangeDiff();}
@@ -404,6 +409,7 @@ function startGameFromCustomSeed(decoded,seedStr){const{sol,sCh,sCv}=decoded;con
 
 /* ── Init ── */
 async function init(){
+  applyTheme(localStorage.getItem('tango_theme')||'dark');
   loadPrefs();
   const user=await initNavAuth();
   currentUserId=user?.id||null;

@@ -15,6 +15,16 @@
   --radius:    10px;
 }
 
+[data-theme="light"] {
+  --bg:        #f5f4f0;
+  --surface:   #ffffff;
+  --surface2:  #eeecea;
+  --border:    rgba(0,0,0,0.08);
+  --border2:   rgba(0,0,0,0.18);
+  --text:      #1a1918;
+  --muted:     rgba(26,25,24,0.48);
+}
+
 body {
   background: var(--bg);
   color: var(--text);

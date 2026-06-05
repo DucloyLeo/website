@@ -290,27 +290,33 @@ h3 { font-size: 1.1rem; margin-bottom: .5rem; }
 .modal-title { font-family: 'Crimson Pro', serif; font-size: 1.4rem; font-weight: 600; text-align: center; }
 .modal-sub   { font-size: 12px; color: var(--muted); line-height: 1.6; text-align: center; }
 
-/* ── Badge notification (toast) ── */
+/* ── Badge notification (toast top-center) ── */
 .badge-toast {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--surface);
   border: 1px solid rgba(245,200,66,.35);
   border-radius: 12px;
-  padding: 1rem 1.2rem;
+  padding: 1rem 1.4rem;
   display: flex;
-  align-items: center;
-  gap: .8rem;
+  flex-direction: column;
+  gap: .6rem;
   font-size: 12px;
-  z-index: 200;
-  animation: toastin .3s ease;
-  max-width: 300px;
+  z-index: 300;
+  animation: toastin .35s ease forwards;
+  min-width: 260px;
+  max-width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.28);
 }
-@keyframes toastin { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:translateY(0); } }
-.badge-toast-ico  { font-size: 1.8rem; flex-shrink: 0; }
-.badge-toast-name { color: var(--sun); font-weight: 500; margin-bottom: 2px; }
-.badge-toast-desc { color: var(--muted); }
+@keyframes toastin  { from { opacity:0; transform:translateX(-50%) translateY(-18px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+@keyframes toastout { from { opacity:1; transform:translateX(-50%) translateY(0); }     to { opacity:0; transform:translateX(-50%) translateY(-14px); } }
+.badge-toast-label { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
+.badge-toast-row   { display:flex; align-items:center; gap:.7rem; }
+.badge-toast-ico   { font-size:1.6rem; flex-shrink:0; }
+.badge-toast-name  { color:var(--sun); font-weight:500; margin-bottom:2px; }
+.badge-toast-desc  { font-size:11px; color:var(--muted); }
 
 /* ── Footer ── */
 .site-footer {

@@ -183,7 +183,6 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
     <div class="modal-title">Puzzle résolu !</div>
     <div class="modal-time" id="modal-time">—</div>
     <div class="modal-sub" id="win-sub">Bravo !</div>
-    <div id="win-badges" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center"></div>
     <div class="modal-btns">
       <button class="btn sun btn-full" onclick="onWinNext()">✦ Nouveau puzzle</button>
     </div>
@@ -360,22 +359,30 @@ async function checkWin(){
     document.getElementById('win-modal').classList.add('show');
   },400);
 
-  // Les badges s'ajoutent dès que la DB répond (peut être avant ou après l'ouverture)
+  // Badges : toast indépendant dès que la DB répond
   if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
     try{
       const newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)||[];
-      if(newBadges.length){
-        const badgeContainer=document.getElementById('win-badges');
-        badgeContainer.innerHTML='';
-        newBadges.forEach(b=>{
-          const chip=document.createElement('span');
-          chip.className='badge-chip earned';
-          chip.textContent=b.icon+' '+b.name;
-          badgeContainer.appendChild(chip);
-        });
-      }
+      if(newBadges.length)showBadgeToast(newBadges);
     }catch(e){console.error('saveGameResult:',e);}
   }
+}
+
+function showBadgeToast(badges){
+  document.querySelectorAll('.badge-toast').forEach(el=>el.remove());
+  const toast=document.createElement('div');
+  toast.className='badge-toast';
+  const rows=badges.map(b=>`
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">${b.icon}</span>
+      <div><div class="badge-toast-name">${b.name}</div><div class="badge-toast-desc">${b.description||''}</div></div>
+    </div>`).join('');
+  toast.innerHTML=`<span class="badge-toast-label">🏅 Badge${badges.length>1?'s':''} débloqué${badges.length>1?'s':''}</span>${rows}`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{
+    toast.style.animation='toastout .3s ease forwards';
+    setTimeout(()=>toast.remove(),300);
+  },4500);
 }
 
 function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}

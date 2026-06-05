@@ -148,9 +148,10 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
   }
 
   if (newlyEarned.length) {
-    await db.from('notifications').insert({
+    const { error: ne } = await db.from('notifications').insert({
       user_id: userId, type: 'badge', payload: { badges: newlyEarned }
-    }).catch(() => {});
+    });
+    if (ne) console.warn('notifications insert:', ne.message);
   }
 
   return newlyEarned;

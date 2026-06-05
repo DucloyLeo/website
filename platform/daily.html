@@ -546,7 +546,7 @@ async function loadCatalogue(selectDate){
   await selectCalDay(target);
 }
 
-async function loadMonthData(){
+async function loadMonthData(doRender=true){
   const firstDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
   const lastDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${new Date(calYear,calMonth+1,0).getDate()}`;
   const[levRes,compRes]=await Promise.all([
@@ -556,8 +556,7 @@ async function loadMonthData(){
   ]);
   (levRes.data||[]).forEach(l=>{levelsCache[l.date]=l;});
   (compRes.data||[]).forEach(c=>{completionsCache[c.daily_level_id]=c;});
-  renderCalendar();
-  _calSetSizes();
+  if(doRender){renderCalendar();_calSetSizes();}
 }
 
 const MIN_CAL_YEAR=2026, MIN_CAL_MONTH=4; // Mai 2026
@@ -670,13 +669,13 @@ function _initCalDrag(){
       slider.style.transform='translateX(0px)';
       let m=calMonth-1,y=calYear;if(m<0){m=11;y--;}
       calMonth=m;calYear=y;
-      const p=loadMonthData();
-      setTimeout(async()=>{await p;slider.style.transition='none';_calSnap();_calAnimating=false;},340);
+      const p=loadMonthData(false);
+      setTimeout(async()=>{await p;renderCalendar();_calSetSizes();slider.style.transition='none';_calSnap();_calAnimating=false;},340);
     }else if(dx<-60){
       slider.style.transform=`translateX(${-2*w}px)`;
       calMonth++;if(calMonth>11){calMonth=0;calYear++;}
-      const p=loadMonthData();
-      setTimeout(async()=>{await p;slider.style.transition='none';_calSnap();_calAnimating=false;},340);
+      const p=loadMonthData(false);
+      setTimeout(async()=>{await p;renderCalendar();_calSetSizes();slider.style.transition='none';_calSnap();_calAnimating=false;},340);
     }else{
       _calSnap();
       setTimeout(()=>{_calAnimating=false;},340);
@@ -783,10 +782,10 @@ async function prevCalMonth(){
   _calAnimating=true;
   const slider=document.getElementById('cal-slider');
   calMonth=m;calYear=y;
-  const p=loadMonthData();
+  const p=loadMonthData(false);
   slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
   slider.style.transform='translateX(0px)';
-  setTimeout(async()=>{await p;slider.style.transition='none';_calSnap();_calAnimating=false;},340);
+  setTimeout(async()=>{await p;renderCalendar();_calSetSizes();slider.style.transition='none';_calSnap();_calAnimating=false;},340);
 }
 
 async function nextCalMonth(){
@@ -794,10 +793,10 @@ async function nextCalMonth(){
   _calAnimating=true;
   const slider=document.getElementById('cal-slider');
   calMonth++;if(calMonth>11){calMonth=0;calYear++;}
-  const p=loadMonthData();
+  const p=loadMonthData(false);
   slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
   slider.style.transform=`translateX(${-2*_calW()}px)`;
-  setTimeout(async()=>{await p;slider.style.transition='none';_calSnap();_calAnimating=false;},340);
+  setTimeout(async()=>{await p;renderCalendar();_calSetSizes();slider.style.transition='none';_calSnap();_calAnimating=false;},340);
 }
 
 async function autoSelectFirstUnresolved(){

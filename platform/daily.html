@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Niveau du jour — Tangoléo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+/* ── Layout ── */
+.daily-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.2rem}
+.view{width:100%}
+@keyframes fadeInUp  {from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOutDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(24px)}}
+@keyframes gridGrow  {from{opacity:0;transform:scale(.55) translate(-15%,-8%)}to{opacity:1;transform:scale(1) translate(0,0)}}
+.anim-in {animation:fadeInUp .35s ease forwards}
+.anim-out{animation:fadeOutDown .3s ease forwards;pointer-events:none}
+.grid-grow{animation:gridGrow .4s cubic-bezier(.4,0,.2,1) forwards}
+
+/* ── Grid (reuse from index) ── */
+.grid-outer{position:relative}
+.grid-wrap{position:relative;display:inline-block}
+.grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
+table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}
+td{position:relative;text-align:center;vertical-align:middle;border:1px solid var(--border)}
+.ci{display:flex;align-items:center;justify-content:center;width:112px;height:112px;font-size:3rem;cursor:pointer;user-select:none;background:var(--surface);transition:background .1s,box-shadow .3s}
+.ci:hover{background:var(--surface2)}
+.ci.fx{cursor:default;background:#1a1a1d}
+[data-theme="light"] .ci.fx{background:#fafaf8}
+.ci.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
+.cn{position:absolute;font-size:11px;font-weight:500;color:var(--muted);z-index:3;pointer-events:none;background:var(--bg);border-radius:99px;width:17px;height:17px;display:flex;align-items:center;justify-content:center}
+.cn.h{right:-9px;top:50%;transform:translateY(-50%)}
+.cn.v{bottom:-9px;left:50%;transform:translateX(-50%)}
+@media(max-width:700px){.ci{width:52px!important;height:52px!important;font-size:1.5rem!important}.cn{font-size:9px;width:13px;height:13px}.cn.h{right:-7px}.cn.v{bottom:-7px}}
+
+/* ── Play overlays ── */
+.play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:12px;z-index:5}
+.daily-start-btn{font-family:'Crimson Pro',serif;font-size:1.4rem;font-weight:600;padding:14px 36px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s;letter-spacing:.02em}
+.daily-start-btn:hover{background:var(--surface2);transform:scale(1.02)}
+
+/* ── Timer ── */
+.timer-bar{display:flex;align-items:center;gap:10px}
+.timer-val{font-size:1.35rem;font-weight:500;color:var(--text);min-width:64px;text-align:center;letter-spacing:.06em}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.tdot.run{background:var(--sun)}.tdot.done{background:var(--green)}
+.level-label{font-size:11px;color:var(--muted);text-align:center}
+
+/* ── Result panel ── */
+.result-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.5rem 2rem;max-width:480px;width:100%;display:flex;flex-direction:column;gap:1rem;text-align:center}
+.result-time{font-size:2rem;font-weight:500;color:var(--sun);letter-spacing:.06em}
+.result-rank{font-size:13px;color:var(--muted)}
+
+/* ── Leaderboard ── */
+.lb-wrap{text-align:left;max-height:280px;overflow-y:auto}
+.lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{width:28px;text-align:right;color:var(--muted);flex-shrink:0;font-size:11px}
+.lb-rank.gold{color:#f5c842}.lb-rank.silver{color:#b0b0b0}.lb-rank.bronze{color:#cd7f32}
+.lb-name{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-name.me{color:var(--moon);font-weight:500}
+.lb-time{color:var(--muted);font-size:11px;flex-shrink:0}
+.lb-sep{padding:6px 0;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.1em}
+
+/* ── Catalogue ── */
+.catalogue-wrap{max-width:900px;margin:0 auto;padding:1.5rem 0 4rem;display:flex;flex-direction:column;gap:2rem}
+.detail-layout{display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:start}
+@media(max-width:700px){.detail-layout{grid-template-columns:1fr}}
+
+/* Mini grid */
+.mini-grid-outer{position:relative;flex-shrink:0}
+.mini-grid-wrap{display:inline-block}
+.mini-grid-wrap.blurred{filter:blur(6px) brightness(.5);pointer-events:none}
+.mini-grid-wrap table{border-radius:8px}
+.mini .ci{width:40px!important;height:40px!important;font-size:1.1rem!important}
+.mini .cn{font-size:7px;width:11px;height:11px}
+.mini .cn.h{right:-6px}.mini .cn.v{bottom:-6px}
+.mini-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.mini-start-btn{font-family:'DM Mono',monospace;font-size:11px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s}
+.mini-start-btn:hover{background:var(--surface2)}
+
+/* Calendar */
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;overflow:hidden;cursor:grab}
+.cal-wrap:active{cursor:grabbing}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
+.cal-month-label{font-family:'Crimson Pro',serif;font-size:1.2rem;font-weight:600}
+.cal-completion{font-size:11px;color:var(--muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-weekday{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:4px 0}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid transparent;transition:all .15s;position:relative}
+.cal-day:hover:not(.future):not(.empty){background:var(--surface2);border-color:var(--border2)}
+.cal-day.selected{border-color:var(--moon);background:rgba(143,168,212,.1)}
+.cal-day.done{background:rgba(109,187,138,.12);border-color:rgba(109,187,138,.3);color:var(--green)}
+.cal-day.today:not(.done){border-color:var(--border2);font-weight:500;color:var(--text)}
+.cal-day.future{color:var(--muted);opacity:.4;cursor:default}
+.cal-day.empty{cursor:default}
+.cal-day.future:hover{background:none;border-color:transparent}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/index.html" class="nav-menu-item">🎮 Jouer</a>
+      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<!-- VIEW: PLAY -->
+<div id="view-play" class="view" style="display:none">
+  <main class="daily-main">
+    <div class="timer-bar">
+      <span class="tdot" id="tdot"></span>
+      <span class="timer-val" id="tval">0:00</span>
+    </div>
+    <p class="level-label" id="level-label"></p>
+    <div class="grid-outer">
+      <div class="grid-wrap blurred" id="grid-wrap"><table id="grid"></table></div>
+      <div class="play-overlay" id="overlay-start">
+        <button class="daily-start-btn" onclick="startDaily()">Commencer</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px" id="play-controls" style="display:none">
+      <button class="btn" id="btn-undo" onclick="undo()" disabled>↩ Annuler</button>
+      <button class="btn" onclick="resetPuzzle()">↺ Recommencer</button>
+    </div>
+    <div id="result-panel" style="display:none;width:100%;display:none;justify-content:center">
+      <div class="result-card">
+        <div>
+          <p style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.3rem">Votre temps</p>
+          <div class="result-time" id="result-time">—</div>
+          <div class="result-rank" id="result-rank"></div>
+        </div>
+        <hr class="sep" style="margin:.2rem 0">
+        <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:left">Classement</p>
+        <div class="lb-wrap" id="result-lb"></div>
+        <button class="btn btn-full" onclick="openCatalogue()" style="margin-top:.3rem">📅 Voir le catalogue</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- VIEW: CATALOGUE -->
+<div id="view-catalogue" class="view" style="display:none">
+  <div class="catalogue-wrap">
+    <!-- Detail: mini-grid + info -->
+    <div class="detail-layout" id="detail-panel" style="display:none">
+      <div class="mini-grid-outer" id="mini-grid-outer">
+        <div class="mini-grid-wrap" id="mini-grid-wrap">
+          <table id="mini-grid" class="mini"></table>
+        </div>
+        <div class="mini-overlay" id="mini-overlay" style="display:none">
+          <button class="mini-start-btn" onclick="startFromCatalogue()">Commencer</button>
+        </div>
+      </div>
+      <div id="detail-info">
+        <p style="font-family:'Crimson Pro',serif;font-size:1.3rem;font-weight:600;margin-bottom:.2rem" id="detail-date"></p>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:1rem" id="detail-diff"></p>
+        <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Classement</p>
+        <div class="lb-wrap" id="detail-lb"></div>
+        <div id="detail-actions" style="margin-top:1rem;display:flex;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="cal-wrap" id="cal-wrap">
+      <div class="cal-header">
+        <span class="cal-month-label" id="cal-label"></span>
+        <span class="cal-completion" id="cal-completion"></span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Login modal -->
+<div class="overlay" id="login-modal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <div class="modal-ico">🔐</div>
+    <div class="modal-title">Connexion requise</div>
+    <div class="modal-sub">Connectez-vous pour jouer aux niveaux journaliers et apparaître dans le classement.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <a href="/login.html" class="btn btn-full sun">Se connecter</a>
+      <a href="/login.html?mode=signup" class="btn btn-full">Créer un compte</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ═══ GAME ENGINE ═══════════════════════════════════════
+const SUN=1,MOON=2,EMPTY=0,N=6;
+const S=['','☀','🌙'];
+const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile'};
+const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
+let hist=[];
+let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
+let errTimers={},activeErrors=new Set(),gameWon=false;
+let rng=Math.random;
+
+/* PRNG */
+function makePRNG(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function seedToStr(diff,n){const d={easy:0,medium:1,hard:2}[diff];const nb=n>>>0;const bytes=new Uint8Array(5);bytes[0]=(nb>>>24)&0xFF;bytes[1]=(nb>>>16)&0xFF;bytes[2]=(nb>>>8)&0xFF;bytes[3]=nb&0xFF;bytes[4]=d<<6;return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
+function strToSeed(str){const b64=str.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;const diff=['easy','medium','hard'][bytes[4]>>6];return{diff,numSeed};}
+
+/* Solver */
+function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}if(ccv[kh]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kh]==='='&&!s)||(ccv[kh]==='×'&&s))return false;}}return true;}
+function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});})}return m;}
+function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o});break;}}}return m;}
+function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}return m;}
+function tEnds(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],e=b[r][4];if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a)});const bb=b[r][1],f=b[r][5];if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb)});}for(let c=0;c<N;c++){const a=b[0][c],e=b[4][c];if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a)});const bb=b[1][c],f=b[5][c];if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb)});}for(let r=0;r<N;r++){const a=b[r][0],f=b[r][5];if(a!==EMPTY&&a===f){const o=opp(a);if(b[r][1]===EMPTY)m.push({r,c:1,val:o});if(b[r][4]===EMPTY)m.push({r,c:4,val:o});}}for(let c=0;c<N;c++){const a=b[0][c],f=b[5][c];if(a!==EMPTY&&a===f){const o=opp(a);if(b[1][c]===EMPTY)m.push({r:1,c,val:o});if(b[4][c]===EMPTY)m.push({r:4,c,val:o});}}for(let r=0;r<N;r++){if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0])});if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4])});}for(let c=0;c<N;c++){if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c])});if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c])});}return m;}
+function tChain(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v});}}if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o});}}}for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){const k1=r+','+c,k2=(r+1)+','+c;if(ccv[k1]==='='&&ccv[k2]==='='){const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v});}}if(ccv[k1]==='×'&&ccv[k2]==='×'){const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o});}}}return m;}
+function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON});if(!cM&&cS)m.push({r,c,val:SUN});}return m;}
+function humanSolve(puz,cch,ccv){const b=puz.map(r=>[...r]);for(let i=0;i<200;i++){const sm=[...tBalance(b),...tTriple(b),...tConstraints(b,cch,ccv)];let ap=0;for(const{r,c,val}of sm){if(b[r][c]===EMPTY){b[r][c]=val;ap++;}}if(ap)continue;const cm=[...tEnds(b),...tChain(b,cch,ccv),...tElim(b,cch,ccv)];let ca=0;for(const{r,c,val}of cm){if(b[r][c]===EMPTY){b[r][c]=val;ca++;}}if(ca)continue;break;}return{solved:b.every(row=>row.every(v=>v!==EMPTY))};}
+
+/* Generator */
+function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
+function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}bt();return cnt;}
+function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=rng()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
+function genForDiff(diff){const chR=diff==='easy'?.52:diff==='medium'?.30:.14;const cvR=diff==='easy'?.52:diff==='medium'?.30:.14;const maxCx=diff==='easy'?1:diff==='medium'?6:999;const minCx=diff==='easy'?0:diff==='medium'?2:6;for(let att=0;att<350;att++){const sol=genSolution();if(!sol)continue;const cch={},ccv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(rng()<chR)cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(rng()<cvR)ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);cells.sort(()=>rng()-.5);for(const[r,c]of cells){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,cch,ccv);if(!solved){puz[r][c]=sv;}}const{solved}=humanSolve(puz,cch,ccv);if(!solved)continue;if(countBT(puz,cch,ccv,2)!==1)continue;return{puzzle:puz,solution:sol,ch:cch,cv:ccv};}return null;}
+
+/* Custom seed decoder */
+function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{puzzle:puz,solution:sol,ch:sCh,cv:sCv};}
+
+/* Errors */
+function getContradictions(){const err=new Set();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=board[r][c];if(v===EMPTY)continue;if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)[c,c+1,c+2].forEach(ci=>err.add(r+','+ci));if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)[r,r+1,r+2].forEach(ri=>err.add(ri+','+c));const kh=r+','+c;if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s)){err.add(kh);err.add(r+','+(c+1));}}if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s)){err.add(kh);err.add((r+1)+','+c);}}}return err;}
+function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},2000);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
+function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));errTimers={};activeErrors=new Set();}
+function highlightCell(key,on){const[r,c]=key.split(',').map(Number);const rows=document.getElementById('grid').querySelectorAll('tr');if(!rows[r])return;const cells=rows[r].querySelectorAll('.ci');if(cells[c])cells[c].classList.toggle('err',on);}
+
+/* Render */
+function renderGrid(){
+  const tbl=document.getElementById('grid');tbl.innerHTML='';
+  for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const key=r+','+c;const inner=document.createElement('div');inner.className='ci'+(fixed[r][c]?' fx':'')+(activeErrors.has(key)?' err':'');inner.textContent=S[board[r][c]];if(!fixed[r][c]&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}if(ch[key]&&c<N-1){const sp=document.createElement('span');sp.className='cn h';sp.textContent=ch[key];td.appendChild(sp);}if(cv[key]&&r<N-1){const sp=document.createElement('span');sp.className='cn v';sp.textContent=cv[key];td.appendChild(sp);}td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
+  const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
+}
+
+function renderMiniGrid(puzData,targetId,miniClass){
+  const tbl=document.getElementById(targetId);if(!tbl)return;tbl.innerHTML='';
+  const p=puzData.puzzle,c_h=puzData.ch,c_v=puzData.cv;
+  for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const key=r+','+c;const inner=document.createElement('div');inner.className='ci'+(p[r][c]!==EMPTY?' fx':'')+(miniClass?' '+miniClass:'');inner.textContent=S[p[r][c]];if(c_h[key]&&c<N-1){const sp=document.createElement('span');sp.className='cn h';sp.textContent=c_h[key];td.appendChild(sp);}if(c_v[key]&&r<N-1){const sp=document.createElement('span');sp.className='cn v';sp.textContent=c_v[key];td.appendChild(sp);}td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
+}
+
+/* Timer */
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+function startTimer(){if(timerOn)return;timerOn=true;document.getElementById('tdot').className='tdot run';clearInterval(timerInt);timerInt=setInterval(()=>{timerSec++;document.getElementById('tval').textContent=fmt(timerSec);},1000);}
+function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementById('tdot').className='tdot done';}
+function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
+
+/* Game logic */
+function cycleCell(r,c,dir){if(gameWon)return;hist.push({r,c,prev:board[r][c]});board[r][c]=((board[r][c]+dir+3)%3);const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el&&activeErrors.has(r+','+c)){activeErrors.delete(r+','+c);el.classList.remove('err');}renderGrid();updateErrorTimers();if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;const key=r+','+c;if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}renderGrid();updateErrorTimers();}
+function resetPuzzle(){clearAllErrors();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;renderGrid();}
+
+async function checkWin(){
+  if(getContradictions().size>0)return;
+  for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
+  for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
+  clearAllErrors();stopTimer();timerDone=true;gameWon=true;
+  const elapsed=timerSec;
+
+  setTimeout(async()=>{
+    document.getElementById('grid-wrap').classList.add('blurred');
+    document.getElementById('overlay-start').style.display='none';
+    document.getElementById('play-controls').style.display='none';
+
+    // Save if first completion and logged in
+    if(currentUserId&&currentDailyLevel&&!currentIsReplay){
+      const{error}=await db.from('daily_completions').insert({
+        user_id:currentUserId,daily_level_id:currentDailyLevel.id,time_seconds:elapsed
+      });
+      if(error&&!error.message.includes('unique'))console.warn('daily save:',error.message);
+      // Clear timer key
+      try{localStorage.removeItem('daily_timer_'+getParisTodayStr());}catch(e){}
+    }
+
+    // Show result
+    document.getElementById('result-time').textContent=fmt(elapsed);
+    const rpanel=document.getElementById('result-panel');
+    rpanel.style.display='flex';
+    await showResultLeaderboard(currentDailyLevel?.id,elapsed);
+  },400);
+}
+
+/* ═══ DAILY LOGIC ════════════════════════════════════════ */
+let currentUserId=null;
+let currentDailyLevel=null;
+let currentIsReplay=false;
+let calYear,calMonth;
+let levelsCache={};    // date→level
+let completionsCache={};// daily_level_id→completion
+
+function getParisTodayStr(){
+  return new Intl.DateTimeFormat('fr-CA',{timeZone:'Europe/Paris'}).format(new Date());
+}
+
+function getParisNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Paris'}));}
+
+async function init(){
+  const user=await initNavAuth();
+  currentUserId=user?.id||null;
+
+  const today=getParisTodayStr();
+  const[levelRes]=await Promise.all([
+    db.from('daily_levels').select('*').eq('date',today).maybeSingle()
+  ]);
+  currentDailyLevel=levelRes.data;
+
+  if(!currentDailyLevel){
+    // No level today
+    showView('catalogue');
+    await loadCatalogue();
+    return;
+  }
+
+  if(!currentUserId){
+    showView('catalogue');
+    await loadCatalogue(today);
+    return;
+  }
+
+  // Check if already completed today
+  const{data:comp}=await db.from('daily_completions').select('*')
+    .eq('user_id',currentUserId).eq('daily_level_id',currentDailyLevel.id).maybeSingle();
+
+  if(comp){
+    showView('catalogue');
+    await loadCatalogue(today);
+    return;
+  }
+
+  // Check if timer already started (resume)
+  const timerKey='daily_timer_'+today;
+  let startTime=null;
+  try{startTime=parseInt(localStorage.getItem(timerKey));}catch(e){}
+
+  // Show play view
+  loadAndRenderPuzzle(currentDailyLevel);
+  document.getElementById('level-label').textContent=
+    currentDailyLevel.name||'Niveau du '+formatDate(today);
+  showView('play');
+
+  if(startTime&&!isNaN(startTime)){
+    // Resume timer
+    timerSec=Math.max(0,Math.floor((Date.now()-startTime)/1000));
+    document.getElementById('tval').textContent=fmt(timerSec);
+    document.getElementById('grid-wrap').classList.remove('blurred');
+    document.getElementById('overlay-start').style.display='none';
+    document.getElementById('play-controls').style.display='flex';
+    startTimer();
+  }
+}
+
+function loadAndRenderPuzzle(level){
+  const seed=level.seed;
+  let res;
+  if(seed.length===16){
+    const d=decodeCustomSeed(seed);
+    puzzle=d.puzzle;solution=d.solution;ch=d.ch;cv=d.cv;
+  }else{
+    const{diff,numSeed}=strToSeed(seed);
+    rng=makePRNG(numSeed);
+    res=null;
+    for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
+    if(!res)return;
+    puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
+  }
+  board=puzzle.map(r=>[...r]);
+  fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
+  hist=[];gameWon=false;clearAllErrors();
+  renderGrid();
+}
+
+function startDaily(){
+  if(!currentUserId){document.getElementById('login-modal').classList.add('show');return;}
+  const today=getParisTodayStr();
+  try{localStorage.setItem('daily_timer_'+today,Date.now());}catch(e){}
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('overlay-start').style.display='none';
+  document.getElementById('play-controls').style.display='flex';
+  resetTimer();timerSec=0;startTimer();
+}
+
+/* ── Views ── */
+function showView(name){
+  const play=document.getElementById('view-play');
+  const cat=document.getElementById('view-catalogue');
+  if(name==='play'){play.style.display='';cat.style.display='none';}
+  else{cat.style.display='';play.style.display='none';}
+}
+
+async function openCatalogue(){
+  const today=getParisTodayStr();
+  const catView=document.getElementById('view-catalogue');
+  const playView=document.getElementById('view-play');
+  playView.classList.add('anim-out');
+  setTimeout(async()=>{
+    playView.style.display='none';
+    playView.classList.remove('anim-out');
+    catView.style.display='';
+    catView.classList.add('anim-in');
+    setTimeout(()=>catView.classList.remove('anim-in'),400);
+    await loadCatalogue(today);
+  },300);
+}
+
+async function startFromCatalogue(){
+  if(!currentUserId){document.getElementById('login-modal').classList.add('show');return;}
+  const catView=document.getElementById('view-catalogue');
+  const playView=document.getElementById('view-play');
+  catView.classList.add('anim-out');
+  setTimeout(()=>{
+    catView.style.display='none';
+    catView.classList.remove('anim-out');
+    playView.style.display='';
+    document.getElementById('grid-wrap').classList.add('grid-grow');
+    setTimeout(()=>document.getElementById('grid-wrap').classList.remove('grid-grow'),450);
+    // Start timer
+    const today=getParisTodayStr();
+    const isToday=currentDailyLevel&&selectedCalDate===today;
+    if(isToday){
+      try{localStorage.setItem('daily_timer_'+today,Date.now());}catch(e){}
+    }
+    resetTimer();timerSec=0;
+    document.getElementById('grid-wrap').classList.remove('blurred');
+    document.getElementById('overlay-start').style.display='none';
+    document.getElementById('play-controls').style.display='flex';
+    startTimer();
+  },300);
+}
+
+/* ── Leaderboard ── */
+async function fetchLeaderboard(levelId){
+  const{data}=await db.from('daily_completions')
+    .select('time_seconds,completed_at,profiles(username)')
+    .eq('daily_level_id',levelId)
+    .order('time_seconds',{ascending:true})
+    .limit(50);
+  return data||[];
+}
+
+function renderLeaderboard(rows,currentUid,userTime,containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  if(!rows.length){el.innerHTML='<p style="font-size:12px;color:var(--muted)">Aucun score encore.</p>';return;}
+
+  const userRow=rows.find(r=>r.profiles?.username&&currentUid&&
+    rows.findIndex(x=>x===r)>=0&&userTime&&r.time_seconds===userTime);
+  const userIdx=currentUid?rows.findIndex(r=>{
+    // find by matching time+username if available
+    return false; // placeholder, real search below
+  }):-1;
+
+  // Find user's rank
+  let myRank=-1;
+  if(currentUid){
+    // We need to know the user's actual time for this level
+    // passed as userTime parameter
+    if(userTime!==null&&userTime!==undefined){
+      myRank=rows.findIndex(r=>r.time_seconds===userTime);
+    }
+  }
+
+  const medals=['🥇','🥈','🥉'];
+  let html='';
+  const top10=rows.slice(0,10);
+  top10.forEach((r,i)=>{
+    const isMe=myRank===i;
+    const rank=medals[i]||(i+1);
+    html+=`<div class="lb-row">
+      <span class="lb-rank ${i<3?['gold','silver','bronze'][i]:''}">${rank}</span>
+      <span class="lb-name${isMe?' me':''}">${escHtml(r.profiles?.username||'—')}</span>
+      <span class="lb-time">${fmt(r.time_seconds)}</span>
+    </div>`;
+  });
+
+  if(myRank>=10){
+    // Show neighbors
+    const above=rows[myRank-1];
+    const me=rows[myRank];
+    const below=rows[myRank+1];
+    html+=`<div class="lb-sep">···</div>`;
+    if(above)html+=`<div class="lb-row"><span class="lb-rank">${myRank}</span><span class="lb-name">${escHtml(above.profiles?.username||'—')}</span><span class="lb-time">${fmt(above.time_seconds)}</span></div>`;
+    html+=`<div class="lb-row"><span class="lb-rank" style="color:var(--moon)">${myRank+1}</span><span class="lb-name me">${escHtml(me.profiles?.username||'—')}</span><span class="lb-time">${fmt(me.time_seconds)}</span></div>`;
+    if(below)html+=`<div class="lb-row"><span class="lb-rank">${myRank+2}</span><span class="lb-name">${escHtml(below.profiles?.username||'—')}</span><span class="lb-time">${fmt(below.time_seconds)}</span></div>`;
+  } else if(myRank===-1&&currentUid&&rows.length>=50){
+    html+=`<div class="lb-sep">Votre classement : +50</div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+async function showResultLeaderboard(levelId,myTime){
+  if(!levelId)return;
+  const rows=await fetchLeaderboard(levelId);
+  const myRankRow=rows.findIndex(r=>r.time_seconds===myTime&&
+    currentUserId&&r.profiles);
+  const rankText=myRankRow>=0?`#${myRankRow+1} sur ${rows.length}`:(rows.length>=50?'+50':'—');
+  document.getElementById('result-rank').textContent=rankText;
+  renderLeaderboard(rows,currentUserId,myTime,'result-lb');
+}
+
+/* ── Calendar ── */
+let selectedCalDate=null;
+
+async function loadCatalogue(selectDate){
+  const now=getParisNow();
+  calYear=now.getFullYear();calMonth=now.getMonth();
+  await loadMonthData();
+  if(selectDate)await selectCalDay(selectDate);
+}
+
+async function loadMonthData(){
+  const firstDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  const lastDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${new Date(calYear,calMonth+1,0).getDate()}`;
+  const[levRes,compRes]=await Promise.all([
+    db.from('daily_levels').select('*').gte('date',firstDay).lte('date',lastDay),
+    currentUserId?db.from('daily_completions').select('*,daily_levels!inner(date)')
+      .eq('user_id',currentUserId).gte('daily_levels.date',firstDay).lte('daily_levels.date',lastDay):Promise.resolve({data:[]})
+  ]);
+  (levRes.data||[]).forEach(l=>{levelsCache[l.date]=l;});
+  (compRes.data||[]).forEach(c=>{completionsCache[c.daily_level_id]=c;});
+  renderCalendar();
+}
+
+function renderCalendar(){
+  document.getElementById('cal-label').textContent=`${MONTHS_FR[calMonth]} ${calYear}`;
+  const today=getParisTodayStr();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  let firstWeekday=new Date(calYear,calMonth,1).getDay();
+  firstWeekday=firstWeekday===0?6:firstWeekday-1;
+
+  let done=0,total=0;
+  const weekdays=['L','M','M','J','V','S','D'];
+  let html=weekdays.map(d=>`<div class="cal-day" style="font-size:10px;color:var(--muted);cursor:default;aspect-ratio:unset;padding:4px 0">${d}</div>`).join('');
+  for(let i=0;i<firstWeekday;i++)html+=`<div class="cal-day empty"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const level=levelsCache[dateStr];
+    const isFuture=dateStr>today;
+    const isToday=dateStr===today;
+    const isSelected=dateStr===selectedCalDate;
+    const comp=level?completionsCache[level.id]:null;
+    if(!isFuture&&level)total++;
+    if(comp)done++;
+    let cls='cal-day';
+    if(isFuture)cls+=' future';
+    else if(comp)cls+=' done';
+    else if(isToday)cls+=' today';
+    if(isSelected)cls+=' selected';
+    const click=!isFuture?`onclick="selectCalDay('${dateStr}')"` :'';
+    html+=`<div class="${cls}" ${click}>${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('cal-completion').textContent=currentUserId?`${done} / ${total}`:'';
+}
+
+async function selectCalDay(dateStr){
+  selectedCalDate=dateStr;
+  renderCalendar();
+  const level=levelsCache[dateStr];
+  if(!level){
+    document.getElementById('detail-panel').style.display='none';
+    return;
+  }
+
+  const today=getParisTodayStr();
+  const isFuture=dateStr>today;
+  if(isFuture)return;
+
+  const comp=level?completionsCache[level.id]:null;
+  const d=new Date(dateStr+'T00:00:00');
+
+  // Set level for potential game start
+  currentDailyLevel=level;
+  currentIsReplay=comp?true:(dateStr!==today);
+
+  // Labels
+  document.getElementById('detail-date').textContent=
+    level.name||`${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('detail-diff').textContent=
+    (level.name?`${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()} · `:'')+DIFF_LABELS[level.difficulty];
+
+  // Mini grid
+  loadAndRenderMiniPuzzle(level);
+  const miniWrap=document.getElementById('mini-grid-wrap');
+  const miniOverlay=document.getElementById('mini-overlay');
+  if(comp){miniWrap.classList.remove('blurred');miniOverlay.style.display='none';}
+  else{miniWrap.classList.add('blurred');miniOverlay.style.display='flex';}
+
+  // Prepare play view too
+  document.getElementById('level-label').textContent=
+    level.name||'Niveau du '+formatDate(dateStr);
+  loadAndRenderPuzzle(level);
+  document.getElementById('grid-wrap').classList.add('blurred');
+  document.getElementById('overlay-start').style.display='flex';
+  document.getElementById('play-controls').style.display='none';
+  document.getElementById('result-panel').style.display='none';
+  resetTimer();
+
+  // Actions
+  const actionsEl=document.getElementById('detail-actions');
+  if(comp){
+    actionsEl.innerHTML=`<span style="font-size:12px;color:var(--green)">✓ Complété en ${fmt(comp.time_seconds)}</span>`;
+  }else{
+    actionsEl.innerHTML=`<button class="btn sun" onclick="startFromCatalogue()">Commencer</button>`;
+  }
+
+  // Leaderboard
+  document.getElementById('detail-lb').innerHTML='<span style="font-size:11px;color:var(--muted)">Chargement…</span>';
+  document.getElementById('detail-panel').style.display='';
+  const rows=await fetchLeaderboard(level.id);
+  renderLeaderboard(rows,currentUserId,comp?.time_seconds,'detail-lb');
+}
+
+function loadAndRenderMiniPuzzle(level){
+  const seed=level.seed;
+  let puzData;
+  if(seed.length===16){
+    const d=decodeCustomSeed(seed);
+    puzData={puzzle:d.puzzle,ch:d.ch,cv:d.cv};
+  }else{
+    const{diff,numSeed}=strToSeed(seed);
+    const savedRng=rng;
+    rng=makePRNG(numSeed);
+    let res=null;
+    for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
+    rng=savedRng;
+    if(!res)return;
+    puzData={puzzle:res.puzzle,ch:res.ch,cv:res.cv};
+  }
+  renderMiniGrid(puzData,'mini-grid','');
+}
+
+/* Calendar navigation */
+async function prevCalMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}selectedCalDate=null;document.getElementById('detail-panel').style.display='none';await loadMonthData();}
+async function nextCalMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}selectedCalDate=null;document.getElementById('detail-panel').style.display='none';await loadMonthData();}
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('view-catalogue').style.display!=='none'){
+    if(e.key==='ArrowLeft')prevCalMonth();
+    if(e.key==='ArrowRight')nextCalMonth();
+  }
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if(document.getElementById('view-play').style.display!=='none'){
+    if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+    if(!e.ctrlKey&&!e.altKey&&(e.key==='r'||e.key==='R')){e.preventDefault();resetPuzzle();}
+  }
+});
+
+// Drag to change month
+let dragStartX=0,isDragging=false;
+const calWrap=document.getElementById('cal-wrap');
+calWrap.addEventListener('mousedown',e=>{dragStartX=e.clientX;isDragging=true;});
+calWrap.addEventListener('mousemove',e=>{if(!isDragging)return;});
+calWrap.addEventListener('mouseup',e=>{
+  if(!isDragging)return;isDragging=false;
+  const dx=e.clientX-dragStartX;
+  if(Math.abs(dx)>80){dx>0?prevCalMonth():nextCalMonth();}
+});
+calWrap.addEventListener('mouseleave',()=>{isDragging=false;});
+calWrap.addEventListener('touchstart',e=>{dragStartX=e.touches[0].clientX;},{passive:true});
+calWrap.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-dragStartX;
+  if(Math.abs(dx)>60){dx>0?prevCalMonth():nextCalMonth();}
+});
+
+/* Utils */
+function formatDate(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  return`${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+init();
+</script>
+</body>
+</html>

@@ -271,13 +271,14 @@ async function initNavAuth(opts = {}) {
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
+      <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
       ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
     if (el) el.innerHTML = `<a href="/stats.html" class="nav-auth-link">Statistiques</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   return user;

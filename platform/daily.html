@@ -563,16 +563,15 @@ function renderCalendar(){
   renderMonthSlide('slide-curr',calYear,calMonth);
   renderMonthSlide('slide-next',ny,nm);
 
-  // Completion counter (current month only, playable days = past+today with a level)
-  let done=0,total=0;
+  // Completion counter: done / total jours du mois
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  let done=0;
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if(dateStr>today)break;
     const level=levelsCache[dateStr];
-    if(level){total++;if(completionsCache[level.id])done++;}
+    if(level&&completionsCache[level.id])done++;
   }
-  document.getElementById('cal-completion').textContent=currentUserId?`${done} / ${total}`:'';
+  document.getElementById('cal-completion').textContent=currentUserId?`${done} / ${daysInMonth}`:'';
 
   // Prev button disabled at min month
   const prevBtn=document.getElementById('btn-prev-cal');
@@ -618,22 +617,24 @@ function _initCalDrag(){
   function onMove(clientX){
     if(!_calDragging)return;
     const dx=clientX-_calDragX;
-    slider.style.transform=`translateX(calc(-100% + ${dx}px))`;
+    const atMin=(calYear<=MIN_CAL_YEAR&&calMonth<=MIN_CAL_MONTH);
+    const clamped=atMin?Math.min(dx,0):dx;
+    slider.style.transform=`translateX(calc(-100% + ${clamped}px))`;
   }
   function onEnd(clientX){
     if(!_calDragging)return;
     _calDragging=false;
     const dx=clientX-_calDragX;
-    const outerW=outer.offsetWidth||300;
+    const atMin=(calYear<=MIN_CAL_YEAR&&calMonth<=MIN_CAL_MONTH);
     if(Math.abs(dx)<8){slider.style.transition='';slider.style.transform='translateX(-100%)';return;}
     _calAnimating=true;
     slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
-    if(dx>60){
+    if(dx>60&&!atMin){
       slider.style.transform='translateX(0%)';
-      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;prevCalMonth(true);},340);
+      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;_changeToPrevMonth();},340);
     }else if(dx<-60){
       slider.style.transform='translateX(-200%)';
-      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;nextCalMonth(true);},340);
+      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;_changeToNextMonth();},340);
     }else{
       slider.style.transform='translateX(-100%)';
       setTimeout(()=>{_calAnimating=false;},340);
@@ -651,14 +652,21 @@ async function selectCalDay(dateStr){
   selectedCalDate=dateStr;
   renderCalendar();
   const level=levelsCache[dateStr];
-  if(!level){
-    document.getElementById('detail-panel').style.display='none';
-    return;
-  }
-
   const today=getParisTodayStr();
   const isFuture=dateStr>today;
-  if(isFuture)return;
+  document.getElementById('detail-panel').style.display='';
+
+  if(!level||isFuture){
+    const d=new Date(dateStr+'T00:00:00');
+    document.getElementById('detail-date').textContent=`${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+    document.getElementById('detail-diff').textContent=isFuture?'Niveau à venir':'Aucun niveau pour ce jour';
+    document.getElementById('mini-grid-wrap').innerHTML='';
+    document.getElementById('mini-overlay').style.display='none';
+    document.getElementById('mini-grid-wrap').classList.remove('blurred');
+    document.getElementById('detail-lb').innerHTML='<p style="font-size:12px;color:var(--muted)">Aucun score.</p>';
+    document.getElementById('detail-actions').innerHTML='';
+    return;
+  }
 
   const comp=level?completionsCache[level.id]:null;
   const d=new Date(dateStr+'T00:00:00');
@@ -725,21 +733,69 @@ function loadAndRenderMiniPuzzle(level){
 }
 
 /* Calendar navigation */
-async function prevCalMonth(skipAnim=false){
+async function _changeToPrevMonth(){
+  let m=calMonth-1,y=calYear;
+  if(m<0){m=11;y--;}
+  calMonth=m;calYear=y;
+  selectedCalDate=null;
+  await loadMonthData();
+  await autoSelectFirstUnresolved();
+}
+
+async function _changeToNextMonth(){
+  calMonth++;if(calMonth>11){calMonth=0;calYear++;}
+  selectedCalDate=null;
+  await loadMonthData();
+  await autoSelectFirstUnresolved();
+}
+
+async function prevCalMonth(){
   let m=calMonth-1,y=calYear;
   if(m<0){m=11;y--;}
   if(y<MIN_CAL_YEAR||(y===MIN_CAL_YEAR&&m<MIN_CAL_MONTH))return;
-  calMonth=m;calYear=y;
-  selectedCalDate=null;
-  document.getElementById('detail-panel').style.display='none';
-  await loadMonthData();
+  if(_calAnimating)return;
+  _calAnimating=true;
+  const slider=document.getElementById('cal-slider');
+  slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
+  slider.style.transform='translateX(0%)';
+  setTimeout(async()=>{
+    slider.style.transition='none';slider.style.transform='translateX(-100%)';
+    _calAnimating=false;
+    await _changeToPrevMonth();
+  },340);
 }
 
-async function nextCalMonth(skipAnim=false){
-  calMonth++;if(calMonth>11){calMonth=0;calYear++;}
-  selectedCalDate=null;
-  document.getElementById('detail-panel').style.display='none';
-  await loadMonthData();
+async function nextCalMonth(){
+  if(_calAnimating)return;
+  _calAnimating=true;
+  const slider=document.getElementById('cal-slider');
+  slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
+  slider.style.transform='translateX(-200%)';
+  setTimeout(async()=>{
+    slider.style.transition='none';slider.style.transform='translateX(-100%)';
+    _calAnimating=false;
+    await _changeToNextMonth();
+  },340);
+}
+
+async function autoSelectFirstUnresolved(){
+  const today=getParisTodayStr();
+  const monthStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  if(`${monthStr}-01`>today){await selectCalDay(`${monthStr}-01`);return;}
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  // First unresolved day
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${monthStr}-${String(d).padStart(2,'0')}`;
+    if(dateStr>today)break;
+    const level=levelsCache[dateStr];
+    if(level&&!completionsCache[level.id]){await selectCalDay(dateStr);return;}
+  }
+  // All resolved — select last playable day with a level
+  for(let d=daysInMonth;d>=1;d--){
+    const dateStr=`${monthStr}-${String(d).padStart(2,'0')}`;
+    if(dateStr>today)continue;
+    if(levelsCache[dateStr]){await selectCalDay(dateStr);return;}
+  }
 }
 
 // Keyboard navigation

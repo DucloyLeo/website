@@ -63,6 +63,7 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
+  if (_notifChannel) { db.removeChannel(_notifChannel); _notifChannel = null; }
   await db.auth.signOut();
   window.location.href = '/index.html';
 }
@@ -144,6 +145,12 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
       const { error } = await db.from('player_badges').insert({ user_id: userId, badge_id: badge.id });
       if (!error) newlyEarned.push(badge);
     }
+  }
+
+  if (newlyEarned.length) {
+    await db.from('notifications').insert({
+      user_id: userId, type: 'badge', payload: { badges: newlyEarned }
+    }).catch(() => {});
   }
 
   return newlyEarned;
@@ -253,6 +260,8 @@ async function initNavAuth(opts = {}) {
       try { localStorage.setItem('tango_theme', prefs.theme); } catch(e) {}
     }
 
+    _initRealtime(user.id);
+
     if (el) el.innerHTML = `
       <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
       ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
@@ -282,6 +291,56 @@ function closeMenu() {
   if (m) m.classList.remove('open');
 }
 document.addEventListener('click', closeMenu);
+
+// ─── Realtime notifications ──────────────────────────
+
+const _notifHandlers = {};
+let _notifChannel = null;
+
+// Enregistrer un handler pour un type d'événement
+function onNotification(type, handler) {
+  if (!_notifHandlers[type]) _notifHandlers[type] = [];
+  _notifHandlers[type].push(handler);
+}
+
+function _dispatchNotif(row) {
+  (_notifHandlers[row.type] || []).forEach(h => h(row.payload, row));
+}
+
+function _initRealtime(userId) {
+  if (_notifChannel) { db.removeChannel(_notifChannel); _notifChannel = null; }
+  _notifChannel = db.channel('app-notifications')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+      ({ new: row }) => _dispatchNotif(row))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=is.null' },
+      ({ new: row }) => _dispatchNotif(row))
+    .subscribe();
+}
+
+// Envoyer une notification globale (admin uniquement)
+async function sendAdminNotification(type, payload) {
+  return db.from('notifications').insert({ user_id: null, type, payload });
+}
+
+// Toast badge — handler par défaut enregistré globalement
+function showBadgeToast(badges) {
+  document.querySelectorAll('.badge-toast').forEach(el => el.remove());
+  const toast = document.createElement('div');
+  toast.className = 'badge-toast';
+  const rows = badges.map(b => `
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">${b.icon}</span>
+      <div><div class="badge-toast-name">${b.name}</div><div class="badge-toast-desc">${b.description || ''}</div></div>
+    </div>`).join('');
+  toast.innerHTML = `<span class="badge-toast-label">🏅 Badge${badges.length > 1 ? 's' : ''} débloqué${badges.length > 1 ? 's' : ''}</span>${rows}`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'toastout .3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4500);
+}
+
+onNotification('badge', ({ badges }) => { if (badges?.length) showBadgeToast(badges); });
 
 // ─── Theme ───────────────────────────────────────────
 

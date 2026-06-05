@@ -358,30 +358,11 @@ async function checkWin(){
     document.getElementById('win-modal').classList.add('show');
   },400);
 
-  // Badges : toast indépendant dès que la DB répond
+  // Sauvegarde en arrière-plan — le toast badge arrive via Realtime
   if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
-    try{
-      const newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)||[];
-      if(newBadges.length)showBadgeToast(newBadges);
-    }catch(e){console.error('saveGameResult:',e);}
+    saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)
+      .catch(e=>console.error('saveGameResult:',e));
   }
-}
-
-function showBadgeToast(badges){
-  document.querySelectorAll('.badge-toast').forEach(el=>el.remove());
-  const toast=document.createElement('div');
-  toast.className='badge-toast';
-  const rows=badges.map(b=>`
-    <div class="badge-toast-row">
-      <span class="badge-toast-ico">${b.icon}</span>
-      <div><div class="badge-toast-name">${b.name}</div><div class="badge-toast-desc">${b.description||''}</div></div>
-    </div>`).join('');
-  toast.innerHTML=`<span class="badge-toast-label">🏅 Badge${badges.length>1?'s':''} débloqué${badges.length>1?'s':''}</span>${rows}`;
-  document.body.appendChild(toast);
-  setTimeout(()=>{
-    toast.style.animation='toastout .3s ease forwards';
-    setTimeout(()=>toast.remove(),300);
-  },4500);
 }
 
 function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}

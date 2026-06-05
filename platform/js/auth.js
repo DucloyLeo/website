@@ -263,14 +263,16 @@ async function initNavAuth(opts = {}) {
 
     _initRealtime(user.id);
 
+    const isVip   = profile?.role === 'vip';
+    const isAdmin = profile?.role === 'admin';
     if (el) el.innerHTML = `
-      <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
-      ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
+      <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}${isVip ? ' <span style="color:var(--moon);font-size:10px">✦ VIP</span>' : ''}</a>
+      ${isAdmin ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
-      <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}</a>
-      ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
+      <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
+      ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
@@ -379,8 +381,20 @@ function showAdminToast(message) {
     </div>`, 'rgba(143,168,212,.45)', 7000);
 }
 
-onNotification('badge', ({ badges }) => { if (badges?.length) showBadgeToast(badges); });
-onNotification('admin_message', ({ message }) => { if (message) showAdminToast(message); });
+function showRoleToast(role, message) {
+  const borderColors = { admin: 'rgba(245,200,66,.4)', vip: 'rgba(143,168,212,.45)', user: 'var(--border2)' };
+  const icons = { admin: '⚙️', vip: '✦', user: '👤' };
+  _createToast(`
+    <span class="badge-toast-label">Changement de rôle</span>
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">${icons[role] || '👤'}</span>
+      <div style="color:var(--text);font-size:13px">${message}</div>
+    </div>`, borderColors[role] || 'var(--border2)', 6000);
+}
+
+onNotification('badge',       ({ badges })  => { if (badges?.length) showBadgeToast(badges); });
+onNotification('admin_message',({ message }) => { if (message) showAdminToast(message); });
+onNotification('role_change',  ({ role, message }) => { if (message) showRoleToast(role, message); });
 
 // ─── Theme ───────────────────────────────────────────
 

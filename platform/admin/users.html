@@ -161,11 +161,17 @@ function renderUsers(users) {
       <td>
         <div class="user-actions">
           <button class="action-btn" onclick='openUserModal(${JSON.stringify(u.id)})'>Détail</button>
-          ${u.role === 'user'
-            ? `<button class="action-btn promote" onclick='promoteUser("${u.id}","${escHtml(u.username)}")'>↑ Admin</button>`
-            : u.id !== currentAdminId
-              ? `<button class="action-btn" onclick='demoteUser("${u.id}","${escHtml(u.username)}")'>↓ Joueur</button>`
-              : ''}
+          ${u.id !== currentAdminId ? (() => {
+              if (u.role === 'user') return `
+                <button class="action-btn" style="border-color:rgba(143,168,212,.4);color:var(--moon)" onclick='setRole("${u.id}","${escHtml(u.username)}","vip")'>✦ VIP</button>
+                <button class="action-btn promote" onclick='setRole("${u.id}","${escHtml(u.username)}","admin")'>↑ Admin</button>`;
+              if (u.role === 'vip') return `
+                <button class="action-btn" onclick='setRole("${u.id}","${escHtml(u.username)}","user")'>↓ Joueur</button>
+                <button class="action-btn promote" onclick='setRole("${u.id}","${escHtml(u.username)}","admin")'>↑ Admin</button>`;
+              return `
+                <button class="action-btn" style="border-color:rgba(143,168,212,.4);color:var(--moon)" onclick='setRole("${u.id}","${escHtml(u.username)}","vip")'>↓ VIP</button>
+                <button class="action-btn" onclick='setRole("${u.id}","${escHtml(u.username)}","user")'>↓ Joueur</button>`;
+            })() : ''}
           ${u.id !== currentAdminId
             ? `<button class="action-btn danger" onclick='deleteUserAdmin("${u.id}","${escHtml(u.username)}")'>Supprimer</button>`
             : ''}
@@ -276,17 +282,24 @@ async function toggleBadge(userId, badgeId, hasIt) {
   loadUsers();
 }
 
-async function promoteUser(userId, username) {
-  if (!confirm(`Promouvoir "${username}" administrateur ?`)) return;
-  await db.from('profiles').update({ role: 'admin' }).eq('id', userId);
-  await logAdminAction('promote_admin', userId, {});
-  await loadUsers();
-}
+async function setRole(userId, username, newRole) {
+  const labels = { user: 'Joueur', vip: 'VIP ✦', admin: 'Administrateur' };
+  if (!confirm(`Changer le rôle de "${username}" en ${labels[newRole]} ?`)) return;
 
-async function demoteUser(userId, username) {
-  if (!confirm(`Rétrograder "${username}" en joueur ?`)) return;
-  await db.from('profiles').update({ role: 'user' }).eq('id', userId);
-  await logAdminAction('demote_user', userId, {});
+  const { error } = await db.from('profiles').update({ role: newRole }).eq('id', userId);
+  if (error) { console.error('setRole:', error.message); return; }
+
+  const messages = {
+    admin: 'Félicitations ! Vous avez été promu administrateur.',
+    vip:   'Félicitations ! Vous avez obtenu le statut VIP ✦.',
+    user:  'Votre rôle a été modifié en joueur.'
+  };
+  const { error: ne } = await db.from('notifications').insert({
+    user_id: userId, type: 'role_change', payload: { role: newRole, message: messages[newRole] }
+  });
+  if (ne) console.warn('role notif:', ne.message);
+
+  await logAdminAction('set_role', userId, { new_role: newRole });
   await loadUsers();
 }
 

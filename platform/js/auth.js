@@ -210,15 +210,49 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// ─── Préférences utilisateur (DB) ────────────────────
+
+let _currentUserId = null;
+let _prefSaveTimer = null;
+let _pendingPatch  = {};
+
+async function getUserPrefs(userId) {
+  const { data } = await db.from('profiles').select('preferences').eq('id', userId).single();
+  return data?.preferences || {};
+}
+
+function saveUserPref(userId, patch) {
+  _pendingPatch = { ..._pendingPatch, ...patch };
+  clearTimeout(_prefSaveTimer);
+  _prefSaveTimer = setTimeout(async () => {
+    const p = _pendingPatch;
+    _pendingPatch = {};
+    try {
+      const { data } = await db.from('profiles').select('preferences').eq('id', userId).single();
+      const merged = { ...(data?.preferences || {}), ...p };
+      await db.from('profiles').update({ preferences: merged }).eq('id', userId);
+    } catch(e) {}
+  }, 600);
+}
+
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
   const user = await getCurrentUser();
+  _currentUserId = user?.id || null;
   const el   = document.getElementById('nav-auth');
   const mel  = document.getElementById('menu-auth-item');
   if (!el && !mel) return user;
 
   if (user) {
-    const profile = await getCurrentProfile();
+    const [profile, prefs] = await Promise.all([getCurrentProfile(), getUserPrefs(user.id).catch(() => ({}))]);
+    window._userPrefs = prefs;
+
+    // Appliquer le thème sauvegardé en DB si différent de l'état actuel
+    if (prefs.theme && prefs.theme !== document.documentElement.getAttribute('data-theme')) {
+      document.documentElement.setAttribute('data-theme', prefs.theme);
+      try { localStorage.setItem('tango_theme', prefs.theme); } catch(e) {}
+    }
+
     if (el) el.innerHTML = `
       <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}</a>
       ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
@@ -229,6 +263,7 @@ async function initNavAuth(opts = {}) {
       ${profile?.role === 'admin' ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
+    window._userPrefs = null;
     if (el) el.innerHTML = `<a href="/stats.html" class="nav-auth-link">Statistiques</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
     if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
@@ -253,6 +288,7 @@ document.addEventListener('click', closeMenu);
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   try { localStorage.setItem('tango_theme', t); } catch(e) {}
+  if (_currentUserId) saveUserPref(_currentUserId, { theme: t });
 }
 
 function toggleTheme() {

@@ -264,7 +264,10 @@ function onOverlayClick(e,id){if(e.target===document.getElementById(id))document
 
 /* ── Prefs ── */
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}}catch(e){}}
-function savePrefs(){try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff&&currentDiff!=='custom')localStorage.setItem('tango_diff',currentDiff);}catch(e){}}
+function savePrefs(){
+  try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff&&currentDiff!=='custom')localStorage.setItem('tango_diff',currentDiff);}catch(e){}
+  if(currentUserId){const patch={remember_diff:rememberDiff};if(rememberDiff&&currentDiff&&currentDiff!=='custom')patch.diff=currentDiff;saveUserPref(currentUserId,patch);}
+}
 function onPrefChange(){rememberDiff=document.getElementById('pref-remember').checked;savePrefs();}
 function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 
@@ -416,6 +419,16 @@ async function init(){
   loadPrefs();
   const user=await initNavAuth();
   currentUserId=user?.id||null;
+
+  // Appliquer les prefs DB si connecté (écrase localStorage)
+  if(user&&window._userPrefs){
+    const p=window._userPrefs;
+    if(typeof p.remember_diff==='boolean'){
+      rememberDiff=p.remember_diff;
+      document.getElementById('pref-remember').checked=rememberDiff;
+    }
+    if(rememberDiff&&p.diff&&p.diff!=='custom')currentDiff=p.diff;
+  }
 
   const urlParams=new URLSearchParams(window.location.search);
   const seedParam=urlParams.get('seed');

@@ -1,0 +1,14 @@
+# Tangoléo — Directives pour les crawlers des moteurs de recherche
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /legal/cgu.html
+Disallow: /legal/mentions-legales.html
+Disallow: /legal/politique-confidentialite.html
+
+# Supabase et services externes
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://tangoleo.fr/sitemap.xml

@@ -82,7 +82,7 @@
       <p class="danger-title">Mes données</p>
       <div class="danger-actions">
         <button class="btn" onclick="handleExport()">⬇ Exporter mes données</button>
-        <button class="btn" onclick="handleResetStats()" style="border-color:rgba(245,160,50,.4);color:rgba(245,160,50,.9)">↺ Réinitialiser mes statistiques</button>
+        <button class="btn" onclick="handleResetStats(this)" style="border-color:rgba(245,160,50,.4);color:rgba(245,160,50,.9)">↺ Réinitialiser mes statistiques</button>
         <button class="btn danger" onclick="handleDeleteAccount()">Supprimer mon compte</button>
       </div>
       <p style="font-size:11px;color:var(--muted);margin-top:.75rem;line-height:1.6">
@@ -189,12 +189,11 @@ async function handleExport() {
   if (user) await exportUserData(user.id);
 }
 
-async function handleResetStats() {
+async function handleResetStats(btn) {
   const user = await getCurrentUser();
   if (!user) return;
   if (!confirm('Réinitialiser toutes vos statistiques, parties et badges ? Votre compte sera conservé.')) return;
   if (!confirm('Dernière confirmation : toutes vos données de jeu seront effacées.')) return;
-  const btn = event.currentTarget;
   btn.disabled = true; btn.textContent = 'Réinitialisation…';
   await db.from('completed_levels').delete().eq('user_id', user.id);
   await db.from('player_stats').delete().eq('user_id', user.id);

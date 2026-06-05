@@ -91,8 +91,8 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .cal-weekdays-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
 .cal-weekdays-row>div{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:4px 0;user-select:none}
 .cal-slider-outer{overflow:hidden}
-.cal-slider{display:flex;transform:translateX(-100%);will-change:transform}
-.cal-slide{flex:0 0 100%;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-slider{display:grid;grid-template-columns:repeat(3,100%);transform:translateX(-100%);will-change:transform}
+.cal-slide{min-width:0;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid transparent;transition:border-color .15s,background .15s;user-select:none}
 .cal-day:hover:not(.future):not(.empty){background:var(--surface2);border-color:var(--border2)}
 .cal-day.selected{border-color:var(--moon);background:rgba(143,168,212,.1)}
@@ -641,10 +641,15 @@ function _initCalDrag(){
     slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
     if(dx>60&&!atMin){
       slider.style.transform='translateX(0%)';
-      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;_changeToPrevMonth();},340);
+      let m=calMonth-1,y=calYear;if(m<0){m=11;y--;}
+      calMonth=m;calYear=y;
+      const p=loadMonthData();
+      setTimeout(async()=>{await p;slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;},340);
     }else if(dx<-60){
       slider.style.transform='translateX(-200%)';
-      setTimeout(()=>{slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;_changeToNextMonth();},340);
+      calMonth++;if(calMonth>11){calMonth=0;calYear++;}
+      const p=loadMonthData();
+      setTimeout(async()=>{await p;slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;},340);
     }else{
       slider.style.transform='translateX(-100%)';
       setTimeout(()=>{_calAnimating=false;},340);
@@ -743,18 +748,6 @@ function loadAndRenderMiniPuzzle(level){
 }
 
 /* Calendar navigation */
-async function _changeToPrevMonth(){
-  let m=calMonth-1,y=calYear;
-  if(m<0){m=11;y--;}
-  calMonth=m;calYear=y;
-  await loadMonthData();
-}
-
-async function _changeToNextMonth(){
-  calMonth++;if(calMonth>11){calMonth=0;calYear++;}
-  await loadMonthData();
-}
-
 async function prevCalMonth(){
   let m=calMonth-1,y=calYear;
   if(m<0){m=11;y--;}
@@ -762,26 +755,22 @@ async function prevCalMonth(){
   if(_calAnimating)return;
   _calAnimating=true;
   const slider=document.getElementById('cal-slider');
+  calMonth=m;calYear=y;
+  const p=loadMonthData();
   slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
   slider.style.transform='translateX(0%)';
-  setTimeout(async()=>{
-    slider.style.transition='none';slider.style.transform='translateX(-100%)';
-    _calAnimating=false;
-    await _changeToPrevMonth();
-  },340);
+  setTimeout(async()=>{await p;slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;},340);
 }
 
 async function nextCalMonth(){
   if(_calAnimating)return;
   _calAnimating=true;
   const slider=document.getElementById('cal-slider');
+  calMonth++;if(calMonth>11){calMonth=0;calYear++;}
+  const p=loadMonthData();
   slider.style.transition='transform .32s cubic-bezier(.4,0,.2,1)';
   slider.style.transform='translateX(-200%)';
-  setTimeout(async()=>{
-    slider.style.transition='none';slider.style.transform='translateX(-100%)';
-    _calAnimating=false;
-    await _changeToNextMonth();
-  },340);
+  setTimeout(async()=>{await p;slider.style.transition='none';slider.style.transform='translateX(-100%)';_calAnimating=false;},340);
 }
 
 async function autoSelectFirstUnresolved(){

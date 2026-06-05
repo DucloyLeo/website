@@ -351,26 +351,31 @@ async function checkWin(){
   clearAllErrors();clearHintPreview();stopTimer();timerDone=true;gameWon=true;
   saveStatsLocal(currentDiff,timerSec);
 
-  let newBadges=[];
-  if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
-    try{newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)||[];}
-    catch(e){console.error('saveGameResult:',e);}
-  }
-
+  // Afficher la modal immédiatement (animation blur = 400ms), save DB en parallèle
   setTimeout(()=>{
     document.getElementById('grid-wrap').classList.add('blurred');
     document.getElementById('modal-time').textContent=fmt(timerSec);
     document.getElementById('win-sub').textContent='Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
-    const badgeContainer=document.getElementById('win-badges');
-    badgeContainer.innerHTML='';
-    newBadges.forEach(b=>{
-      const chip=document.createElement('span');
-      chip.className='badge-chip earned';
-      chip.textContent=b.icon+' '+b.name;
-      badgeContainer.appendChild(chip);
-    });
+    document.getElementById('win-badges').innerHTML='';
     document.getElementById('win-modal').classList.add('show');
   },400);
+
+  // Les badges s'ajoutent dès que la DB répond (peut être avant ou après l'ouverture)
+  if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
+    try{
+      const newBadges=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)||[];
+      if(newBadges.length){
+        const badgeContainer=document.getElementById('win-badges');
+        badgeContainer.innerHTML='';
+        newBadges.forEach(b=>{
+          const chip=document.createElement('span');
+          chip.className='badge-chip earned';
+          chip.textContent=b.icon+' '+b.name;
+          badgeContainer.appendChild(chip);
+        });
+      }
+    }catch(e){console.error('saveGameResult:',e);}
+  }
 }
 
 function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}

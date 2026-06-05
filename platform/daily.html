@@ -589,17 +589,16 @@ function renderCalendar(){
   const prevBtn=document.getElementById('btn-prev-cal');
   if(prevBtn)prevBtn.disabled=(calYear<=MIN_CAL_YEAR&&calMonth<=MIN_CAL_MONTH);
 
-  // Show "go to selected" button if selection is in a different month
+  // "go to selected" button: visible if selection exists, disabled if already at selected month
   const goBtn=document.getElementById('btn-go-selected');
   if(goBtn&&selectedCalDate){
     const selYear=parseInt(selectedCalDate.slice(0,4));
     const selMonth=parseInt(selectedCalDate.slice(5,7))-1;
     const isDifferent=(selYear!==calYear||selMonth!==calMonth);
-    goBtn.style.display=isDifferent?'':'none';
+    goBtn.style.display='';
     goBtn.disabled=!isDifferent;
   }else if(goBtn){
     goBtn.style.display='none';
-    goBtn.disabled=true;
   }
 }
 

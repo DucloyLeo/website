@@ -323,44 +323,63 @@ async function sendAdminNotification(type, payload) {
   return db.from('notifications').insert({ user_id: null, type, payload });
 }
 
-// Toast badge — handler par défaut enregistré globalement
-function showBadgeToast(badges) {
-  document.querySelectorAll('.badge-toast').forEach(el => el.remove());
+// ── Système de toasts empilés ──
+
+function _getToastContainer() {
+  let c = document.getElementById('toast-container');
+  if (!c) { c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); }
+  return c;
+}
+
+function _createToast(html, borderColor, duration = 4500) {
+  const container = _getToastContainer();
   const toast = document.createElement('div');
   toast.className = 'badge-toast';
+  if (borderColor) toast.style.borderColor = borderColor;
+  toast.innerHTML = html;
+
+  const close = document.createElement('button');
+  close.className = 'badge-toast-close';
+  close.innerHTML = '&times;';
+  close.setAttribute('aria-label', 'Fermer');
+  close.onclick = () => _dismissToast(toast);
+  toast.appendChild(close);
+
+  container.prepend(toast);
+
+  toast._timer = setTimeout(() => _dismissToast(toast), duration);
+  return toast;
+}
+
+function _dismissToast(toast) {
+  clearTimeout(toast._timer);
+  toast.style.animation = 'toastout .3s ease forwards';
+  setTimeout(() => {
+    toast.remove();
+    const c = document.getElementById('toast-container');
+    if (c && !c.children.length) c.remove();
+  }, 300);
+}
+
+function showBadgeToast(badges) {
   const rows = badges.map(b => `
     <div class="badge-toast-row">
       <span class="badge-toast-ico">${b.icon}</span>
       <div><div class="badge-toast-name">${b.name}</div><div class="badge-toast-desc">${b.description || ''}</div></div>
     </div>`).join('');
-  toast.innerHTML = `<span class="badge-toast-label">🏅 Badge${badges.length > 1 ? 's' : ''} débloqué${badges.length > 1 ? 's' : ''}</span>${rows}`;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.animation = 'toastout .3s ease forwards';
-    setTimeout(() => toast.remove(), 300);
-  }, 4500);
+  _createToast(`<span class="badge-toast-label">🏅 Badge${badges.length > 1 ? 's' : ''} débloqué${badges.length > 1 ? 's' : ''}</span>${rows}`);
 }
 
-onNotification('badge', ({ badges }) => { if (badges?.length) showBadgeToast(badges); });
-
 function showAdminToast(message) {
-  document.querySelectorAll('.admin-toast').forEach(el => el.remove());
-  const toast = document.createElement('div');
-  toast.className = 'badge-toast admin-toast';
-  toast.style.cssText = 'border-color:rgba(143,168,212,.45);';
-  toast.innerHTML = `
+  _createToast(`
     <span class="badge-toast-label" style="color:var(--moon)">📢 Message de l'équipe</span>
     <div class="badge-toast-row">
       <span class="badge-toast-ico">📣</span>
       <div style="color:var(--text);font-size:13px">${message}</div>
-    </div>`;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.animation = 'toastout .3s ease forwards';
-    setTimeout(() => toast.remove(), 300);
-  }, 7000);
+    </div>`, 'rgba(143,168,212,.45)', 7000);
 }
 
+onNotification('badge', ({ badges }) => { if (badges?.length) showBadgeToast(badges); });
 onNotification('admin_message', ({ message }) => { if (message) showAdminToast(message); });
 
 // ─── Theme ───────────────────────────────────────────

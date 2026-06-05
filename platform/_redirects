@@ -1,0 +1,8 @@
+# Redirect www to non-www (SEO best practice)
+https://www.tangoleo.fr/* https://tangoleo.fr/:splat 301
+
+# Redirect old Netlify domain if applicable
+https://website.ducloy-leo.workers.dev/* https://tangoleo.fr/:splat 301
+
+# Keep this line at the end for all other routes
+/*  /index.html  200

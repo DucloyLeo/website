@@ -610,31 +610,40 @@ function renderMonthSlide(slideId,year,month){
     const click=!isFuture?`onclick="selectCalDay('${dateStr}')"` :'';
     html+=`<div class="${cls}" ${click}>${d}</div>`;
   }
+  // Compléter à 42 cellules (6 semaines) pour hauteur uniforme
+  const cellCount=firstWeekday+daysInMonth;
+  for(let i=cellCount;i<42;i++)html+=`<div class="cal-day empty"></div>`;
   const el=document.getElementById(slideId);
   if(el)el.innerHTML=html;
 }
 
 let _calDragging=false,_calDragX=0,_calAnimating=false;
 
-function _calW(){ return document.getElementById('cal-slider-outer').offsetWidth||300; }
+function _calW(){ return document.getElementById('cal-slider-outer').offsetWidth; }
 
 function _calSetSizes(){
   const w=_calW();
+  if(!w)return;
   const slider=document.getElementById('cal-slider');
   slider.style.width=(w*3)+'px';
   document.querySelectorAll('.cal-slide').forEach(s=>s.style.width=w+'px');
 }
 
 function _calSnap(){
-  document.getElementById('cal-slider').style.transform=`translateX(${-_calW()}px)`;
+  const w=_calW();
+  if(!w)return;
+  document.getElementById('cal-slider').style.transform=`translateX(${-w}px)`;
 }
 
 function _initCalDrag(){
   const outer=document.getElementById('cal-slider-outer');
   const slider=document.getElementById('cal-slider');
-  _calSetSizes();
-  _calSnap();
-  window.addEventListener('resize',()=>{_calSetSizes();if(!_calAnimating)_calSnap();});
+
+  // ResizeObserver garantit les bonne tailles dès que la vue devient visible
+  new ResizeObserver(()=>{
+    _calSetSizes();
+    if(!_calAnimating)_calSnap();
+  }).observe(outer);
 
   function onStart(clientX){
     if(_calAnimating)return;

@@ -20,12 +20,13 @@
   .action-btn:hover { background:var(--surface2); color:var(--text); }
   .action-btn.danger:hover { border-color:rgba(220,80,60,.4); color:rgba(220,80,60,.8); background:rgba(220,80,60,.05); }
   .action-btn.promote { border-color:rgba(245,200,66,.3); color:var(--sun); }
-  .modal-body { display:flex; flex-direction:column; gap:1rem; }
-  .user-stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-  .mini-stat { background:var(--surface2); border-radius:6px; padding:.6rem .8rem; font-size:11px; }
-  .mini-label { color:var(--muted); font-size:10px; }
-  .mini-val   { color:var(--text); font-weight:500; }
+  .modal-body { display:flex; flex-direction:column; gap:1.2rem; }
   .badge-list { display:flex; flex-wrap:wrap; gap:6px; }
+  .user-detail-header { display:flex; align-items:center; gap:.7rem; padding-bottom:.8rem; border-bottom:1px solid var(--border); }
+  .detail-section-title { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+  .diff-block { margin-bottom:.9rem; }
+  .diff-block-title { font-size:11px; letter-spacing:.06em; margin-bottom:.4rem; }
+  .diff-block:last-child { margin-bottom:0; }
 </style>
 </head>
 <body>
@@ -89,7 +90,7 @@
 
 <!-- Modal détail utilisateur -->
 <div class="overlay" id="user-modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:580px;max-height:88vh;overflow-y:auto">
     <div class="modal-title" id="modal-username">—</div>
     <div id="modal-body" class="modal-body"></div>
     <div style="display:flex;gap:8px;margin-top:.5rem;justify-content:flex-end">
@@ -183,39 +184,77 @@ async function openUserModal(userId) {
   if (!u) return;
 
   document.getElementById('modal-username').textContent = u.username;
+  document.getElementById('modal-body').innerHTML = '<p style="font-size:12px;color:var(--muted)">Chargement…</p>';
+  document.getElementById('user-modal').classList.add('show');
 
   const [statsRes, earnedRes] = await Promise.all([
     db.from('player_stats').select('*').eq('user_id', userId),
     db.from('player_badges').select('badge_id, earned_at').eq('user_id', userId)
   ]);
 
-  const stats   = statsRes.data || [];
-  const earned  = earnedRes.data || [];
-  const earnedIds = new Set(earned.map(b => b.badge_id));
+  const stats     = statsRes.data || [];
+  const earned    = earnedRes.data || [];
+  const earnedMap = Object.fromEntries(earned.map(b => [b.badge_id, b.earned_at]));
+  const earnedIds = new Set(Object.keys(earnedMap));
 
-  const diffLabels = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
-  const statsHtml = stats.length ? stats.map(s => `
-    <div class="mini-stat">
-      <div class="mini-label">${diffLabels[s.difficulty] || s.difficulty}</div>
-      <div class="mini-val">${s.games_played} parties · meilleur ${fmtTime(s.best_time)}</div>
-    </div>`).join('') : '<p style="font-size:12px;color:var(--muted)">Aucune partie jouée.</p>';
+  const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+  const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
-  const badgesHtml = allBadges.map(b => `
-    <span id="badge-chip-${b.id}" class="badge-chip ${earnedIds.has(b.id) ? 'earned' : ''}" style="cursor:pointer" onclick='toggleBadge("${userId}","${b.id}",${earnedIds.has(b.id)})' title="${earnedIds.has(b.id) ? 'Cliquez pour retirer' : 'Cliquez pour attribuer'}">
-      ${b.icon} ${escHtml(b.name)}
-    </span>`).join('');
+  // Globales
+  const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
+  const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);
+  const allBests   = stats.filter(r => r.best_time > 0).map(r => r.best_time);
+  const globalBest = allBests.length ? Math.min(...allBests) : 0;
 
-  document.getElementById('modal-body').innerHTML = `
-    <div>
-      <p class="stat-label" style="margin-bottom:.5rem">Statistiques</p>
-      <div style="display:flex;flex-direction:column;gap:6px">${statsHtml}</div>
-    </div>
-    <div>
-      <p class="stat-label" style="margin-bottom:.5rem">Badges (cliquer pour attribuer/retirer)</p>
-      <div class="badge-list">${badgesHtml}</div>
+  const globalHtml = `
+    <div class="stats-grid">
+      <div class="stat-card"><span class="stat-label">Parties jouées</span><span class="stat-val">${totalGames}</span></div>
+      <div class="stat-card"><span class="stat-label">Badges obtenus</span><span class="stat-val green">${earnedIds.size}/${allBadges.length}</span></div>
+      <div class="stat-card"><span class="stat-label">Meilleur temps</span><span class="stat-val best">${fmtTime(globalBest)}</span></div>
+      <div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">${fmtTime(totalTime)}</span></div>
     </div>`;
 
-  document.getElementById('user-modal').classList.add('show');
+  // Par difficulté
+  const diffHtml = ['easy','medium','hard'].map(diff => {
+    const s = stats.find(r => r.difficulty === diff) || { games_played:0, best_time:0, total_time:0 };
+    const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
+    return `<div class="diff-block">
+      <p class="diff-block-title" style="color:${DIFF_COLORS[diff]}">${DIFF_LABELS[diff]}</p>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>
+        <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmtTime(s.best_time)}</span></div>
+        <div class="stat-card"><span class="stat-label">Moyenne</span><span class="stat-val avg">${fmtTime(avg)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Badges
+  const badgesHtml = allBadges.map(b => {
+    const has = earnedIds.has(b.id);
+    return `<span id="badge-chip-${b.id}" class="badge-chip ${has ? 'earned' : ''}" style="cursor:pointer"
+      onclick='toggleBadge("${userId}","${b.id}",${has})'
+      title="${has ? 'Cliquer pour retirer' : 'Cliquer pour attribuer'}">
+      ${b.icon} ${escHtml(b.name)}
+    </span>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="user-detail-header">
+      <span class="role-chip ${u.role}">${u.role}</span>
+      <span style="font-size:11px;color:var(--muted)">Membre depuis ${fmtDate(u.created_at)}</span>
+    </div>
+    <div>
+      <p class="detail-section-title">Statistiques globales</p>
+      ${globalHtml}
+    </div>
+    <div>
+      <p class="detail-section-title">Par difficulté</p>
+      ${diffHtml}
+    </div>
+    <div>
+      <p class="detail-section-title">Badges — cliquer pour attribuer / retirer</p>
+      <div class="badge-list">${badgesHtml || '<span style="font-size:12px;color:var(--muted)">Aucun badge défini.</span>'}</div>
+    </div>`;
 }
 
 function closeModal() {

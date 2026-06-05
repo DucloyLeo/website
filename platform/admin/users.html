@@ -269,6 +269,8 @@ async function toggleBadge(userId, badgeId, hasIt) {
   } else {
     await db.from('player_badges').insert({ user_id: userId, badge_id: badgeId });
     await logAdminAction('grant_badge', userId, { badge_id: badgeId });
+    const badge = allBadges.find(b => b.id === badgeId);
+    if (badge) await db.from('notifications').insert({ user_id: userId, type: 'badge', payload: { badges: [badge] } }).catch(() => {});
   }
   await openUserModal(userId);
   loadUsers();

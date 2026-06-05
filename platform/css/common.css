@@ -25,6 +25,10 @@
   --muted:     rgba(26,25,24,0.48);
 }
 
+[data-theme="light"] .btn { background: var(--surface); }
+[data-theme="light"] .btn:hover { background: var(--surface2); }
+[data-theme="light"] .btn.primary { background: var(--surface2); }
+
 body {
   background: var(--bg);
   color: var(--text);

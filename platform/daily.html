@@ -426,7 +426,7 @@ function showView(name){
 }
 
 async function openCatalogue(){
-  const today=getParisTodayStr();
+  const selectDate=currentDailyLevel?.date||getParisTodayStr();
   const catView=document.getElementById('view-catalogue');
   const playView=document.getElementById('view-play');
   playView.classList.add('anim-out');
@@ -436,7 +436,7 @@ async function openCatalogue(){
     catView.style.display='';
     catView.classList.add('anim-in');
     setTimeout(()=>catView.classList.remove('anim-in'),400);
-    await loadCatalogue(today);
+    await loadCatalogue(selectDate);
   },300);
 }
 
@@ -539,10 +539,11 @@ async function showResultLeaderboard(levelId,myTime){
 let selectedCalDate=null;
 
 async function loadCatalogue(selectDate){
-  const now=getParisNow();
-  calYear=now.getFullYear();calMonth=now.getMonth();
+  const target=selectDate||getParisTodayStr();
+  const d=new Date(target+'T00:00:00');
+  calYear=d.getFullYear();calMonth=d.getMonth();
   await loadMonthData();
-  await selectCalDay(selectDate||getParisTodayStr());
+  await selectCalDay(target);
 }
 
 async function loadMonthData(){
@@ -669,9 +670,9 @@ async function selectCalDay(dateStr){
     const d=new Date(dateStr+'T00:00:00');
     document.getElementById('detail-date').textContent=`${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
     document.getElementById('detail-diff').textContent=isFuture?'Niveau à venir':'Aucun niveau pour ce jour';
-    document.getElementById('mini-grid-wrap').innerHTML='';
-    document.getElementById('mini-overlay').style.display='none';
     document.getElementById('mini-grid-wrap').classList.remove('blurred');
+    document.getElementById('mini-grid-wrap').innerHTML=`<div style="width:246px;height:246px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;font-size:2.5rem">${isFuture?'🔒':'—'}</div>`;
+    document.getElementById('mini-overlay').style.display='none';
     document.getElementById('detail-lb').innerHTML='<p style="font-size:12px;color:var(--muted)">Aucun score.</p>';
     document.getElementById('detail-actions').innerHTML='';
     return;

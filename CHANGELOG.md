@@ -5,6 +5,64 @@
 
 ---
 
+## [v0.3] — Défis quotidiens & refonte calendrier
+
+### 📅 Système des défis journaliers
+
+- Page `/daily.html` avec deux modes :
+  - **Play** : résoudre le niveau du jour avec timer persistant (localStorage, résistant aux changements de fuseau horaire)
+  - **Catalogue** : archives de tous les niveaux passés + calendrier interactif
+- Admin `/admin/daily.html` pour créer/générer/modifier les niveaux journaliers
+- Table Supabase `daily_levels` (date, seed, difficulty, name) + `daily_completions` (user_id, level_id, time_seconds)
+- **Génération automatique** : bouton "Générer les jours manquants" crée les niveaux avec seeds aléatoires
+
+### 📆 Calendrier interactif
+
+- **Slider 3-slides** : affiche simultanément les 3 mois (prev, curr, next) avec transition lisse
+- **Drag-to-change-month** avec snapping magnétique (swipe droit/gauche)
+- Drag verrouillé avant mai 2026 (limite inférieure)
+- **Boutons de navigation** : flèches `‹ ›` avec animation de slide (drag + arrows synchronisés)
+- **Bouton de retour** (`←`) : revient au mois du niveau sélectionné, grayed out si déjà au bon mois
+- **Padding uniforme** : tous les mois complétés à 42 cellules (6 semaines) → hauteur stable
+- **Compteur de complétion** : `done / total_jours_du_mois` (total = 31, 28, etc., non limité aux jours passés)
+- **Sélection persistante** : changer de mois garde la sélection active (elle devient juste invisible)
+- Affichage du panneau de détail même sur jours futurs/sans niveau (placeholder 🔒 ou —)
+
+### 🎯 Refonte catalogue & détail
+
+- Mini-grille du puzzle en vue catalogue
+- **Leaderboard** : top 10 + voisins de l'utilisateur (classement par temps)
+- Bouton "Commencer" **uniquement sur la mini-grille** (centré, clickable)
+- **Relancé les niveaux complétés** : bouton "↺ Rejouer" en bas à droite du temps
+- Popup de victoire **centrée sur la grille** (position absolue) avec fond semi-transparent (`.4 opacity`)
+- Retour au calendrier après jeu revient à la **même date sélectionnée** (pas de saut au jour actuel)
+
+### 🎨 Améliorations UX
+
+- **Mode clair/sombre** : toggle slider dans la navbar, persisté en localStorage
+- **Icone VIP** (✦) + bouton "Lien du jour" (📅) ajoutés à la navbar et hamburger menu
+- **Notifications en toast** : affichage en haut-center avec fade-in/out, stacking horizontal
+- **Notifications Realtime** : badges débloqués, messages admin, changements de rôle reçus en temps réel via Supabase Realtime
+- Tooltips sur boutons du jeu (1s delay) avec raccourcis clavier
+
+### 🔧 Corrections & Optimisations
+
+- **Scintillement calendrier supprimé** : chargement données en parallèle de l'animation, rendu DOM après le snap
+- **Layout mois futurs fixé** : slider width calculée en JS (flexbox ambiguïté → grid explicite en pixels)
+- **ResizeObserver** : recalcule les tailles dès que le conteneur devient visible
+- **Scores sauvegardés** : cache mis à jour après chaque complétion, visuel et sélection refreshes
+- **Niveaux passés jouables** : `currentIsReplay` vérifiée correctement (true seulement si déjà complété)
+- **Seeds verrouillés** : jours passés complétés → champ seed disabled, opacifié, avec tooltip
+- Admin past days : génération après date autorisée, modification seed verrouillée post-complétion
+
+### 🗄 Changements base de données
+
+- 2 nouvelles tables : `daily_levels`, `daily_completions`
+- RLS policies pour accès user (lecture) et admin (full)
+- Trigger optionnel : auto-complétion du jour via batch job (non implémenté, manuel pour l'instant)
+
+---
+
 ## [v0.2] — Plateforme complète & mise en ligne
 
 ### 🔐 Comptes utilisateurs

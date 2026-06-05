@@ -29,17 +29,19 @@ Jeu de puzzle de logique (clone de Tango/LinkedIn) publié publiquement avec com
 ```
 platform/
 ├── index.html              ← Page de jeu Tangoléo (homepage)
+├── daily.html              ← Défis quotidiens (Play + Catalogue)
 ├── tango.html              ← Redirect vers / (legacy)
 ├── login.html              ← Connexion / Inscription
 ├── profile.html            ← Profil utilisateur
 ├── tips.html               ← Conseils & stratégies
 ├── css/
-│   └── common.css          ← Styles partagés
+│   └── common.css          ← Styles partagés + dark/light mode
 ├── js/
 │   ├── supabase-client.js  ← Init Supabase
-│   └── auth.js             ← Helpers auth + stats + badges
+│   └── auth.js             ← Helpers auth + stats + badges + theme + notifications
 ├── admin/
 │   ├── index.html          ← Dashboard admin
+│   ├── daily.html          ← Gestion niveaux journaliers
 │   ├── users.html          ← Gestion utilisateurs
 │   ├── levels.html         ← Niveaux personnalisés
 │   └── badges.html         ← Gestion badges
@@ -66,6 +68,9 @@ platform/
 | `login_logs` | user_id, logged_at, ua_hash (SHA-256 tronqué) |
 | `admin_logs` | admin_id, action, target_user_id, details |
 | `custom_levels` | seed, name, difficulty, is_active |
+| `daily_levels` | id, date (YYYY-MM-DD unique), seed (7 ou 16 chars), difficulty, name (opt), created_at |
+| `daily_completions` | id, user_id, daily_level_id, time_seconds, completed_at |
+| `notifications` | id, user_id, type (badge/admin_message/role_change), data (JSON), is_read, created_at |
 
 ### RLS important
 - `player_stats` : besoin de policies **INSERT** et **UPDATE** explicites (le `FOR ALL USING` ne couvre pas INSERT dans Supabase)
@@ -104,6 +109,27 @@ CREATE POLICY "Stats delete" ON player_stats FOR DELETE USING (auth.uid() = user
 - Modale de victoire avec temps + badges débloqués
 - Stats locales (localStorage) + stats Supabase si connecté
 
+### Défis journaliers (daily.html)
+- **Play** : résoudre le niveau du jour avec timer persistant (localStorage sur `daily_timer_YYYY-MM-DD`)
+- **Catalogue** : archives complètes, calendrier interactif avec navigation smooth
+- **Calendrier** : 
+  - Slider 3-pages (prev/curr/next) avec drag-to-change synchronisé aux boutons `‹ ›`
+  - Snapping magnétique et animation cubic-bezier
+  - Drag verrouillé avant mai 2026
+  - Sélection persiste en changeant de mois
+  - Bouton retour (`←`) revient au mois de la sélection
+  - Tous les mois padded à 42 cellules (hauteur uniforme)
+- **Leaderboard** : top 10 + neighbors affichés en jeu + catalogue
+- **Replay** : bouton "Rejouer" pour les niveaux complétés, "Commencer" sur mini-grille seulement
+- **Admin** (`/admin/daily.html`) : créer/générer/modifier niveaux avec date + seed + difficulté
+
+### Mode clair/sombre (dark/light mode)
+- Toggle slider dans navbar avec icônes ☀/🌙
+- Persistance en localStorage (`tango_theme`)
+- CSS custom properties : `--bg`, `--surface`, `--text`, `--muted`, `--border`, `--border2`, `--green`, `--sun`, `--moon`
+- Appliqué sur page load (script dans `<head>` avant CSS)
+- Classes utilitaires : `.light-only`, `.dark-only`
+
 ### Auth (auth.js)
 - `signUp`, `signIn`, `signOut`
 - `saveGameResult(userId, diff, timeSeconds, seed, assisted)` — `assisted=true` skip best_time
@@ -127,10 +153,17 @@ CREATE POLICY "Stats delete" ON player_stats FOR DELETE USING (auth.uid() = user
 - Badges : créer/supprimer des badges
 - `requireAdmin('/index.html')` — redirige vers homepage si non admin (corrigé : évite boucle)
 
+### Notifications (Supabase Realtime)
+- Toast notifications en haut-center avec fade-in/out staggeré
+- Types : badge débloqué, message admin broadcast, changement de rôle
+- Insertion dans table `notifications` → listeners Realtime reçoivent l'événement
+- Socket Supabase ouvert à `initNavAuth()`
+
 ### Navigation
 - Hamburger sur **toutes** les pages (auth.js global)
-- Liens hamburger : 🎮 Jouer → 💡 Conseils → auth items
-- Sur la page jeu : ✦ Nouvelle partie → 🎯 Difficulté → ⌨️ Commandes → 💡 Conseils → auth items → toggle "Mémoriser la difficulté"
+- Liens hamburger : 🎮 Jouer → 📅 Défi du jour → 💡 Conseils → auth items
+- Sur la page jeu : 🌟 Nouvelle partie → 🎯 Difficulté → ⌨️ Commandes → 💡 Conseils → auth items → toggle "Mémoriser la difficulté"
+- Navbar : toggle ☀/🌙 (mode clair/sombre) + icône ✦ VIP si utilisateur VIP
 - Logo "☀ Tangoléo 🌙" sur la page jeu = lien cliquable vers /index.html
 
 ---
@@ -182,6 +215,33 @@ UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NUL
 
 ---
 
+## Mises à jour v0.3
+
+### Patterns Supabase importants
+- ✅ `.catch()` sur PostgrestBuilder → **toujours** utiliser `{ error }` destructuring ou try/catch
+- ✅ RLS policies : besoin d'INSERT/UPDATE explicites (le `FOR ALL USING` ne couvre pas tout)
+- ✅ Admin notifications RLS : filtrer `user_id=null` côté client APRÈS la requête (pas possible en policy)
+
+### Supabase Realtime (WebSocket)
+```js
+// Écouter les notifications en temps réel
+const channel = db.channel('notifications').on(
+  'postgres_changes',
+  { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
+  payload => { handleNotification(payload.new); }
+).subscribe();
+```
+
+### Calendrier (daily.html)
+- `calMonth`, `calYear` : mois courant affiché
+- `selectedCalDate` : date sélectionnée (YYYY-MM-DD, peut être invisible si autre mois)
+- `_calAnimating`, `_calDragging` : flags pour éviter des actions concurrentes
+- `_calSetSizes()` : réappelé après chaque `renderCalendar()` ET au resize
+- `_calSnap()` : recentre le slider sur le slide courant (position relative en pixels)
+- Tous les changes de mois : `loadMonthData(false)` → delay rendu → animate → `renderCalendar()` après
+
+---
+
 ## Patterns importants à retenir
 
 ### Supabase JS v2
@@ -198,3 +258,15 @@ UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NUL
 - Seed format 7 chars = puzzle généré (diff encodée dans les bits)
 - Seed format 16 chars = puzzle custom (grille complète encodée)
 - `isAssisted` : flag global remis à false à chaque `startGeneration()`
+
+### Daily challenges & Calendrier
+- **Dates** : format `YYYY-MM-DD` (ISO 8601, Paris timezone)
+- **Helper** : `getParisTodayStr()` retourne la date du jour en Paris (resistant aux changements de fuseau horaire)
+- **Timer persistance** : localStorage key `daily_timer_YYYY-MM-DD` stocke le timestamp de démarrage (pas la durée)
+- **Cache mois** : `levelsCache[dateStr]` et `completionsCache[levelId]` peuplés par `loadMonthData()`
+- **Animation calendrier** : 
+  - Données chargées **avant** le snap (`loadMonthData(false)` sans render immédiat)
+  - Rendu DOM **après** l'animation (dans `setTimeout` post-snap)
+  - Élimine les scintillements et recalculs de layout pendant la transition
+- **ResizeObserver** : recalcule slider width/height dès que `.cal-slider-outer` change de taille
+- **Sélection stable** : `selectedCalDate` persiste même quand invisible (en changeant de mois)

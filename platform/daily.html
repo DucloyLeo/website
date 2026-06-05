@@ -48,6 +48,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .level-label{font-size:11px;color:var(--muted);text-align:center}
 
 /* ── Result panel ── */
+#result-panel{display:flex!important;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
 .result-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.5rem 2rem;max-width:480px;width:100%;display:flex;flex-direction:column;gap:1rem;text-align:center}
 .result-time{font-size:2rem;font-weight:500;color:var(--sun);letter-spacing:.06em}
 .result-rank{font-size:13px;color:var(--muted)}
@@ -146,7 +147,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
         <hr class="sep" style="margin:.2rem 0">
         <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:left">Classement</p>
         <div class="lb-wrap" id="result-lb"></div>
-        <button class="btn btn-full" onclick="openCatalogue()" style="margin-top:.3rem">📅 Voir le catalogue</button>
+        <button class="btn btn-full" onclick="openCatalogue()" style="margin-top:.3rem">📅 Voir le calendrier</button>
       </div>
     </div>
   </main>

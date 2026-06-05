@@ -312,9 +312,12 @@ function _initRealtime(userId) {
   _notifChannel = db.channel('app-notifications')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
       ({ new: row }) => {
+        console.log('[Realtime] event reçu:', row);
         if (row.user_id === userId || row.user_id === null) _dispatchNotif(row);
       })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('[Realtime] status:', status, err || '');
+    });
 }
 
 // Envoyer une notification globale (admin uniquement)

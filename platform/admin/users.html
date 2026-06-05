@@ -304,12 +304,10 @@ async function deleteUserAdmin(userId, username) {
 
 async function logAdminAction(action, targetId, details) {
   const admin = await getCurrentUser();
-  await db.from('admin_logs').insert({
-    admin_id: admin.id,
-    action,
-    target_user_id: targetId,
-    details
-  }).catch(() => {});
+  const { error } = await db.from('admin_logs').insert({
+    admin_id: admin.id, action, target_user_id: targetId, details
+  });
+  if (error) console.warn('admin_log:', error.message);
 }
 
 function escHtml(s) {

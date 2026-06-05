@@ -1,16 +1,8 @@
 /**
- * Cloudflare Workers script pour servir les fichiers statiques
- * avec les bons headers SEO et caching
+ * Cloudflare Workers script pour servir les fichiers SEO
  */
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-
-    // Servir sitemap.xml
-    if (pathname === '/sitemap.xml') {
-      const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
+const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://tangoleo.fr/</loc>
@@ -62,26 +54,32 @@ export default {
   </url>
 </urlset>`;
 
-      return new Response(sitemapContent, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/xml; charset=UTF-8',
-          'Cache-Control': 'public, max-age=86400',
-          'X-Content-Type-Options': 'nosniff',
-        },
-      });
-    }
-
-    // Servir robots.txt
-    if (pathname === '/robots.txt') {
-      const robotsContent = `# Tangoléo — Directives pour les crawlers des moteurs de recherche
+const ROBOTS = `# Tangoléo — Directives pour les crawlers
 User-agent: *
 Allow: /
 Disallow: /admin/
 
 Sitemap: https://tangoleo.fr/sitemap.xml`;
 
-      return new Response(robotsContent, {
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    // Servir sitemap.xml
+    if (pathname === '/sitemap.xml') {
+      return new Response(SITEMAP, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml; charset=UTF-8',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+
+    // Servir robots.txt
+    if (pathname === '/robots.txt') {
+      return new Response(ROBOTS, {
         status: 200,
         headers: {
           'Content-Type': 'text/plain; charset=UTF-8',
@@ -90,7 +88,7 @@ Sitemap: https://tangoleo.fr/sitemap.xml`;
       });
     }
 
-    // Pour tous les autres fichiers, utiliser le bucket de fichiers statiques
-    return env.ASSETS.fetch(request);
+    // Pour les autres requêtes, passer à Cloudflare Pages
+    return new Response('Not found', { status: 404 });
   },
 };

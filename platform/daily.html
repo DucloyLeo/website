@@ -88,6 +88,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .cal-nav-btn{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-size:1rem;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
 .cal-nav-btn:hover:not(:disabled){background:var(--surface2);color:var(--text)}
 .cal-nav-btn:disabled{opacity:.3;cursor:default}
+.cal-nav-go{position:absolute;left:0}
 .cal-weekdays-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
 .cal-weekdays-row>div{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:4px 0;user-select:none}
 .cal-slider-outer{overflow:hidden}
@@ -176,8 +177,8 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     <!-- Calendar -->
     <div class="cal-wrap">
       <div class="cal-header">
+        <button class="cal-nav-btn cal-nav-go" id="btn-go-selected" onclick="goToSelectedMonth()" style="display:none" title="Revenir au mois sélectionné">←</button>
         <button class="cal-nav-btn" id="btn-prev-cal" onclick="prevCalMonth()">‹</button>
-        <button class="cal-nav-btn" id="btn-go-selected" onclick="goToSelectedMonth()" style="display:none" title="Aller au mois sélectionné">⚡</button>
         <span class="cal-month-label" id="cal-label"></span>
         <button class="cal-nav-btn" onclick="nextCalMonth()">›</button>
         <span class="cal-completion" id="cal-completion"></span>
@@ -593,9 +594,12 @@ function renderCalendar(){
   if(goBtn&&selectedCalDate){
     const selYear=parseInt(selectedCalDate.slice(0,4));
     const selMonth=parseInt(selectedCalDate.slice(5,7))-1;
-    goBtn.style.display=(selYear!==calYear||selMonth!==calMonth)?'':'none';
+    const isDifferent=(selYear!==calYear||selMonth!==calMonth);
+    goBtn.style.display=isDifferent?'':'none';
+    goBtn.disabled=!isDifferent;
   }else if(goBtn){
     goBtn.style.display='none';
+    goBtn.disabled=true;
   }
 }
 

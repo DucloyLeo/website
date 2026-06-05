@@ -198,6 +198,7 @@ async function handleResetStats(btn) {
   await db.from('completed_levels').delete().eq('user_id', user.id);
   await db.from('player_stats').delete().eq('user_id', user.id);
   await db.from('player_badges').delete().eq('user_id', user.id);
+  try { localStorage.removeItem('tango_stats_v2'); } catch(e) {}
   window.location.reload();
 }
 

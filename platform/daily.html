@@ -757,9 +757,12 @@ async function selectCalDay(dateStr){
   // Actions
   const actionsEl=document.getElementById('detail-actions');
   if(comp){
-    actionsEl.innerHTML=`<span style="font-size:12px;color:var(--green)">✓ Complété en ${fmt(comp.time_seconds)}</span>`;
+    actionsEl.innerHTML=`
+      <span style="font-size:12px;color:var(--green)">✓ Complété en ${fmt(comp.time_seconds)}</span>
+      <button class="btn" onclick="startFromCatalogue()" style="margin-left:auto">↺ Rejouer</button>
+    `;
   }else{
-    actionsEl.innerHTML=`<button class="btn sun" onclick="startFromCatalogue()">Commencer</button>`;
+    actionsEl.innerHTML='';
   }
 
   // Leaderboard

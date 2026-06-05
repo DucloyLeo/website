@@ -310,10 +310,10 @@ function _dispatchNotif(row) {
 function _initRealtime(userId) {
   if (_notifChannel) { db.removeChannel(_notifChannel); _notifChannel = null; }
   _notifChannel = db.channel('app-notifications')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      ({ new: row }) => _dispatchNotif(row))
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=is.null' },
-      ({ new: row }) => _dispatchNotif(row))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
+      ({ new: row }) => {
+        if (row.user_id === userId || row.user_id === null) _dispatchNotif(row);
+      })
     .subscribe();
 }
 

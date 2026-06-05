@@ -128,7 +128,9 @@ async function loadProfile() {
   const earnedMap = Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at]));
 
   // Header
-  document.getElementById('profile-name').textContent = profile.username;
+  const vipBadge = profile.role === 'vip'   ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--moon);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">✦ VIP</span>' : '';
+  const adminBadge = profile.role === 'admin' ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--sun);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">Admin</span>' : '';
+  document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
   document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
   if (profile.role === 'admin') {
     document.getElementById('profile-meta').textContent += ' · Administrateur';

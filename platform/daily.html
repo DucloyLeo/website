@@ -292,11 +292,20 @@ async function checkWin(){
 
     // Save if first completion and logged in
     if(currentUserId&&currentDailyLevel&&!currentIsReplay){
-      const{error}=await db.from('daily_completions').insert({
+      const{data:saved,error}=await db.from('daily_completions').insert({
         user_id:currentUserId,daily_level_id:currentDailyLevel.id,time_seconds:elapsed
-      });
+      }).select().single();
       if(error&&!error.message.includes('unique'))console.warn('daily save:',error.message);
-      // Clear timer key
+      else if(saved){
+        // Mettre à jour le cache et le calendrier
+        completionsCache[currentDailyLevel.id]=saved;
+        renderCalendar();
+        // Mettre à jour la mini-grille (plus de flou)
+        document.getElementById('mini-grid-wrap')?.classList.remove('blurred');
+        document.getElementById('mini-overlay').style.display='none';
+        const actEl=document.getElementById('detail-actions');
+        if(actEl)actEl.innerHTML=`<span style="font-size:12px;color:var(--green)">✓ Complété en ${fmt(elapsed)}</span>`;
+      }
       try{localStorage.removeItem('daily_timer_'+getParisTodayStr());}catch(e){}
     }
 
@@ -673,7 +682,7 @@ async function selectCalDay(dateStr){
 
   // Set level for potential game start
   currentDailyLevel=level;
-  currentIsReplay=comp?true:(dateStr!==today);
+  currentIsReplay=!!comp; // replay uniquement si déjà complété
 
   // Labels
   document.getElementById('detail-date').textContent=

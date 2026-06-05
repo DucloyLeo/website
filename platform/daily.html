@@ -10,7 +10,7 @@
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
 /* ── Layout ── */
-.daily-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.2rem}
+.daily-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.2rem;position:relative}
 .view{width:100%}
 @keyframes fadeInUp  {from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeOutDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(24px)}}
@@ -48,7 +48,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .level-label{font-size:11px;color:var(--muted);text-align:center}
 
 /* ── Result panel ── */
-#result-panel{display:flex!important;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+#result-panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);border-radius:14px}
 .result-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.5rem 2rem;max-width:480px;width:100%;display:flex;flex-direction:column;gap:1rem;text-align:center}
 .result-time{font-size:2rem;font-weight:500;color:var(--sun);letter-spacing:.06em}
 .result-rank{font-size:13px;color:var(--muted)}

@@ -30,6 +30,11 @@
   --anim-win-duration:     500ms;
   --anim-win-color:        rgba(245, 200, 66, 0.30);
   --anim-win-stagger:      28ms;
+
+  /* Lueur de ligne/colonne complétée */
+  --anim-line-glow-duration: 600ms;
+  --anim-line-glow-color:    rgba(245, 200, 66, 0.45);
+  /* (le stagger de propagation est dans animations.js : ANIM_LINE_GLOW_STAGGER) */
 }
 
 /* ── Respect de prefers-reduced-motion ────────────── */
@@ -42,6 +47,7 @@
     --anim-win-duration:     0ms;
     --anim-grid-stagger:     0ms;
     --anim-win-stagger:      0ms;
+    --anim-line-glow-duration: 0ms;
   }
 }
 
@@ -96,4 +102,14 @@
 }
 .anim-win-flash {
   animation: anim-win-flash var(--anim-win-duration) ease both;
+}
+
+/* ── Lueur de bordure (ligne/colonne complétée) ───── */
+@keyframes anim-line-glow {
+  0%   { box-shadow: inset 0 0 0 0 transparent; }
+  40%  { box-shadow: inset 0 0 0 2px var(--anim-line-glow-color), 0 0 10px var(--anim-line-glow-color); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+.anim-line-glow {
+  animation: anim-line-glow var(--anim-line-glow-duration) ease both;
 }

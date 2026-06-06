@@ -404,6 +404,18 @@ function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementBy
 function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
 
 /* Game logic */
+function animLineComplete(r,c,prev,next){
+  if(prev!==EMPTY||next===EMPTY||typeof ANIM==='undefined')return;
+  const rows=document.getElementById('grid').querySelectorAll('tr');
+  if(board[r].every(v=>v!==EMPTY)){
+    const cells=[...rows[r].querySelectorAll('.ci')];
+    ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());
+  }
+  if(board.every(row=>row[c]!==EMPTY)){
+    const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);
+    ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);
+  }
+}
 function cycleCell(r,c,dir){
   if(gameWon)return;
   const prev=board[r][c];
@@ -416,6 +428,7 @@ function cycleCell(r,c,dir){
     const newEl=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
     if(newEl){next===EMPTY?ANIM.erase(newEl):ANIM.place(newEl);}
   }
+  animLineComplete(r,c,prev,next);
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
 function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;const key=r+','+c;if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}renderGrid();updateErrorTimers();}

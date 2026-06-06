@@ -476,9 +476,25 @@ function renderGrid(){
   }
 }
 
-function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;hist.push({r,c,prev:board[r][c]});board[r][c]=val;clearCellError(r+','+c);clearHintPreview();renderGrid();updateErrorTimers();if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;clearCellError(r+','+c);clearHintPreview();renderGrid();updateErrorTimers();if(typeof ANIM!=='undefined'){const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el)ANIM.place(el);}animLineComplete(r,c,prev,val);if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
 
 /* ── Game ── */
+// Lueur en cascade quand une case vide vient compléter sa ligne/colonne.
+// La cascade se propage VERS la case qu'on vient de remplir.
+function animLineComplete(r,c,prev,next){
+  if(prev!==EMPTY||next===EMPTY||typeof ANIM==='undefined')return;
+  const rows=document.getElementById('grid').querySelectorAll('tr');
+  if(board[r].every(v=>v!==EMPTY)){
+    const cells=[...rows[r].querySelectorAll('.ci')];
+    // case à droite (c>=3) → cascade gauche→droite (ordre naturel) ; sinon inversé
+    ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());
+  }
+  if(board.every(row=>row[c]!==EMPTY)){
+    const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);
+    // case en haut (r<3) → cascade bas→haut (inversé) ; sinon haut→bas (naturel)
+    ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);
+  }
+}
 function cycleCell(r,c,dir){
   if(gameWon)return;if(!timerOn&&!timerDone)startTimer();clearHintPreview();
   const prev=board[r][c];
@@ -490,6 +506,7 @@ function cycleCell(r,c,dir){
     const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
     if(el){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
   }
+  animLineComplete(r,c,prev,next);
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
 function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();clearHintPreview();clearCellError(r+','+c);board[r][c]=prev;renderGrid();updateErrorTimers();}

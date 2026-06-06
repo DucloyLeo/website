@@ -8,6 +8,9 @@
 //  Pour désactiver une animation : retourner early.
 // ═══════════════════════════════════════════════════════
 
+// Décalage entre chaque case lors de la propagation de la lueur (ms)
+const ANIM_LINE_GLOW_STAGGER = 55;
+
 const ANIM = {
 
   // Vérifie la préférence système (prefers-reduced-motion).
@@ -65,6 +68,16 @@ const ANIM = {
         el.style.removeProperty('--ci');
       });
     }, delay);
+  },
+
+  // ── Lueur de ligne/colonne complétée ─────────────────
+  // orderedCells : les cases dans l'ordre de propagation
+  // (la première brille en premier, la dernière en dernier).
+  lineGlow(orderedCells) {
+    if (this.reduced) return;
+    orderedCells.forEach((el, i) => {
+      setTimeout(() => this._trigger(el, 'anim-line-glow', 700), i * ANIM_LINE_GLOW_STAGGER);
+    });
   },
 
   // ── Cascade de victoire ──────────────────────────────

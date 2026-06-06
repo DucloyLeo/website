@@ -88,6 +88,7 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .diff-badge-btn.medium{border-color:#f5c84266;color:var(--sun)}
 .diff-badge-btn.hard{border-color:#d87a5066;color:#d87a50}
 .diff-badge-btn.custom{border-color:rgba(143,168,212,.4);color:var(--moon)}
+.diff-badge-btn.extreme{border-color:rgba(180,30,30,.5);color:#c0392b}
 
 .grid-outer{position:relative}
 .grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
@@ -170,6 +171,13 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
         <span>Mémoriser la difficulté</span>
         <label class="toggle" onclick="event.stopPropagation()">
           <input type="checkbox" id="pref-remember" onchange="onPrefChange()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+      <div class="nav-menu-item menu-pref-row" onclick="toggleExtremeMode(event)" style="color:var(--sun)">
+        <span>☠ Mode extrême</span>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()">
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
       </div>
@@ -290,12 +298,12 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 <script>
 // ═══ GAME ENGINE (identique à tango.html original) ═══════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
-const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile',custom:'Perso'};
+const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile',extreme:'Extrême',custom:'Perso'};
 
 let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
-let generating=false,currentDiff=null,rememberDiff=false;
+let generating=false,currentDiff=null,rememberDiff=false,extremeMode=false;
 let errTimers={},activeErrors=new Set(),hintCell=null,gameWon=false;
 let currentSeedStr=null,rng=Math.random;
 let currentUserId=null;
@@ -324,13 +332,15 @@ function copySeed(){
 function onOverlayClick(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('show');}
 
 /* ── Prefs ── */
-function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}}catch(e){}}
+function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}extremeMode=localStorage.getItem('tango_extreme')==='1';document.getElementById('pref-extreme').checked=extremeMode;}catch(e){}}
 function savePrefs(){
   try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff&&currentDiff!=='custom')localStorage.setItem('tango_diff',currentDiff);}catch(e){}
   if(currentUserId){const patch={remember_diff:rememberDiff};if(rememberDiff&&currentDiff&&currentDiff!=='custom')patch.diff=currentDiff;saveUserPref(currentUserId,patch);}
 }
 function onPrefChange(){rememberDiff=document.getElementById('pref-remember').checked;savePrefs();}
 function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
+function onExtremePrefChange(){extremeMode=document.getElementById('pref-extreme').checked;try{localStorage.setItem('tango_extreme',extremeMode?'1':'0');}catch(e){}}
+function toggleExtremeMode(e){e.stopPropagation();const cb=document.getElementById('pref-extreme');cb.checked=!cb.checked;onExtremePrefChange();}
 
 /* ── Timer ── */
 function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
@@ -498,9 +508,10 @@ function pickDiff(diff){currentDiff=diff;if(rememberDiff)savePrefs();document.ge
 // Paramètres par difficulté — chargés depuis Supabase au démarrage,
 // valeurs ci-dessous = défauts utilisés si la DB est indisponible.
 let DIFF_PARAMS={
-  easy:  {cluesMin:14,cluesMax:20,constraintsMin:18,constraintsMax:26,eqRatioMin:0.60,eqRatioMax:0.80,techMin:1,techMax:3},
-  medium:{cluesMin:8, cluesMax:14,constraintsMin:10,constraintsMax:18,eqRatioMin:0.40,eqRatioMax:0.65,techMin:3,techMax:5},
-  hard:  {cluesMin:4, cluesMax:9, constraintsMin:3, constraintsMax:10,eqRatioMin:0.30,eqRatioMax:0.55,techMin:5,techMax:7},
+  easy:   {cluesMin:14,cluesMax:20,constraintsMin:18,constraintsMax:26,eqRatioMin:0.60,eqRatioMax:0.80,techMin:1,techMax:3},
+  medium: {cluesMin:8, cluesMax:14,constraintsMin:10,constraintsMax:18,eqRatioMin:0.40,eqRatioMax:0.65,techMin:3,techMax:5},
+  hard:   {cluesMin:4, cluesMax:9, constraintsMin:3, constraintsMax:10,eqRatioMin:0.30,eqRatioMax:0.55,techMin:5,techMax:7},
+  extreme:{cluesMin:4, cluesMax:6, constraintsMin:2, constraintsMax:5, eqRatioMin:0.00,eqRatioMax:0.30,techMin:5,techMax:7},
 };
 
 function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
@@ -554,7 +565,29 @@ function genForDiff(diff){
   return null;
 }
 
-function startGeneration(diff,forceSeedNum=null){if(generating)return;generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';document.getElementById('gen-modal').classList.add('show');resetTimer();hist=[];renderEmptyGrid();const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);setTimeout(()=>{let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);if(!res)return;puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));setDiffBadge(diff);renderGrid();},30);}
+function startGeneration(diff,forceSeedNum=null){
+  if(generating)return;
+  // Mode extrême : toujours extrême. Sinon, 10% de chance sur hard.
+  const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
+  generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('gen-label').textContent='Génération'+(effectiveDiff==='extreme'?' ☠ Extrême':' niveau '+DIFF_LABELS[diff])+'…';
+  document.getElementById('gen-modal').classList.add('show');
+  resetTimer();hist=[];renderEmptyGrid();
+  const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();
+  currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);
+  setTimeout(()=>{
+    let res=null;
+    for(let i=0;i<5;i++){res=genForDiff(effectiveDiff);if(res)break;}
+    // Fallback : si pas de puzzle extrême trouvé, repasser en hard
+    if(!res&&effectiveDiff==='extreme'){for(let i=0;i<5;i++){res=genForDiff('hard');if(res)break;}}
+    document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);
+    if(!res)return;
+    puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
+    board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
+    setDiffBadge(effectiveDiff==='extreme'?'extreme':diff);renderGrid();
+  },30);
+}
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
 
 /* ── Stats locales ── */

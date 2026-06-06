@@ -28,6 +28,8 @@
 .diff-card.easy .diff-card-title { color:var(--green); }
 .diff-card.medium .diff-card-title { color:var(--sun); }
 .diff-card.hard .diff-card-title { color:#d87a50; }
+.diff-card.extreme .diff-card-title { color:#c0392b; }
+.diff-card.extreme { border-color:rgba(192,57,43,.25); }
 </style>
 </head>
 <body>
@@ -93,13 +95,14 @@
 <script src="../js/supabase-client.js"></script>
 <script src="../js/auth.js?v=3"></script>
 <script>
-const DIFFS = ['easy','medium','hard'];
-const LABELS = { easy:'🌱 Facile', medium:'🔥 Moyen', hard:'💀 Difficile' };
+const DIFFS = ['easy','medium','hard','extreme'];
+const LABELS = { easy:'🌱 Facile', medium:'🔥 Moyen', hard:'💀 Difficile', extreme:'☠ Extrême' };
 
 const DEFAULTS = {
-  easy:   {clues_min:14,clues_max:20,constraints_min:18,constraints_max:26,eq_ratio_min:0.60,eq_ratio_max:0.80,tech_min:1,tech_max:3},
-  medium: {clues_min:8, clues_max:14,constraints_min:10,constraints_max:18,eq_ratio_min:0.40,eq_ratio_max:0.65,tech_min:3,tech_max:5},
-  hard:   {clues_min:4, clues_max:9, constraints_min:3, constraints_max:10,eq_ratio_min:0.30,eq_ratio_max:0.55,tech_min:5,tech_max:7},
+  easy:    {clues_min:14,clues_max:20,constraints_min:18,constraints_max:26,eq_ratio_min:0.60,eq_ratio_max:0.80,tech_min:1,tech_max:3},
+  medium:  {clues_min:8, clues_max:14,constraints_min:10,constraints_max:18,eq_ratio_min:0.40,eq_ratio_max:0.65,tech_min:3,tech_max:5},
+  hard:    {clues_min:4, clues_max:9, constraints_min:3, constraints_max:10,eq_ratio_min:0.30,eq_ratio_max:0.55,tech_min:5,tech_max:7},
+  extreme: {clues_min:4, clues_max:6, constraints_min:2, constraints_max:5, eq_ratio_min:0.00,eq_ratio_max:0.30,tech_min:5,tech_max:7},
 };
 
 let params = {};

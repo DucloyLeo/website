@@ -312,14 +312,6 @@ function saveUserPref(userId, patch) {
   }, 600);
 }
 
-// Révèle les éléments .dev-only sur les déploiements non-production
-(function(){
-  const prod = ['tangoleo.fr','www.tangoleo.fr'];
-  if(!prod.includes(location.hostname)){
-    document.querySelectorAll('.dev-only').forEach(el=>el.style.display='');
-  }
-})();
-
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
   const user = await getCurrentUser();

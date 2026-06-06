@@ -433,3 +433,6 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .ci.skin-bw.sym-moon::before { content: ''; }
 .ci.skin-bw.sym-sun  { background: #f4f4f4 !important; outline: 2px solid #888; outline-offset: -2px; }
 .ci.skin-bw.sym-moon { background: #111111 !important; outline: 2px solid #888; outline-offset: -2px; }
+/* En erreur, l'anneau N&B devient rouge epais (le box-shadow .ci.err
+   passe inapercu sur un fond plein blanc/noir) */
+.ci.skin-bw.err { outline: 3px solid #dc503c !important; outline-offset: -3px; }

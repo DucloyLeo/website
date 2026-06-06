@@ -608,7 +608,8 @@ function startGeneration(diff,forceSeedNum=null){
   generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
   document.getElementById('grid-wrap').classList.remove('blurred');
   document.getElementById('gen-label').textContent='Génération'+(effectiveDiff==='extreme'?' ☠ Extrême':' niveau '+DIFF_LABELS[diff])+'…';
-  document.getElementById('gen-modal').classList.add('show');
+  // N'afficher la modale que si la génération prend > 100ms (évite le flash)
+  const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);
   resetTimer();hist=[];renderEmptyGrid();
   const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();
   currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);
@@ -617,7 +618,7 @@ function startGeneration(diff,forceSeedNum=null){
     for(let i=0;i<5;i++){res=genForDiff(effectiveDiff);if(res)break;}
     // Fallback : si pas de puzzle extrême trouvé, repasser en hard
     if(!res&&effectiveDiff==='extreme'){for(let i=0;i<5;i++){res=genForDiff('hard');if(res)break;}}
-    document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);
+    clearTimeout(genModalTimer);document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));

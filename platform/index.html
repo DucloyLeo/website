@@ -376,6 +376,10 @@ function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));e
 function highlightCell(key,on){const[r,c]=key.split(',').map(Number);const rows=document.getElementById('grid').querySelectorAll('tr');if(!rows[r])return;const cells=rows[r].querySelectorAll('.ci');if(cells[c])cells[c].classList.toggle('err',on);}
 
 /* ── Render ── */
+function renderEmptyGrid(){
+  const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';
+  for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const inner=document.createElement('div');inner.className='ci';setCellSymbol(inner,EMPTY);td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
+}
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
   for(let r=0;r<N;r++){
@@ -455,7 +459,7 @@ function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt
 function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=rng()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
 function genForDiff(diff){const chR=diff==='easy'?.52:diff==='medium'?.30:.14;const cvR=diff==='easy'?.52:diff==='medium'?.30:.14;const maxCx=diff==='easy'?1:diff==='medium'?6:999;const minCx=diff==='easy'?0:diff==='medium'?2:6;for(let att=0;att<350;att++){const sol=genSolution();if(!sol)continue;const cch={},ccv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(rng()<chR)cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(rng()<cvR)ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);cells.sort(()=>rng()-.5);for(const[r,c]of cells){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved,cx}=humanSolve(puz,cch,ccv);if(!solved||cx>maxCx){puz[r][c]=sv;}}const{solved,cx}=humanSolve(puz,cch,ccv);if(!solved||cx<minCx||cx>maxCx)continue;if(countBT(puz,cch,ccv,2)!==1)continue;return{puzzle:puz,solution:sol,ch:cch,cv:ccv};}return null;}
 
-function startGeneration(diff,forceSeedNum=null){if(generating)return;generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';document.getElementById('gen-modal').classList.add('show');resetTimer();hist=[];document.getElementById('grid').innerHTML='';const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);setTimeout(()=>{let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);if(!res)return;puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));setDiffBadge(diff);renderGrid();},30);}
+function startGeneration(diff,forceSeedNum=null){if(generating)return;generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';document.getElementById('gen-modal').classList.add('show');resetTimer();hist=[];renderEmptyGrid();const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);setTimeout(()=>{let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);if(!res)return;puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));setDiffBadge(diff);renderGrid();},30);}
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
 
 /* ── Stats locales ── */
@@ -469,6 +473,7 @@ function startGameFromCustomSeed(decoded,seedStr){const{sol,sCh,sCv}=decoded;con
 
 /* ── Init ── */
 async function init(){
+  renderEmptyGrid();
   loadPrefs();
   const user=await initNavAuth();
   currentUserId=user?.id||null;

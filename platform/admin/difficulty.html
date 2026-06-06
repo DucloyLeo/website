@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Difficultés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css?v=5">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+.diff-form { display:flex; flex-direction:column; gap:1.5rem; }
+.param-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+.param-group { display:flex; flex-direction:column; gap:4px; }
+.param-label { font-size:11px; color:var(--muted); letter-spacing:.05em; }
+.param-label span { color:var(--text); font-size:10px; margin-left:4px; opacity:.5; }
+.param-row { display:flex; gap:6px; align-items:center; }
+.param-row .form-input { width:80px; }
+.param-sep { font-size:11px; color:var(--muted); }
+.tech-legend { font-size:11px; color:var(--muted); line-height:1.8; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.75rem 1rem; }
+.tech-legend b { color:var(--text); }
+.diff-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.5rem; }
+.diff-card-title { font-family:'Crimson Pro',serif; font-size:1.3rem; font-weight:600; margin-bottom:1rem; }
+.diff-card.easy .diff-card-title { color:var(--green); }
+.diff-card.medium .diff-card-title { color:var(--sun); }
+.diff-card.hard .diff-card-title { color:#d87a50; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
+      <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <div class="nav-menu-sep"></div>
+      <a href="/index.html" class="nav-menu-item">← Site public</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="index.html"      class="admin-nav-item">📊 Dashboard</a>
+    <a href="users.html"      class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="levels.html"     class="admin-nav-item">🎮 Niveaux</a>
+    <a href="badges.html"     class="admin-nav-item">🏅 Badges</a>
+    <a href="difficulty.html" class="admin-nav-item active">⚙️ Difficultés</a>
+    <hr class="sep">
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 style="font-size:1.8rem;margin-bottom:.5rem">Paramètres de difficulté</h1>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">
+        Ces paramètres contrôlent le générateur de grilles. Ils s'appliquent aux nouvelles générations — les niveaux existants ne sont pas affectés.
+      </p>
+
+      <!-- Légende des techniques -->
+      <div class="tech-legend" style="margin-bottom:1.5rem">
+        <b>Niveaux de technique</b> — techMin = minimum requis (garantit que le joueur doit l'utiliser) · techMax = maximum autorisé (plafond de difficulté)<br>
+        <b>L1</b> Triplet &nbsp;·&nbsp; <b>L2</b> Équilibre &nbsp;·&nbsp; <b>L3</b> Contrainte directe &nbsp;·&nbsp; <b>L4</b> Paire extrémité &nbsp;·&nbsp; <b>L5</b> Extrémités identiques &nbsp;·&nbsp; <b>L6</b> Dist4 &nbsp;·&nbsp; <b>L7</b> Élimination
+      </div>
+
+      <div class="diff-form" id="diff-form"></div>
+
+      <div style="margin-top:1.5rem;display:flex;gap:8px;align-items:center">
+        <button class="btn sun" onclick="saveAll()">💾 Enregistrer tout</button>
+        <button class="btn" onclick="resetDefaults()">↺ Réinitialiser les défauts</button>
+      </div>
+      <div class="alert error"   id="form-error"   style="margin-top:.75rem"></div>
+      <div class="alert success" id="form-success" style="margin-top:.75rem"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/auth.js?v=3"></script>
+<script>
+const DIFFS = ['easy','medium','hard'];
+const LABELS = { easy:'🌱 Facile', medium:'🔥 Moyen', hard:'💀 Difficile' };
+
+const DEFAULTS = {
+  easy:   {clues_min:14,clues_max:20,constraints_min:18,constraints_max:26,eq_ratio_min:0.60,eq_ratio_max:0.80,tech_min:1,tech_max:3},
+  medium: {clues_min:8, clues_max:14,constraints_min:10,constraints_max:18,eq_ratio_min:0.40,eq_ratio_max:0.65,tech_min:3,tech_max:5},
+  hard:   {clues_min:4, clues_max:9, constraints_min:3, constraints_max:10,eq_ratio_min:0.30,eq_ratio_max:0.55,tech_min:5,tech_max:7},
+};
+
+let params = {};
+
+function renderForms() {
+  document.getElementById('diff-form').innerHTML = DIFFS.map(id => {
+    const p = params[id] || DEFAULTS[id];
+    return `
+    <div class="diff-card ${id}">
+      <div class="diff-card-title">${LABELS[id]}</div>
+      <div class="param-grid">
+        <div class="param-group">
+          <div class="param-label">Cases de départ <span>(sur 36)</span></div>
+          <div class="param-row">
+            <input class="form-input" type="number" id="${id}_clues_min" value="${p.clues_min}" min="1" max="36" placeholder="min">
+            <span class="param-sep">—</span>
+            <input class="form-input" type="number" id="${id}_clues_max" value="${p.clues_max}" min="1" max="36" placeholder="max">
+          </div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Contraintes = / × <span>(sur 60)</span></div>
+          <div class="param-row">
+            <input class="form-input" type="number" id="${id}_constraints_min" value="${p.constraints_min}" min="0" max="60" placeholder="min">
+            <span class="param-sep">—</span>
+            <input class="form-input" type="number" id="${id}_constraints_max" value="${p.constraints_max}" min="0" max="60" placeholder="max">
+          </div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Ratio = <span>(0.0 tout × · 1.0 tout =)</span></div>
+          <div class="param-row">
+            <input class="form-input" type="number" id="${id}_eq_ratio_min" value="${p.eq_ratio_min}" min="0" max="1" step="0.05" placeholder="min">
+            <span class="param-sep">—</span>
+            <input class="form-input" type="number" id="${id}_eq_ratio_max" value="${p.eq_ratio_max}" min="0" max="1" step="0.05" placeholder="max">
+          </div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Niveaux de technique <span>(L1–L7)</span></div>
+          <div class="param-row">
+            <input class="form-input" type="number" id="${id}_tech_min" value="${p.tech_min}" min="1" max="7" placeholder="min">
+            <span class="param-sep">—</span>
+            <input class="form-input" type="number" id="${id}_tech_max" value="${p.tech_max}" min="1" max="7" placeholder="max">
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getFormValues(id) {
+  const g = k => parseFloat(document.getElementById(`${id}_${k}`).value);
+  return {
+    id,
+    label: { easy:'Facile', medium:'Moyen', hard:'Difficile' }[id],
+    clues_min:        parseInt(g('clues_min')),
+    clues_max:        parseInt(g('clues_max')),
+    constraints_min:  parseInt(g('constraints_min')),
+    constraints_max:  parseInt(g('constraints_max')),
+    eq_ratio_min:     g('eq_ratio_min'),
+    eq_ratio_max:     g('eq_ratio_max'),
+    tech_min:         parseInt(g('tech_min')),
+    tech_max:         parseInt(g('tech_max')),
+    updated_at:       new Date().toISOString(),
+  };
+}
+
+function validate(p) {
+  if (p.clues_min > p.clues_max) return 'Cases de départ : min > max';
+  if (p.constraints_min > p.constraints_max) return 'Contraintes : min > max';
+  if (p.eq_ratio_min > p.eq_ratio_max) return 'Ratio = : min > max';
+  if (p.tech_min > p.tech_max) return 'Tech : min > max';
+  return null;
+}
+
+async function saveAll() {
+  const err = document.getElementById('form-error');
+  const ok  = document.getElementById('form-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  const rows = DIFFS.map(id => getFormValues(id));
+  for (const p of rows) {
+    const e = validate(p);
+    if (e) { err.textContent = `${LABELS[p.id]} — ${e}`; err.classList.add('show'); return; }
+  }
+
+  const { error } = await db.from('difficulty_params').upsert(rows, { onConflict: 'id' });
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
+  ok.textContent = 'Paramètres enregistrés.';
+  ok.classList.add('show');
+  rows.forEach(p => { params[p.id] = p; });
+}
+
+function resetDefaults() {
+  if (!confirm('Réinitialiser les paramètres aux valeurs par défaut ?')) return;
+  params = JSON.parse(JSON.stringify(DEFAULTS));
+  renderForms();
+}
+
+async function loadPage() {
+  const ok = await requireAdmin('/index.html');
+  if (!ok) return;
+
+  const { data } = await db.from('difficulty_params').select('*');
+  if (data && data.length) data.forEach(p => { params[p.id] = p; });
+  else params = JSON.parse(JSON.stringify(DEFAULTS));
+
+  renderForms();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+  initNavAuth();
+}
+
+loadPage();
+</script>
+</body>
+</html>

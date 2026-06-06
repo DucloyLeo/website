@@ -339,33 +339,73 @@ function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementBy
 function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
 function resumeTimer(){if(timerOn)return;timerDone=false;timerOn=true;document.getElementById('tdot').className='tdot run';clearInterval(timerInt);timerInt=setInterval(()=>{timerSec++;document.getElementById('tval').textContent=fmt(timerSec);},1000);}
 
-/* ── Solver ── */
+/* ── Solver (7 niveaux) ──────────────────────────────
+   L1 Triplet · L2 Équilibre · L3 Contrainte directe
+   L4 Paire extrémité · L5 Extrémités identiques
+   L6 Dist4 · L7 Élimination
+   humanSolve retourne { solved, level } où level = plus
+   haut niveau utilisé (0 = résolu sans technique).       */
 function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}if(ccv[kh]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kh]==='='&&!s)||(ccv[kh]==='×'&&s))return false;}}return true;}
-function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-row'});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-row'});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-col'});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-col'});})}return m;}
 function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o,tip:'triple-h'});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o,tip:'triple-v'});break;}}}return m;}
+function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-row'});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-row'});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON,tip:'balance-col'});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN,tip:'balance-col'});})}return m;}
 function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN),tip:'constraint-h'});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN),tip:'constraint-h'});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN),tip:'constraint-v'});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN),tip:'constraint-v'});}return m;}
-function tEnds(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],e=b[r][4];if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a),tip:'dist4'});const bb=b[r][1],f=b[r][5];if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb),tip:'dist4'});}for(let c=0;c<N;c++){const a=b[0][c],e=b[4][c];if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a),tip:'dist4'});const bb=b[1][c],f=b[5][c];if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb),tip:'dist4'});}for(let r=0;r<N;r++){const a=b[r][0],f=b[r][5];if(a!==EMPTY&&a===f){const o=opp(a);if(b[r][1]===EMPTY)m.push({r,c:1,val:o,tip:'dist5'});if(b[r][4]===EMPTY)m.push({r,c:4,val:o,tip:'dist5'});}}for(let c=0;c<N;c++){const a=b[0][c],f=b[5][c];if(a!==EMPTY&&a===f){const o=opp(a);if(b[1][c]===EMPTY)m.push({r:1,c,val:o,tip:'dist5'});if(b[4][c]===EMPTY)m.push({r:4,c,val:o,tip:'dist5'});}}for(let r=0;r<N;r++){if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0]),tip:'pair-end'});if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4]),tip:'pair-end'});}for(let c=0;c<N;c++){if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c]),tip:'pair-end'});if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c]),tip:'pair-end'});}return m;}
-function tChain(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v,tip:'chain-eq'});if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v,tip:'chain-eq'});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v,tip:'chain-eq'});}}if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o,tip:'chain-x'});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o,tip:'chain-x'});}}}for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){const k1=r+','+c,k2=(r+1)+','+c;if(ccv[k1]==='='&&ccv[k2]==='='){const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v,tip:'chain-eq'});if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v,tip:'chain-eq'});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v,tip:'chain-eq'});}}if(ccv[k1]==='×'&&ccv[k2]==='×'){const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o,tip:'chain-x'});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o,tip:'chain-x'});}}}return m;}
+function tPairEnd(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0]),tip:'pair-end'});if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4]),tip:'pair-end'});}for(let c=0;c<N;c++){if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c]),tip:'pair-end'});if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c]),tip:'pair-end'});}return m;}
+function tDistIdent(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],f=b[r][5];if(a!==EMPTY&&a===f){const o=opp(a);if(b[r][1]===EMPTY)m.push({r,c:1,val:o,tip:'dist-ident'});if(b[r][4]===EMPTY)m.push({r,c:4,val:o,tip:'dist-ident'});}}for(let c=0;c<N;c++){const a=b[0][c],f=b[5][c];if(a!==EMPTY&&a===f){const o=opp(a);if(b[1][c]===EMPTY)m.push({r:1,c,val:o,tip:'dist-ident'});if(b[4][c]===EMPTY)m.push({r:4,c,val:o,tip:'dist-ident'});}}return m;}
+function tDist4(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],e=b[r][4];if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a),tip:'dist4'});const bb=b[r][1],f=b[r][5];if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb),tip:'dist4'});}for(let c=0;c<N;c++){const a=b[0][c],e=b[4][c];if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a),tip:'dist4'});const bb=b[1][c],f=b[5][c];if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb),tip:'dist4'});}return m;}
 function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON,tip:'elim'});if(!cM&&cS)m.push({r,c,val:SUN,tip:'elim'});}return m;}
-function humanSolve(puz,cch,ccv){const b=puz.map(r=>[...r]);let cx=0;for(let i=0;i<200;i++){const sm=[...tBalance(b),...tTriple(b),...tConstraints(b,cch,ccv)];let ap=0;for(const{r,c,val}of sm){if(b[r][c]===EMPTY){b[r][c]=val;ap++;}}if(ap)continue;const cm=[...tEnds(b),...tChain(b,cch,ccv),...tElim(b,cch,ccv)];let ca=0;for(const{r,c,val}of cm){if(b[r][c]===EMPTY){b[r][c]=val;ca++;cx++;}}if(ca)continue;break;}return{solved:b.every(row=>row.every(v=>v!==EMPTY)),cx};}
+
+const SOLVE_LEVELS=[
+  {level:1,fn:(b,ch,cv)=>tTriple(b)},
+  {level:2,fn:(b,ch,cv)=>tBalance(b)},
+  {level:3,fn:(b,ch,cv)=>tConstraints(b,ch,cv)},
+  {level:4,fn:(b,ch,cv)=>tPairEnd(b)},
+  {level:5,fn:(b,ch,cv)=>tDistIdent(b)},
+  {level:6,fn:(b,ch,cv)=>tDist4(b)},
+  {level:7,fn:(b,ch,cv)=>tElim(b,ch,cv)},
+];
+
+function humanSolve(puz,cch,ccv,maxLevel=7){
+  const b=puz.map(r=>[...r]);let highestLevel=0;
+  outer:for(let i=0;i<200;i++){
+    for(const{level,fn}of SOLVE_LEVELS){
+      if(level>maxLevel)break;
+      const moves=fn(b,cch,ccv).filter(({r,c})=>b[r][c]===EMPTY);
+      if(moves.length){for(const{r,c,val}of moves)if(b[r][c]===EMPTY)b[r][c]=val;if(level>highestLevel)highestLevel=level;continue outer;}
+    }
+    break;
+  }
+  return{solved:b.every(row=>row.every(v=>v!==EMPTY)),level:highestLevel};
+}
 
 const TIP_TEXT={
+  'triple-h':'Triplet : deux symboles identiques côte à côte — la case adjacente est forcée à l\'opposé.',
+  'triple-v':'Triplet : deux symboles identiques en colonne — la case adjacente est forcée à l\'opposé.',
   'balance-row':'Équilibre : cette ligne a déjà 3 ☀ ou 3 🌙 — les cases vides restantes sont toutes forcées.',
   'balance-col':'Équilibre : cette colonne a déjà 3 ☀ ou 3 🌙 — les cases vides restantes sont toutes forcées.',
-  'triple-h':'Pas de triplet : deux symboles identiques côte à côte — la case adjacente est forcée.',
-  'triple-v':'Pas de triplet : deux symboles identiques en colonne — la case adjacente est forcée.',
   'constraint-h':'Contrainte = / × : la case voisine est connue et détermine directement ce symbole.',
   'constraint-v':'Contrainte = / × : la case voisine (verticale) est connue et détermine directement ce symbole.',
-  'dist4':'Distance 4 : deux cases identiques séparées de 4 positions forcent la 6ᵉ case à être l\'opposé.',
-  'dist5':'Extrémités identiques : si [0] et [5] sont identiques, [1] et [4] sont forcés vers l\'opposé.',
-  'pair-end':'Paire en extrémité : une paire identique en [0-1] force [5] à l\'opposé.',
-  'chain-eq':'Chaîne = = : deux contraintes "égal" consécutives — si l\'un est connu, les deux autres sont identiques.',
-  'chain-x':'Chaîne × × : si A ≠ B et B ≠ C, alors A et C sont nécessairement identiques.',
+  'pair-end':'Paire en extrémité : une paire identique en [0-1] force [5] à l\'opposé (et vice-versa).',
+  'dist-ident':'Extrémités identiques : [0] et [5] sont identiques — [1] et [4] sont forcés à l\'opposé.',
+  'dist4':'Dist4 : [0] et [4] identiques — [5] est forcé à l\'opposé (ou [1]=[5] → [0] forcé).',
   'elim':'Élimination : placer l\'autre symbole ici mènerait à une contradiction.',
 };
 
 /* ── Hint ── */
-function giveHint(){if(!timerOn&&!timerDone)startTimer();clearHintPreview();const b=board.map(r=>[...r]);const moves=[...tBalance(b),...tTriple(b),...tConstraints(b,ch,cv),...tEnds(b),...tChain(b,ch,cv),...tElim(b,ch,cv)];const candidates=moves.filter(({r,c,val})=>board[r][c]===EMPTY&&val===solution[r][c]);if(!candidates.length){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(board[r][c]===EMPTY){candidates.push({r,c,val:solution[r][c],tip:'elim'});break;}if(candidates.length)break;}}if(!candidates.length)return;const h=candidates[0];hintCell=h;const bubble=document.getElementById('hint-bubble');bubble.textContent=TIP_TEXT[h.tip]||'Cette case peut être déduite logiquement.';bubble.classList.add('show');renderGrid();}
+function giveHint(){
+  if(!timerOn&&!timerDone)startTimer();clearHintPreview();
+  const b=board.map(r=>[...r]);
+  let hint=null;
+  outer:for(const{fn}of SOLVE_LEVELS){
+    const moves=fn(b,ch,cv).filter(({r,c,val})=>board[r][c]===EMPTY&&val===solution[r][c]);
+    if(moves.length){hint=moves[0];break outer;}
+  }
+  if(!hint){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(board[r][c]===EMPTY){hint={r,c,val:solution[r][c],tip:'elim'};break;}if(hint)break;}}
+  if(!hint)return;
+  hintCell=hint;
+  const bubble=document.getElementById('hint-bubble');
+  bubble.textContent=TIP_TEXT[hint.tip]||'Cette case peut être déduite logiquement.';
+  bubble.classList.add('show');renderGrid();
+}
 function clearHintPreview(){hintCell=null;document.getElementById('hint-bubble').classList.remove('show');}
 
 /* ── Errors ── */
@@ -454,10 +494,65 @@ function askNewPuzzle(){const validDiffs=['easy','medium','hard'];const storedDi
 function pickDiff(diff){currentDiff=diff;if(rememberDiff)savePrefs();document.getElementById('diff-modal').classList.remove('show');startGeneration(diff);}
 
 /* ── Generator ── */
+
+// Paramètres par difficulté — chargés depuis Supabase au démarrage,
+// valeurs ci-dessous = défauts utilisés si la DB est indisponible.
+let DIFF_PARAMS={
+  easy:  {cluesMin:14,cluesMax:20,constraintsMin:18,constraintsMax:26,eqRatioMin:0.60,eqRatioMax:0.80,techMin:1,techMax:3},
+  medium:{cluesMin:8, cluesMax:14,constraintsMin:10,constraintsMax:18,eqRatioMin:0.40,eqRatioMax:0.65,techMin:3,techMax:5},
+  hard:  {cluesMin:4, cluesMax:9, constraintsMin:3, constraintsMax:10,eqRatioMin:0.30,eqRatioMax:0.55,techMin:5,techMax:7},
+};
+
 function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
 function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}bt();return cnt;}
 function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=rng()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
-function genForDiff(diff){const chR=diff==='easy'?.52:diff==='medium'?.30:.14;const cvR=diff==='easy'?.52:diff==='medium'?.30:.14;const maxCx=diff==='easy'?1:diff==='medium'?6:999;const minCx=diff==='easy'?0:diff==='medium'?2:6;for(let att=0;att<350;att++){const sol=genSolution();if(!sol)continue;const cch={},ccv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(rng()<chR)cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(rng()<cvR)ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);cells.sort(()=>rng()-.5);for(const[r,c]of cells){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved,cx}=humanSolve(puz,cch,ccv);if(!solved||cx>maxCx){puz[r][c]=sv;}}const{solved,cx}=humanSolve(puz,cch,ccv);if(!solved||cx<minCx||cx>maxCx)continue;if(countBT(puz,cch,ccv,2)!==1)continue;return{puzzle:puz,solution:sol,ch:cch,cv:ccv};}return null;}
+
+function placeConstraints(sol,targetCount,eqRatio){
+  const eqPool=[],xPool=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){(sol[r][c]===sol[r][c+1]?eqPool:xPool).push({r,c,dir:'h'});}
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){(sol[r][c]===sol[r+1][c]?eqPool:xPool).push({r,c,dir:'v'});}
+  eqPool.sort(()=>rng()-.5);xPool.sort(()=>rng()-.5);
+  const eqCount=Math.min(Math.round(targetCount*eqRatio),eqPool.length);
+  const xCount=Math.min(targetCount-eqCount,xPool.length);
+  const cch={},ccv={};
+  for(const{r,c,dir}of[...eqPool.slice(0,eqCount),...xPool.slice(0,xCount)]){
+    if(dir==='h')cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';
+    else ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';
+  }
+  return{cch,ccv};
+}
+
+function carve(sol,cch,ccv,targetClues,maxLevel){
+  const puz=sol.map(r=>[...r]);
+  const cells=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
+  cells.sort(()=>rng()-.5);
+  for(const[r,c]of cells){
+    if(puz.flat().filter(v=>v!==EMPTY).length<=targetClues)break;
+    const sv=puz[r][c];puz[r][c]=EMPTY;
+    const{solved}=humanSolve(puz,cch,ccv,maxLevel);
+    if(!solved)puz[r][c]=sv;
+  }
+  return puz;
+}
+
+function genForDiff(diff){
+  const p=DIFF_PARAMS[diff]||DIFF_PARAMS.medium;
+  for(let att=0;att<500;att++){
+    const sol=genSolution();if(!sol)continue;
+    const targetConstraints=Math.floor(rng()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;
+    const targetEqRatio=p.eqRatioMin+rng()*(p.eqRatioMax-p.eqRatioMin);
+    const{cch,ccv}=placeConstraints(sol,targetConstraints,targetEqRatio);
+    const targetClues=Math.floor(rng()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
+    const puz=carve(sol,cch,ccv,targetClues,p.techMax);
+    const{solved,level}=humanSolve(puz,cch,ccv,p.techMax);
+    if(!solved)continue;
+    if(level<p.techMin)continue;
+    if(countBT(puz,cch,ccv,2)!==1)continue;
+    return{puzzle:puz,solution:sol,ch:cch,cv:ccv};
+  }
+  return null;
+}
 
 function startGeneration(diff,forceSeedNum=null){if(generating)return;generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';document.getElementById('gen-modal').classList.add('show');resetTimer();hist=[];renderEmptyGrid();const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);setTimeout(()=>{let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);if(!res)return;puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));setDiffBadge(diff);renderGrid();},30);}
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
@@ -477,6 +572,21 @@ async function init(){
   loadPrefs();
   const user=await initNavAuth();
   currentUserId=user?.id||null;
+
+  // Charger les paramètres de difficulté depuis la DB (écrase les défauts si disponible)
+  try{
+    const{data}=await db.from('difficulty_params').select('*');
+    if(data&&data.length){
+      data.forEach(p=>{
+        if(DIFF_PARAMS[p.id])DIFF_PARAMS[p.id]={
+          cluesMin:p.clues_min,cluesMax:p.clues_max,
+          constraintsMin:p.constraints_min,constraintsMax:p.constraints_max,
+          eqRatioMin:p.eq_ratio_min,eqRatioMax:p.eq_ratio_max,
+          techMin:p.tech_min,techMax:p.tech_max,
+        };
+      });
+    }
+  }catch(e){}
 
   // Appliquer les prefs DB si connecté (écrase localStorage)
   if(user&&window._userPrefs){

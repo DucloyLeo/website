@@ -1,70 +1,9 @@
+# Cloudflare Pages configuration
+# This is a static site - files in platform/ are served directly
 name = "tangoleo"
 type = "javascript"
 main = "src/index.js"
 site = { bucket = "platform" }
 compatibility_date = "2024-01-01"
 
-[env.production]
-route = "tangoleo.fr/*"
-zone_id = "your_zone_id"
-
-[[routes]]
-pattern = "tangoleo.fr/robots.txt"
-zone_name = "tangoleo.fr"
-
-[[routes]]
-pattern = "tangoleo.fr/sitemap.xml"
-zone_name = "tangoleo.fr"
-
-[build]
-cwd = "."
-command = ""
-watch_paths = []
-
-[build.upload]
-format = "modules"
-
-[env.production.build]
-command = "npm run build"
-
-# Cache configuration for static assets
-[caches.default]
-default_ttl = 3600
-
-# Headers for SEO and performance
-[[headers]]
-path = "/index.html"
-[headers.values]
-Cache-Control = "public, max-age=3600, must-revalidate"
-X-Content-Type-Options = "nosniff"
-X-Frame-Options = "SAMEORIGIN"
-X-XSS-Protection = "1; mode=block"
-Referrer-Policy = "strict-origin-when-cross-origin"
-
-[[headers]]
-path = "/css/*"
-[headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-path = "/js/*"
-[headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-path = "/*.html"
-[headers.values]
-Cache-Control = "public, max-age=3600"
-Content-Type = "text/html; charset=utf-8"
-
-[[headers]]
-path = "/sitemap.xml"
-[headers.values]
-Content-Type = "application/xml"
-Cache-Control = "public, max-age=86400"
-
-[[headers]]
-path = "/robots.txt"
-[headers.values]
-Content-Type = "text/plain"
-Cache-Control = "public, max-age=86400"
+# No routes needed - Cloudflare Pages handles routing

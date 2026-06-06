@@ -155,7 +155,7 @@ function getFormValues(id) {
   const g = k => parseFloat(document.getElementById(`${id}_${k}`).value);
   return {
     id,
-    label: { easy:'Facile', medium:'Moyen', hard:'Difficile' }[id],
+    label: { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' }[id],
     clues_min:        parseInt(g('clues_min')),
     clues_max:        parseInt(g('clues_max')),
     constraints_min:  parseInt(g('constraints_min')),

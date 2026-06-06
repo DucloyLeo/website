@@ -748,7 +748,7 @@ function renderMonthSlide(slideId,year,month){
   if(el)el.innerHTML=html;
 }
 
-let _calDragging=false,_calDragX=0,_calAnimating=false;
+let _calDragging=false,_calDragX=0,_calAnimating=false,_calHasMoved=false;
 
 function _calW(){ return document.getElementById('cal-slider-outer').offsetWidth; }
 
@@ -778,12 +778,13 @@ function _initCalDrag(){
 
   function onStart(clientX){
     if(_calAnimating)return;
-    _calDragging=true;_calDragX=clientX;
+    _calDragging=true;_calDragX=clientX;_calHasMoved=false;
     slider.style.transition='none';
   }
   function onMove(clientX){
     if(!_calDragging)return;
     const dx=clientX-_calDragX;
+    if(Math.abs(dx)>5)_calHasMoved=true;
     const atMin=(calYear<=MIN_CAL_YEAR&&calMonth<=MIN_CAL_MONTH);
     const clamped=atMin?Math.min(dx,0):dx;
     slider.style.transform=`translateX(${-_calW()+clamped}px)`;
@@ -822,6 +823,8 @@ function _initCalDrag(){
 }
 
 async function selectCalDay(dateStr){
+  // Ignorer si l'utilisateur était en train de slider (mouvement > 5px)
+  if(_calHasMoved){_calHasMoved=false;return;}
   selectedCalDate=dateStr;
   renderCalendar();
   const level=levelsCache[dateStr];

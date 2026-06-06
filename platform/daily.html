@@ -362,11 +362,23 @@ function genForDiff(diff){
 function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{puzzle:puz,solution:sol,ch:sCh,cv:sCv};}
 
 /* Errors */
-function getContradictions(){const err=new Set();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=board[r][c];if(v===EMPTY)continue;if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)[c,c+1,c+2].forEach(ci=>err.add(r+','+ci));if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)[r,r+1,r+2].forEach(ri=>err.add(ri+','+c));const kh=r+','+c;if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s)){err.add(kh);err.add(r+','+(c+1));}}if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s)){err.add(kh);err.add((r+1)+','+c);}}}
-for(let r=0;r<N;r++){for(const val of[SUN,MOON]){if(board[r].filter(v=>v===val).length>N/2)board[r].forEach((v,c)=>{if(v===val)err.add(r+','+c);});}}
-for(let c=0;c<N;c++){for(const val of[SUN,MOON]){if(board.map(row=>row[c]).filter(v=>v===val).length>N/2)board.forEach((row,r)=>{if(row[c]===val)err.add(r+','+c);});}}
-return err;}
-function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},1000);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
+function getContradictions(){
+  const err=new Set();
+  const addRow=r=>{for(let c=0;c<N;c++)err.add(r+','+c);};
+  const addCol=c=>{for(let r=0;r<N;r++)err.add(r+','+c);};
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const v=board[r][c];if(v===EMPTY)continue;
+    if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)addRow(r);
+    if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)addCol(c);
+    const kh=r+','+c;
+    if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s))addRow(r);}
+    if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s))addCol(c);}
+  }
+  for(let r=0;r<N;r++)for(const val of[SUN,MOON])if(board[r].filter(v=>v===val).length>N/2)addRow(r);
+  for(let c=0;c<N;c++)for(const val of[SUN,MOON])if(board.map(row=>row[c]).filter(v=>v===val).length>N/2)addCol(c);
+  return err;
+}
+function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},500);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
 function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));errTimers={};activeErrors=new Set();}
 function highlightCell(key,on){
   const[r,c]=key.split(',').map(Number);
@@ -375,7 +387,6 @@ function highlightCell(key,on){
   const cells=rows[r].querySelectorAll('.ci');
   if(cells[c]){
     cells[c].classList.toggle('err',on);
-    if(on&&typeof ANIM!=='undefined')ANIM.error(cells[c]);
   }
 }
 

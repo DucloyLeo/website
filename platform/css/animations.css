@@ -21,6 +21,10 @@
   --anim-error-duration:  320ms;
   --anim-error-distance:  5px;
 
+  /* Erreur — pulse continu de la surbrillance rouge */
+  --anim-err-pulse-duration: 1400ms;
+  --anim-err-pulse-min:      0.55; /* opacité au creux du pulse */
+
   /* Apparition des cellules (chargement grille) */
   --anim-cell-in-duration: 150ms;
   --anim-cell-in-easing:   cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -33,7 +37,7 @@
 
   /* Lueur de ligne/colonne complétée */
   --anim-line-glow-duration: 600ms;
-  --anim-line-glow-color:    rgba(245, 200, 66, 0.45);
+  --anim-line-glow-color:    rgba(245, 200, 66, 0.28);
   /* (le stagger de propagation est dans animations.js : ANIM_LINE_GLOW_STAGGER) */
 }
 
@@ -48,6 +52,7 @@
     --anim-grid-stagger:     0ms;
     --anim-win-stagger:      0ms;
     --anim-line-glow-duration: 0ms;
+    --anim-err-pulse-duration: 0ms;
   }
 }
 
@@ -102,6 +107,15 @@
 }
 .anim-win-flash {
   animation: anim-win-flash var(--anim-win-duration) ease both;
+}
+
+/* ── Pulse continu sur les cases en erreur ────────── */
+@keyframes anim-err-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: var(--anim-err-pulse-min); }
+}
+.ci.err {
+  animation: anim-err-pulse var(--anim-err-pulse-duration) ease-in-out infinite;
 }
 
 /* ── Lueur de bordure (ligne/colonne complétée) ───── */

@@ -22,6 +22,9 @@
 <meta name="twitter:title" content="Tangoléo — Jeu de puzzle logique">
 <meta name="twitter:description" content="Défiez-vous avec Tangoléo : un jeu de puzzle logique gratuit. Défis quotidiens, classements et communauté.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -220,6 +223,34 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
     </div>
   </div>
 </main>
+
+<!-- Contenu SEO / présentation -->
+<section class="seo-intro" style="max-width:760px;margin:3rem auto 1rem;padding:0 1.25rem;color:var(--text);line-height:1.65">
+  <h2 style="font-family:'Crimson Pro',serif;font-weight:600;font-size:1.6rem;margin-bottom:.6rem">Tangoléo, le jeu de puzzle logique gratuit</h2>
+  <p style="opacity:.85;margin-bottom:1.4rem">
+    <strong>Tangoléo</strong> est un jeu de puzzle logique gratuit inspiré de Tango. Le but&nbsp;: remplir une grille
+    6×6 de soleils ☀ et de lunes 🌙 en respectant trois règles simples. Pas d'inscription obligatoire, pas de
+    publicité&nbsp;— juste de la déduction pure. Un nouveau défi vous attend à chaque partie, et un
+    <a href="/daily.html" style="color:var(--accent,#8fa8d4)">défi quotidien</a> avec classement vous permet de vous
+    mesurer aux autres joueurs.
+  </p>
+
+  <h2 style="font-family:'Crimson Pro',serif;font-weight:600;font-size:1.35rem;margin-bottom:.6rem">Les règles en 30 secondes</h2>
+  <ul style="opacity:.85;margin-bottom:1.4rem;padding-left:1.2rem">
+    <li><strong>Équilibre</strong> : chaque ligne et chaque colonne contient exactement 3 soleils et 3 lunes.</li>
+    <li><strong>Pas de triplet</strong> : jamais trois symboles identiques côte à côte, horizontalement ou verticalement.</li>
+    <li><strong>Contraintes</strong> : les signes <code>=</code> et <code>×</code> entre deux cases imposent des symboles égaux ou différents.</li>
+  </ul>
+
+  <h2 style="font-family:'Crimson Pro',serif;font-weight:600;font-size:1.35rem;margin-bottom:.6rem">Pourquoi jouer à Tangoléo&nbsp;?</h2>
+  <ul style="opacity:.85;padding-left:1.2rem">
+    <li>✅ <strong>100&nbsp;% gratuit</strong> et sans publicité</li>
+    <li>✅ <strong>Défis quotidiens</strong> avec classements en direct</li>
+    <li>✅ <strong>Badges</strong> à débloquer et statistiques de progression</li>
+    <li>✅ <strong>Indices intégrés</strong> et <a href="/tips.html" style="color:var(--accent,#8fa8d4)">techniques de résolution</a> pour progresser</li>
+    <li>✅ Trois niveaux de difficulté&nbsp;: facile, moyen, difficile</li>
+  </ul>
+</section>
 
 <!-- Difficulty picker -->
 <div class="overlay" id="diff-modal" onclick="onOverlayClick(event,'diff-modal')">

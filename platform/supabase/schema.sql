@@ -45,7 +45,10 @@ create table badges (
   name             text not null,
   description      text not null,
   icon             text not null,
-  condition_type   text not null check (condition_type in ('games_played', 'best_time')),
+  condition_type   text not null check (condition_type in (
+                     'games_played', 'best_time', 'total_time', 'games_in_day',
+                     'streak_days', 'distinct_days', 'fast_solve', 'night_owl',
+                     'early_bird', 'account_age', 'all_difficulties')),
   condition_value  integer not null,
   condition_diff   text check (condition_diff in ('easy', 'medium', 'hard') or condition_diff is null),
   sort_order       integer default 0

@@ -110,35 +110,104 @@ async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false)
 // ─── Badges ──────────────────────────────────────────
 
 async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) {
-  const [statsRes, badgesRes, earnedRes] = await Promise.all([
+  const [statsRes, badgesRes, earnedRes, compRes, profRes] = await Promise.all([
     db.from('player_stats').select('*').eq('user_id', userId),
     db.from('badges').select('*').order('sort_order'),
-    db.from('player_badges').select('badge_id').eq('user_id', userId)
+    db.from('player_badges').select('badge_id').eq('user_id', userId),
+    db.from('completed_levels').select('difficulty, completed_at').eq('user_id', userId),
+    db.from('profiles').select('created_at').eq('id', userId).maybeSingle()
   ]);
 
   const stats      = statsRes.data || [];
   const badges     = badgesRes.data || [];
   const earnedIds  = new Set((earnedRes.data || []).map(b => b.badge_id));
+  const completions = compRes.data || [];
   const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
+  const totalTime  = stats.reduce((s, r) => s + (r.total_time || 0), 0);
   const newlyEarned = [];
+
+  // ── Données dérivées des parties (jours, séries) ──
+  const dayKey = ts => { const x = new Date(ts); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  const perDay = {};
+  completions.forEach(c => { const k = dayKey(c.completed_at); perDay[k] = (perDay[k] || 0) + 1; });
+  const dayKeys      = Object.keys(perDay).map(Number).sort((a, b) => a - b);
+  const distinctDays = dayKeys.length;
+  const maxGamesInDay = dayKeys.reduce((m, k) => Math.max(m, perDay[k]), 0);
+  let longestStreak = 0, run = 0, prev = null;
+  for (const k of dayKeys) {
+    run = (prev !== null && k - prev === 86400000) ? run + 1 : 1;
+    if (run > longestStreak) longestStreak = run;
+    prev = k;
+  }
+
+  // ── Contexte de la partie en cours ──
+  const nowHour    = new Date().getHours();
+  const accountAge = profRes.data?.created_at
+    ? Math.floor((Date.now() - new Date(profRes.data.created_at).getTime()) / 86400000)
+    : 0;
+  const playedDiffs = new Set(stats.filter(r => (r.games_played || 0) > 0).map(r => r.difficulty));
 
   for (const badge of badges) {
     if (earnedIds.has(badge.id)) continue;
 
+    const val  = badge.condition_value;
+    const cdif = badge.condition_diff;
     let earned = false;
 
-    if (badge.condition_type === 'games_played') {
-      if (badge.condition_diff) {
-        const s = stats.find(r => r.difficulty === badge.condition_diff);
-        earned = (s?.games_played || 0) >= badge.condition_value;
-      } else {
-        earned = totalGames >= badge.condition_value;
-      }
-    } else if (badge.condition_type === 'best_time' && !assisted) {
-      const targetDiff = badge.condition_diff || diff;
-      if (targetDiff === diff) {
-        earned = timeSeconds <= badge.condition_value;
-      }
+    switch (badge.condition_type) {
+      case 'games_played':
+        if (cdif) {
+          const s = stats.find(r => r.difficulty === cdif);
+          earned = (s?.games_played || 0) >= val;
+        } else {
+          earned = totalGames >= val;
+        }
+        break;
+
+      case 'best_time':
+        if (!assisted && (cdif || diff) === diff) earned = timeSeconds <= val;
+        break;
+
+      case 'total_time':
+        if (cdif) {
+          const s = stats.find(r => r.difficulty === cdif);
+          earned = (s?.total_time || 0) >= val;
+        } else {
+          earned = totalTime >= val;
+        }
+        break;
+
+      case 'games_in_day':
+        earned = maxGamesInDay >= val;
+        break;
+
+      case 'streak_days':
+        earned = longestStreak >= val;
+        break;
+
+      case 'distinct_days':
+        earned = distinctDays >= val;
+        break;
+
+      case 'fast_solve':
+        if (!assisted && (!cdif || cdif === diff)) earned = timeSeconds <= val;
+        break;
+
+      case 'night_owl':
+        earned = (nowHour >= 0 && nowHour < 5);
+        break;
+
+      case 'early_bird':
+        earned = (nowHour >= 5 && nowHour < 8);
+        break;
+
+      case 'account_age':
+        earned = accountAge >= val;
+        break;
+
+      case 'all_difficulties':
+        earned = ['easy', 'medium', 'hard'].every(d => playedDiffs.has(d));
+        break;
     }
 
     if (earned) {

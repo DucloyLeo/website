@@ -74,9 +74,18 @@
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.8rem">
             <div class="form-group">
               <label class="form-label">Condition</label>
-              <select class="form-input" id="b-ctype">
-                <option value="games_played">Parties jouées</option>
-                <option value="best_time">Meilleur temps (s)</option>
+              <select class="form-input" id="b-ctype" onchange="updateCtypeHint()">
+                <option value="games_played">Parties jouées (≥)</option>
+                <option value="best_time">Meilleur temps (≤ s)</option>
+                <option value="total_time">Temps de jeu cumulé (≥ s)</option>
+                <option value="games_in_day">Parties en une journée (≥)</option>
+                <option value="streak_days">Jours consécutifs (≥)</option>
+                <option value="distinct_days">Jours différents joués (≥)</option>
+                <option value="fast_solve">Résoudre en (≤ s)</option>
+                <option value="night_owl">Noctambule (partie 0h–5h)</option>
+                <option value="early_bird">Lève-tôt (partie 5h–8h)</option>
+                <option value="account_age">Ancienneté du compte (≥ jours)</option>
+                <option value="all_difficulties">Jouer aux 3 difficultés</option>
               </select>
             </div>
             <div class="form-group">
@@ -97,6 +106,7 @@
               <input class="form-input" type="number" id="b-order" placeholder="10" value="10" min="0">
             </div>
           </div>
+          <small id="ctype-hint" style="color:var(--muted);font-size:11px;display:block;margin:-.2rem 0 .4rem"></small>
           <div class="alert error"   id="badge-error"></div>
           <div class="alert success" id="badge-success"></div>
           <button type="submit" class="btn sun" style="align-self:flex-start">+ Créer le badge</button>
@@ -120,8 +130,41 @@
 <script src="../js/supabase-client.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-const CTYPE_LABELS = { games_played:'Parties ≥', best_time:'Temps ≤ (s)' };
+const CTYPE_LABELS = {
+  games_played:'Parties ≥', best_time:'Temps ≤ (s)', total_time:'Temps cumulé ≥ (s)',
+  games_in_day:'Parties/jour ≥', streak_days:'Jours consécutifs ≥', distinct_days:'Jours joués ≥',
+  fast_solve:'Résoudre en ≤ (s)', night_owl:'Noctambule (0h–5h)', early_bird:'Lève-tôt (5h–8h)',
+  account_age:'Compte ≥ (jours)', all_difficulties:'Les 3 difficultés'
+};
 const DIFF_LABELS  = { easy:'Facile', medium:'Moyen', hard:'Difficile', '':'Toutes' };
+
+// Types qui n'utilisent ni "Valeur" ni "Difficulté"
+const CTYPE_NOVAL = new Set(['night_owl', 'early_bird', 'all_difficulties']);
+const CTYPE_NODIFF = new Set(['games_in_day','streak_days','distinct_days','night_owl','early_bird','account_age','all_difficulties']);
+const CTYPE_HINTS = {
+  games_played:'Le joueur doit avoir joué au moins « Valeur » parties (total, ou pour la difficulté choisie).',
+  best_time:'Récompense un temps record ≤ « Valeur » secondes (difficulté de la partie, parties non assistées).',
+  total_time:'Temps de jeu cumulé ≥ « Valeur » secondes (total, ou pour la difficulté choisie).',
+  games_in_day:'Au moins « Valeur » parties terminées dans une même journée.',
+  streak_days:'Avoir joué « Valeur » jours d’affilée (plus longue série).',
+  distinct_days:'Avoir joué au moins « Valeur » jours différents.',
+  fast_solve:'Terminer une partie en ≤ « Valeur » secondes (instantané, parties non assistées).',
+  night_owl:'Attribué dès qu’une partie est terminée entre 0h et 5h. Valeur et difficulté ignorées.',
+  early_bird:'Attribué dès qu’une partie est terminée entre 5h et 8h. Valeur et difficulté ignorées.',
+  account_age:'Compte créé depuis au moins « Valeur » jours.',
+  all_difficulties:'Avoir gagné au moins une partie en facile, moyen ET difficile. Valeur et difficulté ignorées.'
+};
+
+function updateCtypeHint() {
+  const t = document.getElementById('b-ctype').value;
+  const hint = document.getElementById('ctype-hint');
+  if (hint) hint.textContent = CTYPE_HINTS[t] || '';
+  const valWrap  = document.getElementById('b-cval');
+  const diffWrap = document.getElementById('b-cdiff');
+  const noVal = CTYPE_NOVAL.has(t);
+  if (valWrap)  { valWrap.disabled = noVal; valWrap.required = !noVal; if (noVal) valWrap.value = valWrap.value || 1; }
+  if (diffWrap) { diffWrap.disabled = CTYPE_NODIFF.has(t); if (CTYPE_NODIFF.has(t)) diffWrap.value = ''; }
+}
 
 async function loadBadges() {
   const ok = await requireAdmin('/index.html');
@@ -170,15 +213,17 @@ async function createBadge(e) {
   const ok  = document.getElementById('badge-success');
   err.classList.remove('show'); ok.classList.remove('show');
 
+  const ctype = document.getElementById('b-ctype').value;
   const cdiff = document.getElementById('b-cdiff').value;
+  const cval  = parseInt(document.getElementById('b-cval').value);
   const { error } = await db.from('badges').insert({
     id:              document.getElementById('b-id').value.trim(),
     name:            document.getElementById('b-name').value.trim(),
     description:     document.getElementById('b-desc').value.trim(),
     icon:            document.getElementById('b-icon').value.trim(),
-    condition_type:  document.getElementById('b-ctype').value,
-    condition_value: parseInt(document.getElementById('b-cval').value),
-    condition_diff:  cdiff || null,
+    condition_type:  ctype,
+    condition_value: CTYPE_NOVAL.has(ctype) ? 1 : (isNaN(cval) ? 1 : cval),
+    condition_diff:  CTYPE_NODIFF.has(ctype) ? null : (cdiff || null),
     sort_order:      parseInt(document.getElementById('b-order').value) || 0
   });
 
@@ -190,6 +235,7 @@ async function createBadge(e) {
   ok.textContent = 'Badge créé avec succès.';
   ok.classList.add('show');
   e.target.reset();
+  updateCtypeHint();
   await loadBadges();
 }
 
@@ -205,6 +251,7 @@ function escHtml(s) {
 }
 
 loadBadges();
+updateCtypeHint();
 </script>
 </body>
 </html>

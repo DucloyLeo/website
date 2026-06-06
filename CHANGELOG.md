@@ -5,6 +5,49 @@
 
 ---
 
+## [v0.4] — SEO, PWA, skins & nouveaux badges
+
+### 🔍 Référencement (SEO)
+
+- Meta tags complets sur chaque page : `description`, `keywords`, `canonical`, `author`
+- **Open Graph** + **Twitter Cards** pour des aperçus riches au partage (réseaux sociaux, messageries)
+- **JSON-LD** structuré : `WebApplication` + `Organization` (compréhension par Google)
+- `sitemap.xml` (8 URLs priorisées) + `robots.txt` (autorise tout sauf `/admin/` et pages légales)
+- `H1` caché pour lecteurs d'écran, `noindex` sur `login` / `profile`
+- **Google Search Console** connecté, sitemap soumis (8 pages indexées)
+- `og-image.png` (1200×630) généré pour l'aperçu social (les SVG ne sont pas rendus par les réseaux)
+
+### 📱 PWA & mobile
+
+- `site.webmanifest` + icônes (192 / 512 / apple-touch) → jeu installable sur écran d'accueil
+- `theme-color` et `apple-touch-icon` sur toutes les pages
+- `favicon.svg` ajouté sur **toutes** les pages (était seulement sur l'accueil)
+
+### 🎨 Skins de symboles
+
+- Choix du rendu des soleils/lunes dans **Mon Profil → Apparence** : **Emoji**, **Ronds colorés**, **Cases N&B**
+- Architecture propre : le moteur marque la donnée (`sym-sun`/`sym-moon`/`sym-empty`), le CSS gère l'apparence (`js/skins.js`)
+- Skins « ronds » et « N&B » en **CSS pur → rendu identique sur tous les supports** (contrairement aux emojis)
+- Choix mémorisé en `localStorage`, appliqué au jeu et aux défis quotidiens
+
+### 🏅 Conditions de badges étendues
+
+9 nouveaux types de conditions pour laisser les admins créer librement : `total_time`, `games_in_day`, `streak_days`, `distinct_days`, `fast_solve`, `night_owl`, `early_bird`, `account_age`, `all_difficulties`. Formulaire admin adaptatif (indices contextuels, champs masqués selon le type) + migration SQL de la contrainte CHECK.
+
+### 🌐 Infrastructure
+
+- **Migration Cloudflare Workers → Cloudflare Pages** (résolution d'une Error 522 qui rendait le site inaccessible)
+- Domaine `tangoleo.fr` reconnecté en domaine personnalisé Pages (SSL auto)
+- **Cloudflare Web Analytics** activé (gratuit, sans cookie, RGPD) — Core Web Vitals au vert (LCP ~556 ms)
+
+### 🔧 Corrections
+
+- Alignement du formulaire admin badges (label sur 2 lignes décalait les champs)
+- Attribut `lang="fr"` manquant sur `tango.html`
+- **Cache** : `_headers` CSS/JS passés de `immutable` à `no-cache` ; cache-busting `?v=N` sur les assets (la zone Cloudflare imposait un TTL qui masquait les mises à jour)
+
+---
+
 ## [v0.3] — Défis quotidiens & refonte calendrier
 
 ### 📅 Système des défis journaliers

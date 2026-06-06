@@ -147,8 +147,8 @@ function renderSkinOptions() {
   document.getElementById('skin-options').innerHTML = order.map(k => {
     const s = SKINS[k];
     return `<button class="skin-opt ${k === cur ? 'active' : ''}" onclick="chooseSkin('${k}')">
-      <span class="skin-preview" data-skin="${k}">
-        <span class="ci sym-sun"></span><span class="ci sym-moon"></span>
+      <span class="skin-preview">
+        <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
       </span>
       <span class="skin-label">${s.label}</span>
       <span class="skin-desc">${s.desc}</span>

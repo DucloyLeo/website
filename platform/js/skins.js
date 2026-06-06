@@ -20,6 +20,10 @@ const SKINS = {
 function setCellSymbol(el, val) {
   el.classList.remove('sym-sun', 'sym-moon', 'sym-empty');
   el.classList.add(val === 1 ? 'sym-sun' : val === 2 ? 'sym-moon' : 'sym-empty');
+  // La classe du skin est posée sur la cellule elle-même (pas via un
+  // ancêtre data-skin) pour éviter toute « fuite » entre contextes.
+  el.classList.remove('skin-emoji', 'skin-circles', 'skin-bw');
+  el.classList.add('skin-' + getSkin());
   el.textContent = '';
 }
 

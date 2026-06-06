@@ -37,6 +37,23 @@
   .danger-zone { margin-top:3rem; border-top:1px solid rgba(220,80,60,.2); padding-top:2rem; }
   .danger-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(220,80,60,.6); margin-bottom:1rem; }
   .danger-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .skin-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .skin-opt {
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:.9rem 1.1rem; cursor:pointer;
+    transition:border-color .15s, box-shadow .15s; min-width:118px;
+  }
+  .skin-opt:hover { border-color:var(--border2); }
+  .skin-opt.active { border-color:var(--moon); box-shadow:0 0 0 1px var(--moon); }
+  .skin-preview { display:flex; gap:4px; }
+  .skin-preview .ci {
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px; font-size:1.05rem;
+    border-radius:7px; border:1px solid var(--border2); background:var(--surface2);
+  }
+  .skin-label { font-size:12px; color:var(--text); font-weight:500; }
+  .skin-desc { font-size:10px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -84,6 +101,12 @@
       <div class="badges-grid" id="badges-grid"></div>
     </div>
 
+    <!-- Apparence -->
+    <div class="diff-section">
+      <p class="diff-title">Apparence des symboles</p>
+      <div class="skin-grid" id="skin-options"></div>
+    </div>
+
     <!-- Zone RGPD -->
     <div class="danger-zone">
       <p class="danger-title">Mes données</p>
@@ -114,8 +137,29 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/skins.js"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+
+function renderSkinOptions() {
+  const cur = getSkin();
+  const order = ['emoji', 'circles', 'bw'];
+  document.getElementById('skin-options').innerHTML = order.map(k => {
+    const s = SKINS[k];
+    return `<button class="skin-opt ${k === cur ? 'active' : ''}" onclick="chooseSkin('${k}')">
+      <span class="skin-preview" data-skin="${k}">
+        <span class="ci sym-sun"></span><span class="ci sym-moon"></span>
+      </span>
+      <span class="skin-label">${s.label}</span>
+      <span class="skin-desc">${s.desc}</span>
+    </button>`;
+  }).join('');
+}
+
+function chooseSkin(k) {
+  applySkin(k);
+  renderSkinOptions();
+}
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
 async function loadProfile() {
@@ -185,6 +229,8 @@ async function loadProfile() {
       </div>`;
   }).join('');
   document.getElementById('badges-grid').innerHTML = badgesHtml || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
+
+  renderSkinOptions();
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('profile-content').style.display = '';

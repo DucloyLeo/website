@@ -5,6 +5,26 @@
 
 ---
 
+## [v0.5.1] — Skins, corrections & stabilisation
+
+### 🎨 Skins de symboles (suite)
+
+- **Synchronisation compte** : le choix de skin est désormais sauvegardé dans `profiles.preferences.skin` (Supabase) — synchronisé entre tous les appareils connectés au même compte
+- **Sync inter-onglets** : changer de skin dans un onglet se répercute instantanément dans les autres onglets du même navigateur (événement `storage`)
+- **Fix aperçus indépendants** : dans le sélecteur de skin du profil, chaque vignette (Emoji / Ronds / N&B) conserve son propre rendu quelle que soit l'option active
+- **Fix surbrillance d'erreur N&B** : en skin « Cases N&B », les cases en erreur affichent un contour rouge visible (le `box-shadow` était masqué par le fond plein)
+
+### 🎮 Interface de jeu
+
+- **Grille vide au chargement** : une grille 6×6 vide est affichée dès le chargement de la page, évitant le saut de layout lors de l'apparition du puzzle généré
+
+### 🌐 Infrastructure
+
+- **www.tangoleo.fr** : sous-domaine `www` connecté comme domaine personnalisé Pages — redirige vers `tangoleo.fr` (301, SEO correct)
+- **Cache Cloudflare** : la zone Cloudflare imposait un TTL de 4h qui écrasait les en-têtes `_headers`. Système de cache-busting par `?v=N` établi sur tous les assets — à incrémenter à chaque modification de CSS/JS
+
+---
+
 ## [v0.5] — Nettoyage & optimisation du code
 
 Passe de nettoyage en profondeur après audit de tout le code. Aucun changement d'interface, de structure ni de logique — uniquement la suppression de code mort accumulé au fil des ajouts. Chaque suppression a été vérifiée (zéro référence restante) et les pages de jeu testées en navigateur (aucune erreur JS).

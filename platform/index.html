@@ -63,6 +63,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css?v=5">
+<link rel="stylesheet" href="css/animations.css">
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
 nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
@@ -295,12 +296,14 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js?v=3"></script>
 <script src="js/skins.js?v=4"></script>
+<script src="js/animations.js"></script>
 <script>
 // ═══ GAME ENGINE (identique à tango.html original) ═══════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
 const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile',extreme:'Extrême',custom:'Perso'};
 
 let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
+let _animNextGrid=false; // true = prochain renderGrid joue l'animation de chargement
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
 let generating=false,currentDiff=null,rememberDiff=false,extremeMode=false;
@@ -423,7 +426,16 @@ function getContradictions(){const err=new Set();for(let r=0;r<N;r++)for(let c=0
 function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},2000);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
 function clearCellError(key){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);}}
 function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));errTimers={};activeErrors=new Set();}
-function highlightCell(key,on){const[r,c]=key.split(',').map(Number);const rows=document.getElementById('grid').querySelectorAll('tr');if(!rows[r])return;const cells=rows[r].querySelectorAll('.ci');if(cells[c])cells[c].classList.toggle('err',on);}
+function highlightCell(key,on){
+  const[r,c]=key.split(',').map(Number);
+  const rows=document.getElementById('grid').querySelectorAll('tr');
+  if(!rows[r])return;
+  const cells=rows[r].querySelectorAll('.ci');
+  if(cells[c]){
+    cells[c].classList.toggle('err',on);
+    if(on&&typeof ANIM!=='undefined')ANIM.error(cells[c]);
+  }
+}
 
 /* ── Render ── */
 function renderEmptyGrid(){
@@ -448,15 +460,34 @@ function renderGrid(){
       td.appendChild(inner);tr.appendChild(td);
     }
     tbl.appendChild(tr);
+
   }
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   document.getElementById('btn-hint').disabled=gameWon;
+  // Animation de chargement (seulement au premier affichage d'un puzzle)
+  if(_animNextGrid){
+    _animNextGrid=false;
+    const cells=[...tbl.querySelectorAll('.ci')];
+    if(typeof ANIM!=='undefined')ANIM.gridLoad(cells);
+  }
 }
 
 function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;hist.push({r,c,prev:board[r][c]});board[r][c]=val;clearCellError(r+','+c);clearHintPreview();renderGrid();updateErrorTimers();if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
 
 /* ── Game ── */
-function cycleCell(r,c,dir){if(gameWon)return;if(!timerOn&&!timerDone)startTimer();clearHintPreview();hist.push({r,c,prev:board[r][c]});board[r][c]=((board[r][c]+dir+3)%3);clearCellError(r+','+c);renderGrid();updateErrorTimers();if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function cycleCell(r,c,dir){
+  if(gameWon)return;if(!timerOn&&!timerDone)startTimer();clearHintPreview();
+  const prev=board[r][c];
+  hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
+  const next=board[r][c];
+  clearCellError(r+','+c);renderGrid();updateErrorTimers();
+  // Animation après renderGrid (nouveau nœud DOM)
+  if(typeof ANIM!=='undefined'){
+    const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
+    if(el){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
+  }
+  if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
+}
 function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();clearHintPreview();clearCellError(r+','+c);board[r][c]=prev;renderGrid();updateErrorTimers();}
 
 async function checkWin(){
@@ -464,6 +495,11 @@ async function checkWin(){
   for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   clearAllErrors();clearHintPreview();stopTimer();timerDone=true;gameWon=true;
+  // Cascade dorée sur les cellules avant le flou
+  if(typeof ANIM!=='undefined'){
+    const cells=[...document.getElementById('grid').querySelectorAll('.ci')];
+    ANIM.winCascade(cells);
+  }
   saveStatsLocal(currentDiff,timerSec);
 
   // Afficher la modal immédiatement (animation blur = 400ms), save DB en parallèle
@@ -585,7 +621,7 @@ function startGeneration(diff,forceSeedNum=null){
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
-    setDiffBadge(effectiveDiff==='extreme'?'extreme':diff);renderGrid();
+    setDiffBadge(effectiveDiff==='extreme'?'extreme':diff);_animNextGrid=true;renderGrid();
   },30);
 }
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
@@ -597,7 +633,7 @@ function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','h
 
 /* ── Custom seed ── */
 function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{sol,sCh,sCv};}
-function startGameFromCustomSeed(decoded,seedStr){const{sol,sCh,sCv}=decoded;const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=sol[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-modal').classList.remove('show');resetTimer();hist=[];puzzle=puz;solution=sol;ch=sCh;cv=sCv;board=puz.map(r=>[...r]);fixed=puz.map(r=>r.map(v=>v!==EMPTY));currentDiff='custom';currentSeedStr=seedStr;setDiffBadge('custom');renderGrid();}
+function startGameFromCustomSeed(decoded,seedStr){const{sol,sCh,sCv}=decoded;const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=sol[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-modal').classList.remove('show');resetTimer();hist=[];puzzle=puz;solution=sol;ch=sCh;cv=sCv;board=puz.map(r=>[...r]);fixed=puz.map(r=>r.map(v=>v!==EMPTY));currentDiff='custom';currentSeedStr=seedStr;setDiffBadge('custom');_animNextGrid=true;renderGrid();}
 
 /* ── Init ── */
 async function init(){

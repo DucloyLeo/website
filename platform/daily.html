@@ -42,6 +42,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css?v=5">
+<link rel="stylesheet" href="css/animations.css">
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
 /* ── Layout ── */
@@ -254,9 +255,11 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js?v=3"></script>
 <script src="js/skins.js?v=4"></script>
+<script src="js/animations.js"></script>
 <script>
 // ═══ GAME ENGINE ═══════════════════════════════════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
+let _animNextGrid=false;
 const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile'};
 const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
@@ -362,13 +365,27 @@ function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/
 function getContradictions(){const err=new Set();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=board[r][c];if(v===EMPTY)continue;if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)[c,c+1,c+2].forEach(ci=>err.add(r+','+ci));if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)[r,r+1,r+2].forEach(ri=>err.add(ri+','+c));const kh=r+','+c;if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s)){err.add(kh);err.add(r+','+(c+1));}}if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s)){err.add(kh);err.add((r+1)+','+c);}}}return err;}
 function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},2000);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
 function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));errTimers={};activeErrors=new Set();}
-function highlightCell(key,on){const[r,c]=key.split(',').map(Number);const rows=document.getElementById('grid').querySelectorAll('tr');if(!rows[r])return;const cells=rows[r].querySelectorAll('.ci');if(cells[c])cells[c].classList.toggle('err',on);}
+function highlightCell(key,on){
+  const[r,c]=key.split(',').map(Number);
+  const rows=document.getElementById('grid').querySelectorAll('tr');
+  if(!rows[r])return;
+  const cells=rows[r].querySelectorAll('.ci');
+  if(cells[c]){
+    cells[c].classList.toggle('err',on);
+    if(on&&typeof ANIM!=='undefined')ANIM.error(cells[c]);
+  }
+}
 
 /* Render */
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
   for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const key=r+','+c;const inner=document.createElement('div');inner.className='ci'+(fixed[r][c]?' fx':'')+(activeErrors.has(key)?' err':'');setCellSymbol(inner,board[r][c]);if(!fixed[r][c]&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}if(ch[key]&&c<N-1){const sp=document.createElement('span');sp.className='cn h';sp.textContent=ch[key];td.appendChild(sp);}if(cv[key]&&r<N-1){const sp=document.createElement('span');sp.className='cn v';sp.textContent=cv[key];td.appendChild(sp);}td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
   const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
+  if(_animNextGrid){
+    _animNextGrid=false;
+    const cells=[...tbl.querySelectorAll('.ci')];
+    if(typeof ANIM!=='undefined')ANIM.gridLoad(cells);
+  }
 }
 
 function renderMiniGrid(puzData,targetId,miniClass){
@@ -384,7 +401,20 @@ function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementBy
 function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
 
 /* Game logic */
-function cycleCell(r,c,dir){if(gameWon)return;hist.push({r,c,prev:board[r][c]});board[r][c]=((board[r][c]+dir+3)%3);const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el&&activeErrors.has(r+','+c)){activeErrors.delete(r+','+c);el.classList.remove('err');}renderGrid();updateErrorTimers();if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function cycleCell(r,c,dir){
+  if(gameWon)return;
+  const prev=board[r][c];
+  hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
+  const next=board[r][c];
+  const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
+  if(el&&activeErrors.has(r+','+c)){activeErrors.delete(r+','+c);el.classList.remove('err');}
+  renderGrid();updateErrorTimers();
+  if(typeof ANIM!=='undefined'){
+    const newEl=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
+    if(newEl){next===EMPTY?ANIM.erase(newEl):ANIM.place(newEl);}
+  }
+  if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
+}
 function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;const key=r+','+c;if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}renderGrid();updateErrorTimers();}
 function resetPuzzle(){clearAllErrors();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;renderGrid();}
 
@@ -393,6 +423,10 @@ async function checkWin(){
   for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   clearAllErrors();stopTimer();timerDone=true;gameWon=true;
+  if(typeof ANIM!=='undefined'){
+    const cells=[...document.getElementById('grid').querySelectorAll('.ci')];
+    ANIM.winCascade(cells);
+  }
   const elapsed=timerSec;
 
   setTimeout(async()=>{
@@ -528,7 +562,7 @@ function loadAndRenderPuzzle(level){
   board=puzzle.map(r=>[...r]);
   fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
   hist=[];gameWon=false;clearAllErrors();
-  renderGrid();
+  _animNextGrid=true;renderGrid();
 }
 
 function startDaily(){

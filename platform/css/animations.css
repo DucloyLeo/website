@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════
+   animations.css — Système d'animations Tangoléo
+
+   POUR AJUSTER UNE ANIMATION : modifier les variables
+   CSS ci-dessous, pas les keyframes.
+   Chaque animation a son propre bloc bien délimité.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Variables globales ────────────────────────────── */
+:root {
+  /* Placement d'un symbole */
+  --anim-place-duration:  140ms;
+  --anim-place-scale:     1.14;
+  --anim-place-easing:    cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Effacement d'un symbole */
+  --anim-erase-duration:  100ms;
+  --anim-erase-scale:     0.82;
+
+  /* Erreur (shake) */
+  --anim-error-duration:  320ms;
+  --anim-error-distance:  5px;
+
+  /* Apparition des cellules (chargement grille) */
+  --anim-cell-in-duration: 220ms;
+  --anim-cell-in-easing:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --anim-grid-stagger:     16ms;
+
+  /* Cascade de victoire */
+  --anim-win-duration:     500ms;
+  --anim-win-color:        rgba(245, 200, 66, 0.30);
+  --anim-win-stagger:      28ms;
+}
+
+/* ── Respect de prefers-reduced-motion ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --anim-place-duration:   0ms;
+    --anim-erase-duration:   0ms;
+    --anim-error-duration:   0ms;
+    --anim-cell-in-duration: 0ms;
+    --anim-win-duration:     0ms;
+    --anim-grid-stagger:     0ms;
+    --anim-win-stagger:      0ms;
+  }
+}
+
+/* ── Placement d'un symbole ───────────────────────── */
+@keyframes anim-place {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(var(--anim-place-scale)); }
+  100% { transform: scale(1); }
+}
+.anim-place {
+  animation: anim-place var(--anim-place-duration) var(--anim-place-easing) both;
+}
+
+/* ── Effacement d'un symbole ──────────────────────── */
+@keyframes anim-erase {
+  0%   { transform: scale(1);                   opacity: 1; }
+  40%  { transform: scale(var(--anim-erase-scale)); opacity: 0.6; }
+  100% { transform: scale(1);                   opacity: 1; }
+}
+.anim-erase {
+  animation: anim-erase var(--anim-erase-duration) ease both;
+}
+
+/* ── Erreur — shake horizontal ────────────────────── */
+@keyframes anim-error {
+  0%, 100% { transform: translateX(0); }
+  18%      { transform: translateX(calc(-1 * var(--anim-error-distance))); }
+  36%      { transform: translateX(var(--anim-error-distance)); }
+  54%      { transform: translateX(calc(-0.6 * var(--anim-error-distance))); }
+  72%      { transform: translateX(calc(0.4 * var(--anim-error-distance))); }
+  88%      { transform: translateX(calc(-0.2 * var(--anim-error-distance))); }
+}
+.anim-error {
+  animation: anim-error var(--anim-error-duration) cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ── Apparition au chargement (stagger via --ci) ──── */
+@keyframes anim-cell-in {
+  0%   { transform: scale(0.72); opacity: 0; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.anim-cell-in {
+  animation: anim-cell-in var(--anim-cell-in-duration) var(--anim-cell-in-easing) both;
+  animation-delay: calc(var(--ci, 0) * var(--anim-grid-stagger));
+}
+
+/* ── Flash de victoire ────────────────────────────── */
+@keyframes anim-win-flash {
+  0%   { background: var(--surface); }
+  35%  { background: var(--anim-win-color); }
+  100% { background: var(--surface); }
+}
+.anim-win-flash {
+  animation: anim-win-flash var(--anim-win-duration) ease both;
+}

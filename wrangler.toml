@@ -1,9 +1,0 @@
-# Cloudflare Pages configuration
-# This is a static site - files in platform/ are served directly
-name = "tangoleo"
-type = "javascript"
-main = "src/index.js"
-site = { bucket = "platform" }
-compatibility_date = "2024-01-01"
-
-# No routes needed - Cloudflare Pages handles routing

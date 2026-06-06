@@ -5,6 +5,26 @@
 
 ---
 
+## [v0.5] — Nettoyage & optimisation du code
+
+Passe de nettoyage en profondeur après audit de tout le code. Aucun changement d'interface, de structure ni de logique — uniquement la suppression de code mort accumulé au fil des ajouts. Chaque suppression a été vérifiée (zéro référence restante) et les pages de jeu testées en navigateur (aucune erreur JS).
+
+### 🧹 Code mort supprimé
+
+- `const S=['','☀','🌙']` dans `index.html` et `daily.html` — rendu obsolète par le système de skins (le rendu passe désormais par `setCellSymbol`)
+- `clearStatsLocal()` (`index.html`) — fonction jamais appelée
+- `seedToStr()`, `getParisNow()`, `autoSelectFirstUnresolved()` (`daily.html`) — fonctions jamais appelées
+- `og-image.svg` — fichier orphelin remplacé par `og-image.png` (v0.4)
+
+### ✅ Vérifié et conservé
+
+- `loadStatsLocal` / `saveStatsLocal` (`index.html`) : alimentent les statistiques des joueurs **non connectés** affichées sur `stats.html` — **conservés**
+- CSS partagé (`common.css`) et fonctions de `auth.js` : audités, aucun mort (les classes de toasts/thème sont injectées dynamiquement via JS)
+
+> Note : la principale optimisation restante (déduplication du moteur de jeu, dupliqué entre `index.html` et `daily.html`) est un refactor à part entière, à traiter dans une passe dédiée avec tests.
+
+---
+
 ## [v0.4] — SEO, PWA, skins & nouveaux badges
 
 ### 🔍 Référencement (SEO)

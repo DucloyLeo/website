@@ -290,7 +290,6 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 <script>
 // ═══ GAME ENGINE (identique à tango.html original) ═══════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
-const S=['','☀','🌙'];
 const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile',custom:'Perso'};
 
 let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
@@ -463,7 +462,6 @@ function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=
 const STATS_KEY='tango_stats_v2';
 function loadStatsLocal(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
 function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard'].includes(diff))return;const s=loadStatsLocal();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
-function clearStatsLocal(){try{localStorage.removeItem(STATS_KEY);}catch(e){}}
 
 /* ── Custom seed ── */
 function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{sol,sCh,sCv};}

@@ -6,6 +6,13 @@
    Chaque animation a son propre bloc bien délimité.
    ═══════════════════════════════════════════════════════ */
 
+/* Coins arrondis des 4 cases d'angle — alignés sur l'arrondi de la grille,
+   pour que l'anneau d'erreur / la lueur / l'indice ne soient pas rognés. */
+#grid tr:first-child td:first-child .ci { border-top-left-radius: 9px; }
+#grid tr:first-child td:last-child  .ci { border-top-right-radius: 9px; }
+#grid tr:last-child  td:first-child .ci { border-bottom-left-radius: 9px; }
+#grid tr:last-child  td:last-child  .ci { border-bottom-right-radius: 9px; }
+
 /* ── Variables globales ────────────────────────────── */
 :root {
   /* Placement d'un symbole */

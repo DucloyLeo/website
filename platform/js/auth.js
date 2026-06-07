@@ -312,8 +312,55 @@ function saveUserPref(userId, patch) {
   }, 600);
 }
 
+// ── Menu hamburger commun (pages hors admin) ──────────
+// Source unique du menu de jeu, injecté sur chaque page non-admin.
+// Les actions de jeu (Nouvelle partie, Difficulté, Commandes) et les
+// toggles sont surchargés par le moteur de jeu sur la page de jeu ;
+// ailleurs, les fonctions de repli ci-dessous prennent le relais.
+function renderGameMenu() {
+  if (location.pathname.includes('/admin/')) return;
+  const menu = document.getElementById('nav-menu');
+  if (!menu) return;
+  menu.innerHTML = `
+      <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
+      <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
+      <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
+      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div id="menu-auth-item"></div>
+      <div class="nav-menu-sep"></div>
+      <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
+        <span>Mémoriser la difficulté</span>
+        <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-remember" onchange="onPrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+      </div>
+      <div class="nav-menu-item menu-pref-row" onclick="toggleExtremeMode(event)" style="color:var(--sun)">
+        <span>☠ Mode extrême</span>
+        <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+      </div>
+      <div class="nav-menu-item menu-pref-row" onclick="toggleSoundPref(event)">
+        <span>🔊 Sons</span>
+        <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-sound" onchange="onSoundPrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+      </div>`;
+  try {
+    const r = document.getElementById('pref-remember'); if (r) r.checked = localStorage.getItem('tango_remember') === '1';
+    const e = document.getElementById('pref-extreme');  if (e) e.checked = localStorage.getItem('tango_extreme') === '1';
+    const s = document.getElementById('pref-sound');    if (s) s.checked = localStorage.getItem('tango_sound') !== '0';
+  } catch (_) {}
+}
+
+// Fallbacks (surchargés par le moteur de jeu sur la page de jeu)
+function menuNew()      { closeMenu(); location.href = '/index.html'; }
+function menuDiff()     { closeMenu(); location.href = '/index.html'; }
+function menuCommands() { closeMenu(); location.href = '/index.html'; }
+function onPrefChange()        { try { localStorage.setItem('tango_remember', document.getElementById('pref-remember').checked ? '1' : '0'); } catch (e) {} }
+function toggleRememberDiff(e) { e.stopPropagation(); const cb = document.getElementById('pref-remember'); cb.checked = !cb.checked; onPrefChange(); }
+function onExtremePrefChange() { try { localStorage.setItem('tango_extreme', document.getElementById('pref-extreme').checked ? '1' : '0'); } catch (e) {} }
+function toggleExtremeMode(e)  { e.stopPropagation(); const cb = document.getElementById('pref-extreme'); cb.checked = !cb.checked; onExtremePrefChange(); }
+function onSoundPrefChange()   { const on = document.getElementById('pref-sound').checked; try { localStorage.setItem('tango_sound', on ? '1' : '0'); } catch (e) {} if (typeof SOUND !== 'undefined') SOUND.setMuted(!on); }
+function toggleSoundPref(e)    { e.stopPropagation(); const cb = document.getElementById('pref-sound'); cb.checked = !cb.checked; onSoundPrefChange(); }
+
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
+  renderGameMenu();
   const user = await getCurrentUser();
   _currentUserId = user?.id || null;
   const el   = document.getElementById('nav-auth');

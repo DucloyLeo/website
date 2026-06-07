@@ -5,6 +5,52 @@
 
 ---
 
+## [v0.6] — Refonte du générateur, mode extrême & animations
+
+Grosse mise à jour développée sur une branche `dev` (preview Cloudflare) puis fusionnée en production.
+
+### 🎲 Refonte complète de la génération de grilles
+
+- **Nouveau solveur à 7 niveaux ordonnés** (L1 Triplet → L2 Équilibre → L3 Contrainte directe → L4 Paire extrémité → L5 Extrémités identiques → L6 Dist4 → L7 Élimination). La difficulté d'une grille = le niveau le plus haut nécessaire à sa résolution. Les chaînes sont absorbées par la contrainte directe itérative.
+- **Générateur paramétrique** qui *cible* des plages plutôt que de filtrer après coup : `placeConstraints()` (quantité + ratio `=`/`×`), `carve()` (creusage jusqu'à un nombre de cases visé), validation technique min/max + unicité.
+- Convergence beaucoup plus rapide et fiable.
+
+### ⚙️ Paramètres de difficulté éditables par les admins
+
+- Nouvelle page **`/admin/difficulty.html`** : cases de départ, contraintes, ratio `=`/`×`, technique min/max — par difficulté, en plages.
+- Table `difficulty_params` (migration SQL) + lien dans toute la nav admin.
+
+### ☠️ Mode extrême
+
+- Difficulté optimisée pour être la plus dure possible (peu de cases, peu de contraintes, beaucoup de `×`, élimination requise).
+- **Toggle « Mode extrême »** dans le menu (force toutes les parties), et **10 % de chance** d'apparaître en « Difficile » classique (avec fallback).
+
+### ✨ Système d'animations (nouveau)
+
+- Fichiers dédiés **`css/animations.css` + `js/animations.js`**, réglables par variables CSS, `prefers-reduced-motion` respecté.
+- Pop de placement (symbole), effet de pose d'indice, **lueur en cascade** quand une ligne/colonne est complétée, **cascade dorée de victoire**, grille vide au chargement.
+- Rendu **en place** des cases (plus de reconstruction de la grille à chaque coup) → les animations ne sont plus coupées.
+
+### 🚨 Refonte de la détection d'erreurs
+
+- Détection de la règle d'**équilibre** ajoutée (elle manquait).
+- Surbrillance de la **ligne/colonne entière** concernée (ne révèle plus la case fautive), **pulse synchronisé** sur toute la grille, **shake** des cases remplies (re-déclenché quand une nouvelle ligne/colonne entre en erreur).
+- Plus de clignotement quand on modifie une case sans impact sur l'erreur.
+
+### 🏁 Fin de partie repensée
+
+- Plus de flou ni de voile plein écran : la grille reste nette, on profite de la cascade. Modale de résultat **opaque** affichée immédiatement. Relance rapide préservée (bouton, **Entrée**, **W**).
+
+### 🎨 UX & corrections
+
+- Calendrier : pas de sélection accidentelle en glissant, style de sélection visible sur jours complétés, hover adapté à l'état de la case.
+- Coins des cases d'angle arrondis (anti-rognage erreur/indice).
+- Chrono affiché en **pilule** (style puce admin).
+- Fix Ctrl+H (indice direct, cassé par la refonte du solveur), fix touche W qui ne fermait pas la modale de victoire, fix flash à la génération.
+- `RETENTION.md` : pistes de rétention joueurs (streak, partage, notifications, XP, missions, heatmap) — à implémenter ultérieurement.
+
+---
+
 ## [v0.5.1] — Skins, corrections & stabilisation
 
 ### 🎨 Skins de symboles (suite)

@@ -186,6 +186,13 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
       </div>
+      <div class="nav-menu-item menu-pref-row" onclick="toggleSoundPref(event)">
+        <span>🔊 Sons</span>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-sound" onchange="onSoundPrefChange()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
     </div>
   </div>
   <a href="/index.html" class="nav-title">☀ Tangoléo 🌙</a>
@@ -301,6 +308,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 <script src="js/auth.js?v=3"></script>
 <script src="js/skins.js?v=4"></script>
 <script src="js/animations.js"></script>
+<script src="js/sounds.js"></script>
 <script>
 // ═══ GAME ENGINE (identique à tango.html original) ═══════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
@@ -339,7 +347,7 @@ function copySeed(){
 function onOverlayClick(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('show');}
 
 /* ── Prefs ── */
-function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}extremeMode=localStorage.getItem('tango_extreme')==='1';document.getElementById('pref-extreme').checked=extremeMode;}catch(e){}}
+function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}extremeMode=localStorage.getItem('tango_extreme')==='1';document.getElementById('pref-extreme').checked=extremeMode;const sc=document.getElementById('pref-sound');if(sc)sc.checked=(typeof SOUND==='undefined'||!SOUND.muted);}catch(e){}}
 function savePrefs(){
   try{localStorage.setItem('tango_remember',rememberDiff?'1':'0');if(rememberDiff&&currentDiff&&currentDiff!=='custom')localStorage.setItem('tango_diff',currentDiff);}catch(e){}
   if(currentUserId){const patch={remember_diff:rememberDiff};if(rememberDiff&&currentDiff&&currentDiff!=='custom')patch.diff=currentDiff;saveUserPref(currentUserId,patch);}
@@ -348,6 +356,8 @@ function onPrefChange(){rememberDiff=document.getElementById('pref-remember').ch
 function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 function onExtremePrefChange(){extremeMode=document.getElementById('pref-extreme').checked;try{localStorage.setItem('tango_extreme',extremeMode?'1':'0');}catch(e){}}
 function toggleExtremeMode(e){e.stopPropagation();const cb=document.getElementById('pref-extreme');cb.checked=!cb.checked;onExtremePrefChange();}
+function onSoundPrefChange(){const on=document.getElementById('pref-sound').checked;if(typeof SOUND!=='undefined')SOUND.setMuted(!on);}
+function toggleSoundPref(e){e.stopPropagation();const cb=document.getElementById('pref-sound');cb.checked=!cb.checked;onSoundPrefChange();}
 
 /* ── Timer ── */
 function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
@@ -461,6 +471,7 @@ function applyErrClasses(){
 }
 // Shake sur les cases REMPLIES d'une ligne ou colonne donnée
 function shakeErrLine(type,idx){
+  if(typeof SOUND!=='undefined')SOUND.error();
   if(typeof ANIM==='undefined')return;
   const trs=document.getElementById('grid').querySelectorAll('tr');
   if(type==='row'){const cells=trs[idx]&&trs[idx].querySelectorAll('.ci');for(let c=0;c<N;c++)if(board[idx][c]!==EMPTY&&cells&&cells[c])ANIM.error(cells[c]);}
@@ -518,6 +529,7 @@ function confirmHint(){
   if(el){el.classList.remove('hint-preview');setCellSymbol(el,val);}
   updateErrorTimers();
   if(el&&typeof ANIM!=='undefined'){ANIM.place(el);ANIM.hint(el);}
+  if(typeof SOUND!=='undefined')SOUND.hint();
   animLineComplete(r,c,prev,val);
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
@@ -527,18 +539,16 @@ function confirmHint(){
 // Lueur en cascade quand une case vide vient compléter sa ligne/colonne.
 // La cascade se propage VERS la case qu'on vient de remplir.
 function animLineComplete(r,c,prev,next){
-  if(prev!==EMPTY||next===EMPTY||typeof ANIM==='undefined')return;
+  if(prev!==EMPTY||next===EMPTY)return;
   const rows=document.getElementById('grid').querySelectorAll('tr');
-  if(board[r].every(v=>v!==EMPTY)){
-    const cells=[...rows[r].querySelectorAll('.ci')];
-    // case à droite (c>=3) → cascade gauche→droite (ordre naturel) ; sinon inversé
-    ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());
+  const rowDone=board[r].every(v=>v!==EMPTY);
+  const colDone=board.every(row=>row[c]!==EMPTY);
+  if(typeof ANIM!=='undefined'){
+    // case à droite (c>=3) → cascade gauche→droite ; en haut (r<3) → bas→haut
+    if(rowDone){const cells=[...rows[r].querySelectorAll('.ci')];ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());}
+    if(colDone){const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);}
   }
-  if(board.every(row=>row[c]!==EMPTY)){
-    const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);
-    // case en haut (r<3) → cascade bas→haut (inversé) ; sinon haut→bas (naturel)
-    ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);
-  }
+  if((rowDone||colDone)&&typeof SOUND!=='undefined')SOUND.lineComplete();
 }
 function cycleCell(r,c,dir){
   if(gameWon)return;
@@ -553,6 +563,7 @@ function cycleCell(r,c,dir){
   if(el)setCellSymbol(el,next);
   updateErrorTimers();
   if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
+  if(typeof SOUND!=='undefined'){next===EMPTY?SOUND.erase():SOUND.place(next);}
   animLineComplete(r,c,prev,next);
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
@@ -576,6 +587,7 @@ async function checkWin(){
     const cells=[...document.getElementById('grid').querySelectorAll('.ci')];
     ANIM.winCascade(cells);
   }
+  if(typeof SOUND!=='undefined')SOUND.win();
   saveStatsLocal(currentDiff,timerSec);
 
   // La modale (fond semi-transparent + flou local) laisse voir la cascade.

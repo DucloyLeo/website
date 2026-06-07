@@ -256,6 +256,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <script src="js/auth.js?v=3"></script>
 <script src="js/skins.js?v=4"></script>
 <script src="js/animations.js"></script>
+<script src="js/sounds.js"></script>
 <script>
 // ═══ GAME ENGINE ═══════════════════════════════════════
 const SUN=1,MOON=2,EMPTY=0,N=6;
@@ -383,6 +384,7 @@ function applyErrClasses(){
   for(let r=0;r<N;r++){const cells=trs[r]&&trs[r].querySelectorAll('.ci');if(!cells)continue;for(let c=0;c<N;c++)if(cells[c])cells[c].classList.toggle('err',isCellErr(r,c));}
 }
 function shakeErrLine(type,idx){
+  if(typeof SOUND!=='undefined')SOUND.error();
   if(typeof ANIM==='undefined')return;
   const trs=document.getElementById('grid').querySelectorAll('tr');
   if(type==='row'){const cells=trs[idx]&&trs[idx].querySelectorAll('.ci');for(let c=0;c<N;c++)if(board[idx][c]!==EMPTY&&cells&&cells[c])ANIM.error(cells[c]);}
@@ -423,16 +425,15 @@ function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone
 
 /* Game logic */
 function animLineComplete(r,c,prev,next){
-  if(prev!==EMPTY||next===EMPTY||typeof ANIM==='undefined')return;
+  if(prev!==EMPTY||next===EMPTY)return;
   const rows=document.getElementById('grid').querySelectorAll('tr');
-  if(board[r].every(v=>v!==EMPTY)){
-    const cells=[...rows[r].querySelectorAll('.ci')];
-    ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());
+  const rowDone=board[r].every(v=>v!==EMPTY);
+  const colDone=board.every(row=>row[c]!==EMPTY);
+  if(typeof ANIM!=='undefined'){
+    if(rowDone){const cells=[...rows[r].querySelectorAll('.ci')];ANIM.lineGlow(c>=N/2?cells:[...cells].reverse());}
+    if(colDone){const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);}
   }
-  if(board.every(row=>row[c]!==EMPTY)){
-    const colCells=[...rows].map(tr=>tr.querySelectorAll('.ci')[c]);
-    ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);
-  }
+  if((rowDone||colDone)&&typeof SOUND!=='undefined')SOUND.lineComplete();
 }
 function cellEl(r,c){const tr=document.getElementById('grid').querySelectorAll('tr')[r];return tr?tr.querySelectorAll('.ci')[c]:null;}
 function cycleCell(r,c,dir){
@@ -445,6 +446,7 @@ function cycleCell(r,c,dir){
   if(el)setCellSymbol(el,next);
   updateErrorTimers();
   if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
+  if(typeof SOUND!=='undefined'){next===EMPTY?SOUND.erase():SOUND.place(next);}
   animLineComplete(r,c,prev,next);
   const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
@@ -467,6 +469,7 @@ async function checkWin(){
     const cells=[...document.getElementById('grid').querySelectorAll('.ci')];
     ANIM.winCascade(cells);
   }
+  if(typeof SOUND!=='undefined')SOUND.win();
   const elapsed=timerSec;
 
   // Affichage immédiat du résultat, sans flouter la grille (cascade visible).

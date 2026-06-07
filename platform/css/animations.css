@@ -109,18 +109,26 @@
   animation: anim-win-flash var(--anim-win-duration) ease both;
 }
 
-/* ── Pulse continu sur les cases en erreur ────────── */
-@keyframes anim-err-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: var(--anim-err-pulse-min); }
+/* ── Pulse synchronisé sur les cases en erreur ──────
+   Une seule horloge globale (--err-pulse animée sur body)
+   pilote l'opacité de TOUTES les cases en erreur → pulse
+   parfaitement synchronisé, indépendant du rebuild DOM.
+   Comme le pulse passe par l'opacité (et non 'animation'),
+   il n'entre plus en conflit avec le shake (transform).   */
+@property --err-pulse {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
 }
-.ci.err {
+@keyframes anim-err-pulse {
+  0%, 100% { --err-pulse: 1; }
+  50%      { --err-pulse: var(--anim-err-pulse-min); }
+}
+body {
   animation: anim-err-pulse var(--anim-err-pulse-duration) ease-in-out infinite;
 }
-/* Case en erreur + shake : jouer les deux (sinon le pulse écrase le shake) */
-.ci.err.anim-error {
-  animation: anim-error var(--anim-error-duration) cubic-bezier(0.36, 0.07, 0.19, 0.97) both,
-             anim-err-pulse var(--anim-err-pulse-duration) ease-in-out infinite;
+.ci.err {
+  opacity: var(--err-pulse, 1);
 }
 
 /* ── Lueur de bordure (ligne/colonne complétée) ───── */

@@ -266,7 +266,7 @@ const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Ao�
 let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
-let errTimers={},activeErrors=new Set(),gameWon=false;
+let errRowTimers={},errColTimers={},activeErrRows=new Set(),activeErrCols=new Set(),gameWon=false;
 let rng=Math.random;
 
 /* PRNG */
@@ -362,39 +362,45 @@ function genForDiff(diff){
 function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{puzzle:puz,solution:sol,ch:sCh,cv:sCv};}
 
 /* Errors */
-function getContradictions(){
-  const err=new Set();
-  const addRow=r=>{for(let c=0;c<N;c++)err.add(r+','+c);};
-  const addCol=c=>{for(let r=0;r<N;r++)err.add(r+','+c);};
+function getErrorLines(){
+  const rows=new Set(),cols=new Set();
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const v=board[r][c];if(v===EMPTY)continue;
-    if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)addRow(r);
-    if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)addCol(c);
+    if(c+2<N&&board[r][c+1]===v&&board[r][c+2]===v)rows.add(r);
+    if(r+2<N&&board[r+1][c]===v&&board[r+2][c]===v)cols.add(c);
     const kh=r+','+c;
-    if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s))addRow(r);}
-    if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s))addCol(c);}
+    if(ch[kh]&&c+1<N&&board[r][c+1]!==EMPTY){const s=v===board[r][c+1];if((ch[kh]==='='&&!s)||(ch[kh]==='×'&&s))rows.add(r);}
+    if(cv[kh]&&r+1<N&&board[r+1][c]!==EMPTY){const s=v===board[r+1][c];if((cv[kh]==='='&&!s)||(cv[kh]==='×'&&s))cols.add(c);}
   }
-  for(let r=0;r<N;r++)for(const val of[SUN,MOON])if(board[r].filter(v=>v===val).length>N/2)addRow(r);
-  for(let c=0;c<N;c++)for(const val of[SUN,MOON])if(board.map(row=>row[c]).filter(v=>v===val).length>N/2)addCol(c);
-  return err;
+  for(let r=0;r<N;r++)for(const val of[SUN,MOON])if(board[r].filter(v=>v===val).length>N/2)rows.add(r);
+  for(let c=0;c<N;c++)for(const val of[SUN,MOON])if(board.map(row=>row[c]).filter(v=>v===val).length>N/2)cols.add(c);
+  return{rows,cols};
 }
-function updateErrorTimers(){const current=getContradictions();current.forEach(key=>{if(!activeErrors.has(key)&&!errTimers[key]){errTimers[key]=setTimeout(()=>{delete errTimers[key];if(getContradictions().has(key)){activeErrors.add(key);highlightCell(key,true);}},500);}});[...Object.keys(errTimers),...activeErrors].forEach(key=>{if(!current.has(key)){if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}}});}
-function clearAllErrors(){Object.values(errTimers).forEach(t=>clearTimeout(t));errTimers={};activeErrors=new Set();}
-function highlightCell(key,on){
-  const[r,c]=key.split(',').map(Number);
-  const rows=document.getElementById('grid').querySelectorAll('tr');
-  if(!rows[r])return;
-  const cells=rows[r].querySelectorAll('.ci');
-  if(cells[c]){
-    cells[c].classList.toggle('err',on);
-    if(on&&board[r][c]!==EMPTY&&typeof ANIM!=='undefined')ANIM.error(cells[c]);
-  }
+function hasError(){const e=getErrorLines();return e.rows.size>0||e.cols.size>0;}
+function isCellErr(r,c){return activeErrRows.has(r)||activeErrCols.has(c);}
+function applyErrClasses(){
+  const trs=document.getElementById('grid').querySelectorAll('tr');
+  for(let r=0;r<N;r++){const cells=trs[r]&&trs[r].querySelectorAll('.ci');if(!cells)continue;for(let c=0;c<N;c++)if(cells[c])cells[c].classList.toggle('err',isCellErr(r,c));}
 }
+function shakeErrLine(type,idx){
+  if(typeof ANIM==='undefined')return;
+  const trs=document.getElementById('grid').querySelectorAll('tr');
+  if(type==='row'){const cells=trs[idx]&&trs[idx].querySelectorAll('.ci');for(let c=0;c<N;c++)if(board[idx][c]!==EMPTY&&cells&&cells[c])ANIM.error(cells[c]);}
+  else{for(let r=0;r<N;r++){const cell=trs[r]&&trs[r].querySelectorAll('.ci')[idx];if(board[r][idx]!==EMPTY&&cell)ANIM.error(cell);}}
+}
+function updateErrorTimers(){
+  const{rows:curR,cols:curC}=getErrorLines();
+  curR.forEach(r=>{if(!activeErrRows.has(r)&&!errRowTimers[r])errRowTimers[r]=setTimeout(()=>{delete errRowTimers[r];if(getErrorLines().rows.has(r)){activeErrRows.add(r);applyErrClasses();shakeErrLine('row',r);}},500);});
+  curC.forEach(c=>{if(!activeErrCols.has(c)&&!errColTimers[c])errColTimers[c]=setTimeout(()=>{delete errColTimers[c];if(getErrorLines().cols.has(c)){activeErrCols.add(c);applyErrClasses();shakeErrLine('col',c);}},500);});
+  [...Object.keys(errRowTimers).map(Number),...activeErrRows].forEach(r=>{if(!curR.has(r)){if(errRowTimers[r]){clearTimeout(errRowTimers[r]);delete errRowTimers[r];}if(activeErrRows.delete(r))applyErrClasses();}});
+  [...Object.keys(errColTimers).map(Number),...activeErrCols].forEach(c=>{if(!curC.has(c)){if(errColTimers[c]){clearTimeout(errColTimers[c]);delete errColTimers[c];}if(activeErrCols.delete(c))applyErrClasses();}});
+}
+function clearAllErrors(){Object.values(errRowTimers).forEach(t=>clearTimeout(t));Object.values(errColTimers).forEach(t=>clearTimeout(t));errRowTimers={};errColTimers={};activeErrRows=new Set();activeErrCols=new Set();}
 
 /* Render */
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
-  for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const key=r+','+c;const inner=document.createElement('div');inner.className='ci'+(fixed[r][c]?' fx':'')+(activeErrors.has(key)?' err':'');setCellSymbol(inner,board[r][c]);if(!fixed[r][c]&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}if(ch[key]&&c<N-1){const sp=document.createElement('span');sp.className='cn h';sp.textContent=ch[key];td.appendChild(sp);}if(cv[key]&&r<N-1){const sp=document.createElement('span');sp.className='cn v';sp.textContent=cv[key];td.appendChild(sp);}td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
+  for(let r=0;r<N;r++){const tr=document.createElement('tr');for(let c=0;c<N;c++){const td=document.createElement('td');const key=r+','+c;const inner=document.createElement('div');inner.className='ci'+(fixed[r][c]?' fx':'')+(isCellErr(r,c)?' err':'');setCellSymbol(inner,board[r][c]);if(!fixed[r][c]&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}if(ch[key]&&c<N-1){const sp=document.createElement('span');sp.className='cn h';sp.textContent=ch[key];td.appendChild(sp);}if(cv[key]&&r<N-1){const sp=document.createElement('span');sp.className='cn v';sp.textContent=cv[key];td.appendChild(sp);}td.appendChild(inner);tr.appendChild(td);}tbl.appendChild(tr);}
   const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
   if(_animNextGrid){
     _animNextGrid=false;
@@ -441,11 +447,11 @@ function cycleCell(r,c,dir){
   animLineComplete(r,c,prev,next);
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
-function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;const key=r+','+c;if(errTimers[key]){clearTimeout(errTimers[key]);delete errTimers[key];}if(activeErrors.has(key)){activeErrors.delete(key);highlightCell(key,false);}renderGrid();updateErrorTimers();}
+function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;renderGrid();updateErrorTimers();}
 function resetPuzzle(){clearAllErrors();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;renderGrid();}
 
 async function checkWin(){
-  if(getContradictions().size>0)return;
+  if(hasError())return;
   for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   clearAllErrors();stopTimer();timerDone=true;gameWon=true;

@@ -149,6 +149,10 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 
 .modal-time{font-size:1.7rem;font-weight:500;color:var(--sun);text-align:center;letter-spacing:.06em}
 .modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:.3rem}
+/* Modale de victoire : pas de voile plein écran (on voit la cascade),
+   flou + semi-transparence uniquement derrière la modale. */
+#win-modal{background:transparent}
+#win-modal .modal{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 40px rgba(0,0,0,.45)}
 
 main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem}
 @media(max-width:700px){.ci{width:52px!important;height:52px!important;font-size:1.5rem!important}.cn{font-size:9px;width:13px;height:13px}.cn.h{right:-7px}.cn.v{bottom:-7px}}
@@ -574,13 +578,13 @@ async function checkWin(){
   }
   saveStatsLocal(currentDiff,timerSec);
 
-  // Afficher la modal immédiatement (animation blur = 400ms), save DB en parallèle
+  // La modale (fond semi-transparent + flou local) laisse voir la cascade.
+  // Léger délai pour que la cascade démarre avant l'apparition de la modale.
   setTimeout(()=>{
-    document.getElementById('grid-wrap').classList.add('blurred');
     document.getElementById('modal-time').textContent=fmt(timerSec);
     document.getElementById('win-sub').textContent='Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
     document.getElementById('win-modal').classList.add('show');
-  },400);
+  },650);
 
   // Sauvegarde en arrière-plan — le toast badge arrive via Realtime
   if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){

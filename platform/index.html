@@ -625,7 +625,7 @@ document.addEventListener('keydown',e=>{
 /* ── Difficulty ── */
 function setDiffBadge(diff){const el=document.getElementById('diff-badge');el.textContent=DIFF_LABELS[diff];el.className='diff-badge-btn '+diff;}
 function openChangeDiff(){document.getElementById('diff-modal-sub').textContent='Changer la difficulté (génère un nouveau puzzle)';document.getElementById('diff-modal').classList.add('show');}
-function askNewPuzzle(){const validDiffs=['easy','medium','hard'];const storedDiff=rememberDiff?localStorage.getItem('tango_diff'):null;if(storedDiff&&validDiffs.includes(storedDiff)){startGeneration(storedDiff);}else{document.getElementById('diff-modal-sub').textContent='Quel niveau pour ce nouveau puzzle ?';document.getElementById('diff-modal').classList.add('show');}}
+function askNewPuzzle(){document.getElementById('win-modal').classList.remove('show');const validDiffs=['easy','medium','hard'];const storedDiff=rememberDiff?localStorage.getItem('tango_diff'):null;if(storedDiff&&validDiffs.includes(storedDiff)){startGeneration(storedDiff);}else{document.getElementById('diff-modal-sub').textContent='Quel niveau pour ce nouveau puzzle ?';document.getElementById('diff-modal').classList.add('show');}}
 function pickDiff(diff){currentDiff=diff;if(rememberDiff)savePrefs();document.getElementById('diff-modal').classList.remove('show');startGeneration(diff);}
 
 /* ── Generator ── */
@@ -696,6 +696,7 @@ function startGeneration(diff,forceSeedNum=null){
   const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
   generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
   document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('win-modal').classList.remove('show');
   document.getElementById('gen-label').textContent='Génération'+(effectiveDiff==='extreme'?' ☠ Extrême':' niveau '+DIFF_LABELS[diff])+'…';
   // N'afficher la modale que si la génération prend > 100ms (évite le flash)
   const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);

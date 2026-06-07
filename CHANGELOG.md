@@ -5,6 +5,30 @@
 
 ---
 
+## [v0.7] — Sons, navigation unifiée & finitions
+
+### 🔊 Effets sonores
+- Système de sons (`js/sounds.js`, Web Audio API, réglable via `SOUND_CONFIG`) : placement (☀/🌙), effacement, erreur, indice, ligne complétée, victoire, **notification**.
+- Toggle « 🔊 Sons » dans le menu, persisté.
+
+### 🧭 Navigation centralisée (anti-duplication)
+- **Nav admin** cohérente sur toutes les pages (sidebar + hamburger) — fini le lien « Journaliers » accessible seulement depuis le dashboard.
+- **Hamburger commun** sur toutes les pages hors admin, généré depuis une source unique (`renderGameMenu` dans `auth.js`) — actions de jeu et toggles, avec repli intelligent hors page de jeu.
+
+### 🗓️ Calendrier (défis)
+- **Molette** = changement de mois quand la souris est dans le calendrier.
+- Plus de sélection accidentelle en glissant ; style de sélection visible sur jours complétés ; hover adapté à l'état.
+
+### 🏁 Fin de partie & UX
+- Modale de résultat **opaque, sans flou ni voile**, affichée immédiatement (cascade de victoire visible). Touche **W** ferme bien la modale.
+- Chrono affiché en **pilule**.
+
+### ✨ Finitions animations
+- Shake d'erreur **synchronisé** (toute la ligne/colonne d'un coup), cascade de victoire **toujours jouée**, lueur de complétion, coins de grille arrondis (anti-rognage).
+- Fix **Ctrl+H** (indice direct) cassé par la refonte du solveur.
+
+---
+
 ## [v0.6] — Refonte du générateur, mode extrême & animations
 
 Grosse mise à jour développée sur une branche `dev` (preview Cloudflare) puis fusionnée en production.

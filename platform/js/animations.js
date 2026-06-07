@@ -43,10 +43,23 @@ const ANIM = {
   },
 
   // ── Erreur (shake) ───────────────────────────────────
-  // Appelé dans highlightCell(key, true) quand une erreur
-  // est détectée (après le délai de 2s).
-  error(cellEl) {
-    this._trigger(cellEl, 'anim-error', 380);
+  // Web Animations API : indépendant de la propriété CSS 'animation'
+  // (donc pas de conflit avec le glow/pulse) et synchronisé sur la même
+  // frame quand on l'appelle en boucle pour toute une ligne/colonne.
+  error(el) {
+    if (this.reduced || !el || !el.animate) return;
+    const cs = getComputedStyle(document.documentElement);
+    const d   = parseFloat(cs.getPropertyValue('--anim-error-distance')) || 5;
+    const dur = parseFloat(cs.getPropertyValue('--anim-error-duration')) || 320;
+    el.animate([
+      { transform: 'translateX(0)' },
+      { transform: `translateX(${-d}px)`,      offset: 0.18 },
+      { transform: `translateX(${d}px)`,       offset: 0.36 },
+      { transform: `translateX(${-d * 0.6}px)`, offset: 0.54 },
+      { transform: `translateX(${d * 0.4}px)`,  offset: 0.72 },
+      { transform: `translateX(${-d * 0.2}px)`, offset: 0.88 },
+      { transform: 'translateX(0)' }
+    ], { duration: dur, easing: 'cubic-bezier(0.36,0.07,0.19,0.97)' });
   },
 
   // ── Chargement initial de la grille ──────────────────

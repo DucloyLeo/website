@@ -490,7 +490,7 @@ function renderGrid(){
   }
 }
 
-function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;clearCellError(r+','+c);clearHintPreview();renderGrid();updateErrorTimers();if(typeof ANIM!=='undefined'){const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el)ANIM.place(el);}animLineComplete(r,c,prev,val);if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;clearHintPreview();renderGrid();updateErrorTimers();if(typeof ANIM!=='undefined'){const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el)ANIM.place(el);}animLineComplete(r,c,prev,val);if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
 
 /* ── Game ── */
 // Lueur en cascade quand une case vide vient compléter sa ligne/colonne.
@@ -514,7 +514,7 @@ function cycleCell(r,c,dir){
   const prev=board[r][c];
   hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
   const next=board[r][c];
-  clearCellError(r+','+c);renderGrid();updateErrorTimers();
+  renderGrid();updateErrorTimers();
   // Animation après renderGrid (nouveau nœud DOM)
   if(typeof ANIM!=='undefined'){
     const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
@@ -523,7 +523,7 @@ function cycleCell(r,c,dir){
   animLineComplete(r,c,prev,next);
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
-function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();clearHintPreview();clearCellError(r+','+c);board[r][c]=prev;renderGrid();updateErrorTimers();}
+function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();clearHintPreview();board[r][c]=prev;renderGrid();updateErrorTimers();}
 
 async function checkWin(){
   if(getContradictions().size>0)return;

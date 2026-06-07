@@ -433,8 +433,6 @@ function cycleCell(r,c,dir){
   const prev=board[r][c];
   hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
   const next=board[r][c];
-  const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
-  if(el&&activeErrors.has(r+','+c)){activeErrors.delete(r+','+c);el.classList.remove('err');}
   renderGrid();updateErrorTimers();
   if(typeof ANIM!=='undefined'){
     const newEl=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];

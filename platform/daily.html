@@ -1030,6 +1030,23 @@ async function nextCalMonth(){
   setTimeout(async()=>{await p;renderCalendar();_calSetSizes();slider.style.transition='none';_calSnap();_calAnimating=false;},340);
 }
 
+// Molette sur le calendrier → change de mois (et bloque le scroll de page).
+// En dehors de la boîte calendrier, le scroll de page reste classique.
+(function(){
+  const wrap=document.querySelector('.cal-wrap');
+  if(!wrap)return;
+  let acc=0;
+  wrap.addEventListener('wheel',e=>{
+    e.preventDefault();                 // bloque le scroll de page tant qu'on est dans le calendrier
+    if(_calAnimating){acc=0;return;}    // une seule transition à la fois
+    const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
+    acc+=d;
+    if(Math.abs(acc)<40)return;         // seuil : évite les micro-défilements (trackpad)
+    const forward=acc>0; acc=0;
+    forward?nextCalMonth():prevCalMonth();
+  },{passive:false});
+})();
+
 // Keyboard navigation
 document.addEventListener('keydown',e=>{
   if(document.getElementById('view-catalogue').style.display!=='none'){

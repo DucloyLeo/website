@@ -99,12 +99,24 @@ const ANIM = {
   },
 
   // ── Cascade de victoire ──────────────────────────────
-  // Appelé dès que la victoire est détectée.
-  // Les cellules flashent en dorée ligne par ligne.
+  // Web Animations API (backgroundColor) : indépendante de la propriété
+  // CSS 'animation', donc elle se joue TOUJOURS, même par-dessus un glow
+  // de complétion ou un pop en cours.
   winCascade(cellEls) {
     if (this.reduced) return;
+    const cs = getComputedStyle(document.documentElement);
+    const gold    = (cs.getPropertyValue('--anim-win-color') || 'rgba(245,200,66,0.30)').trim();
+    const dur     = parseFloat(cs.getPropertyValue('--anim-win-duration')) || 500;
+    const stagger = parseFloat(cs.getPropertyValue('--anim-win-stagger')) || 28;
     cellEls.forEach((el, i) => {
-      setTimeout(() => this._trigger(el, 'anim-win-flash', 600), i * 28);
+      setTimeout(() => {
+        if (!el || !el.animate) return;
+        const base = getComputedStyle(el).backgroundColor;
+        el.animate(
+          [{ backgroundColor: base }, { backgroundColor: gold, offset: 0.35 }, { backgroundColor: base }],
+          { duration: dur, easing: 'ease' }
+        );
+      }, i * stagger);
     });
   },
 

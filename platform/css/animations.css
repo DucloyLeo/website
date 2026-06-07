@@ -24,6 +24,10 @@
   --anim-erase-duration:  100ms;
   --anim-erase-scale:     0.82;
 
+  /* Placement d'un indice (lueur lune) */
+  --anim-hint-duration:   520ms;
+  --anim-hint-color:      rgba(143, 168, 212, 0.70);
+
   /* Erreur (shake) */
   --anim-error-duration:  320ms;
   --anim-error-distance:  5px;
@@ -63,6 +67,7 @@
     --anim-win-stagger:      0ms;
     --anim-line-glow-duration: 0ms;
     --anim-err-pulse-duration: 0ms;
+    --anim-hint-duration:      0ms;
   }
 }
 
@@ -74,6 +79,16 @@
 }
 .anim-place-sym::before {
   animation: anim-place-sym var(--anim-place-duration) var(--anim-place-easing) both;
+}
+
+/* ── Placement d'un indice (lueur lune) ───────────── */
+@keyframes anim-hint {
+  0%   { box-shadow: inset 0 0 0 0 transparent; }
+  35%  { box-shadow: inset 0 0 0 3px var(--anim-hint-color), 0 0 12px var(--anim-hint-color); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+.anim-hint {
+  animation: anim-hint var(--anim-hint-duration) ease both;
 }
 
 /* ── Effacement d'un symbole ──────────────────────── */

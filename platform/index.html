@@ -513,7 +513,7 @@ function confirmHint(){
   const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;
   if(el){el.classList.remove('hint-preview');setCellSymbol(el,val);}
   updateErrorTimers();
-  if(el&&typeof ANIM!=='undefined')ANIM.place(el);
+  if(el&&typeof ANIM!=='undefined'){ANIM.place(el);ANIM.hint(el);}
   animLineComplete(r,c,prev,val);
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
@@ -593,7 +593,23 @@ function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[
 function onWinOverlayClick(e){if(e.target===document.getElementById('win-modal')){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');}}
 function onWinNext(){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');askNewPuzzle();}
 
-function applyHintDirect(){if(gameWon)return;isAssisted=true;if(!timerOn&&!timerDone)startTimer();if(!hintCell){const b=board.map(r=>[...r]);const moves=[...tBalance(b),...tTriple(b),...tConstraints(b,ch,cv),...tEnds(b),...tChain(b,ch,cv),...tElim(b,ch,cv)];const candidates=moves.filter(({r,c,val})=>board[r][c]===EMPTY&&val===solution[r][c]);if(!candidates.length){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(board[r][c]===EMPTY){candidates.push({r,c,val:solution[r][c],tip:'elim'});break;}if(candidates.length)break;}}if(!candidates.length)return;hintCell=candidates[0];}confirmHint();}
+function applyHintDirect(){
+  if(gameWon)return;
+  isAssisted=true;
+  if(!timerOn&&!timerDone)startTimer();
+  if(!hintCell){
+    const b=board.map(r=>[...r]);
+    let hint=null;
+    outer:for(const{fn}of SOLVE_LEVELS){
+      const moves=fn(b,ch,cv).filter(({r,c,val})=>board[r][c]===EMPTY&&val===solution[r][c]);
+      if(moves.length){hint=moves[0];break outer;}
+    }
+    if(!hint){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(board[r][c]===EMPTY){hint={r,c,val:solution[r][c],tip:'elim'};break;}if(hint)break;}}
+    if(!hint)return;
+    hintCell=hint;
+  }
+  confirmHint();
+}
 
 document.addEventListener('keydown',e=>{
   const tag=document.activeElement&&document.activeElement.tagName;

@@ -42,6 +42,11 @@ const ANIM = {
     this._trigger(cellEl, 'anim-erase', 180);
   },
 
+  // ── Placement d'un indice (lueur lune sur la case) ──
+  hint(cellEl) {
+    this._trigger(cellEl, 'anim-hint', 600);
+  },
+
   // ── Erreur (shake) ───────────────────────────────────
   // Web Animations API : indépendant de la propriété CSS 'animation'
   // (donc pas de conflit avec le glow/pulse) et synchronisé sur la même

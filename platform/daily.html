@@ -434,20 +434,28 @@ function animLineComplete(r,c,prev,next){
     ANIM.lineGlow(r<N/2?[...colCells].reverse():colCells);
   }
 }
+function cellEl(r,c){const tr=document.getElementById('grid').querySelectorAll('tr')[r];return tr?tr.querySelectorAll('.ci')[c]:null;}
 function cycleCell(r,c,dir){
   if(gameWon)return;
   const prev=board[r][c];
   hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
   const next=board[r][c];
-  renderGrid();updateErrorTimers();
-  if(typeof ANIM!=='undefined'){
-    const newEl=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
-    if(newEl){next===EMPTY?ANIM.erase(newEl):ANIM.place(newEl);}
-  }
+  // Mise à jour en place (pas de rebuild) → les animations en cours survivent
+  const el=cellEl(r,c);
+  if(el)setCellSymbol(el,next);
+  updateErrorTimers();
+  if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
   animLineComplete(r,c,prev,next);
+  const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
-function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();board[r][c]=prev;renderGrid();updateErrorTimers();}
+function undo(){
+  if(!hist.length||gameWon)return;
+  const{r,c,prev}=hist.pop();board[r][c]=prev;
+  const el=cellEl(r,c);if(el)setCellSymbol(el,prev);
+  updateErrorTimers();
+  const undoBtn=document.getElementById('btn-undo');if(undoBtn)undoBtn.disabled=hist.length===0||gameWon;
+}
 function resetPuzzle(){clearAllErrors();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;renderGrid();}
 
 async function checkWin(){

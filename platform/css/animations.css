@@ -38,6 +38,9 @@
   /* Lueur de ligne/colonne complétée */
   --anim-line-glow-duration: 600ms;
   --anim-line-glow-color:    rgba(245, 200, 66, 0.28);
+  /* Anneau rouge d'erreur (doit correspondre au box-shadow .ci.err des pages) */
+  --anim-err-ring:           rgba(220, 80, 60, 0.85);
+  --anim-err-ring-outer:     rgba(220, 80, 60, 0.30);
   /* (le stagger de propagation est dans animations.js : ANIM_LINE_GLOW_STAGGER) */
 }
 
@@ -139,4 +142,14 @@ body {
 }
 .anim-line-glow {
   animation: anim-line-glow var(--anim-line-glow-duration) ease both;
+}
+/* Si la case est aussi en erreur : garder l'anneau rouge AU PREMIER PLAN
+   (1re couche) et faire briller le glow doré DERRIÈRE (dernière couche). */
+@keyframes anim-line-glow-err {
+  0%   { box-shadow: inset 0 0 0 3px var(--anim-err-ring), 0 0 14px var(--anim-err-ring-outer); }
+  40%  { box-shadow: inset 0 0 0 3px var(--anim-err-ring), 0 0 14px var(--anim-err-ring-outer), 0 0 10px var(--anim-line-glow-color); }
+  100% { box-shadow: inset 0 0 0 3px var(--anim-err-ring), 0 0 14px var(--anim-err-ring-outer); }
+}
+.ci.err.anim-line-glow {
+  animation: anim-line-glow-err var(--anim-line-glow-duration) ease both;
 }

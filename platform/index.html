@@ -404,6 +404,8 @@ const TIP_TEXT={
 };
 
 /* ── Hint ── */
+// Récupère le nœud .ci d'une case (mise à jour en place, sans rebuild)
+function cellEl(r,c){const tr=document.getElementById('grid').querySelectorAll('tr')[r];return tr?tr.querySelectorAll('.ci')[c]:null;}
 function giveHint(){
   if(!timerOn&&!timerDone)startTimer();clearHintPreview();
   const b=board.map(r=>[...r]);
@@ -417,9 +419,14 @@ function giveHint(){
   hintCell=hint;
   const bubble=document.getElementById('hint-bubble');
   bubble.textContent=TIP_TEXT[hint.tip]||'Cette case peut être déduite logiquement.';
-  bubble.classList.add('show');renderGrid();
+  bubble.classList.add('show');
+  const el=cellEl(hint.r,hint.c);
+  if(el){el.classList.add('hint-preview');setCellSymbol(el,hint.val);}
 }
-function clearHintPreview(){hintCell=null;document.getElementById('hint-bubble').classList.remove('show');}
+function clearHintPreview(){
+  if(hintCell){const el=cellEl(hintCell.r,hintCell.c);if(el){el.classList.remove('hint-preview');setCellSymbol(el,board[hintCell.r][hintCell.c]);}}
+  hintCell=null;document.getElementById('hint-bubble').classList.remove('show');
+}
 
 /* ── Errors ── */
 // Marque la ligne/colonne ENTIÈRE en erreur (sans pointer la case fautive,
@@ -499,7 +506,18 @@ function renderGrid(){
   }
 }
 
-function confirmHint(){if(!hintCell)return;const{r,c,val}=hintCell;const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;clearHintPreview();renderGrid();updateErrorTimers();if(typeof ANIM!=='undefined'){const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];if(el)ANIM.place(el);}animLineComplete(r,c,prev,val);if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();}
+function confirmHint(){
+  if(!hintCell)return;
+  const{r,c,val}=hintCell;const el=cellEl(r,c);
+  hintCell=null;document.getElementById('hint-bubble').classList.remove('show');
+  const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;
+  if(el){el.classList.remove('hint-preview');setCellSymbol(el,val);}
+  updateErrorTimers();
+  if(el&&typeof ANIM!=='undefined')ANIM.place(el);
+  animLineComplete(r,c,prev,val);
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+  if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
+}
 
 /* ── Game ── */
 // Lueur en cascade quand une case vide vient compléter sa ligne/colonne.
@@ -519,20 +537,30 @@ function animLineComplete(r,c,prev,next){
   }
 }
 function cycleCell(r,c,dir){
-  if(gameWon)return;if(!timerOn&&!timerDone)startTimer();clearHintPreview();
+  if(gameWon)return;
+  // Clic sur la case d'indice : valider (gauche) ou annuler l'indice (droite)
+  if(hintCell&&hintCell.r===r&&hintCell.c===c){if(dir>0)confirmHint();else clearHintPreview();return;}
+  if(!timerOn&&!timerDone)startTimer();clearHintPreview();
   const prev=board[r][c];
   hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
   const next=board[r][c];
-  renderGrid();updateErrorTimers();
-  // Animation après renderGrid (nouveau nœud DOM)
-  if(typeof ANIM!=='undefined'){
-    const el=document.getElementById('grid').querySelectorAll('tr')[r]?.querySelectorAll('.ci')[c];
-    if(el){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
-  }
+  // Mise à jour en place (pas de rebuild) → les animations en cours survivent
+  const el=cellEl(r,c);
+  if(el)setCellSymbol(el,next);
+  updateErrorTimers();
+  if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
   animLineComplete(r,c,prev,next);
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   if(board.every(row=>row.every(v=>v!==EMPTY)))checkWin();
 }
-function undo(){if(!hist.length||gameWon)return;const{r,c,prev}=hist.pop();clearHintPreview();board[r][c]=prev;renderGrid();updateErrorTimers();}
+function undo(){
+  if(!hist.length||gameWon)return;
+  clearHintPreview();
+  const{r,c,prev}=hist.pop();board[r][c]=prev;
+  const el=cellEl(r,c);if(el)setCellSymbol(el,prev);
+  updateErrorTimers();
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+}
 
 async function checkWin(){
   if(hasError())return;

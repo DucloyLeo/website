@@ -11,10 +11,6 @@
 // Décalage entre chaque case lors de la propagation de la lueur (ms)
 const ANIM_LINE_GLOW_STAGGER = 55;
 
-// Mode du pop de placement : 'cell' = toute la case grandit ·
-// 'symbol' = seul le symbole à l'intérieur grandit. (pour comparer les 2 rendus)
-const ANIM_PLACE_MODE = 'symbol';
-
 const ANIM = {
 
   // Vérifie la préférence système (prefers-reduced-motion).
@@ -37,7 +33,7 @@ const ANIM = {
   // ── Placement d'un symbole ───────────────────────────
   // Appelé après cycleCell quand la valeur devient SUN ou MOON.
   place(cellEl) {
-    this._trigger(cellEl, ANIM_PLACE_MODE === 'symbol' ? 'anim-place-sym' : 'anim-place', 250);
+    this._trigger(cellEl, 'anim-place-sym', 250);
   },
 
   // ── Effacement d'un symbole ──────────────────────────

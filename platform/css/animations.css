@@ -59,21 +59,7 @@
   }
 }
 
-/* ── Placement d'un symbole ───────────────────────── */
-@keyframes anim-place {
-  0%   { transform: scale(1); }
-  45%  { transform: scale(var(--anim-place-scale)); }
-  100% { transform: scale(1); }
-}
-/* Option 'cell' : toute la case grandit. z-index:2 (avec position:relative)
-   pour que la case passe AU-DESSUS des voisines pendant le pop -> croissance
-   symétrique visible des 4 côtés. z-index < 3 pour rester sous les badges =/×. */
-.anim-place {
-  animation: anim-place var(--anim-place-duration) var(--anim-place-easing) both;
-  position: relative;
-  z-index: 2;
-}
-/* Option 'symbol' : seul le symbole (::before) grandit, à l'intérieur de la case. */
+/* ── Placement d'un symbole (seul le symbole grandit) ─ */
 @keyframes anim-place-sym {
   0%   { transform: scale(1); }
   45%  { transform: scale(var(--anim-place-scale)); }

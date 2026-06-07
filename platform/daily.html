@@ -390,8 +390,8 @@ function shakeErrLine(type,idx){
 }
 function updateErrorTimers(){
   const{rows:curR,cols:curC}=getErrorLines();
-  curR.forEach(r=>{if(!activeErrRows.has(r)&&!errRowTimers[r])errRowTimers[r]=setTimeout(()=>{delete errRowTimers[r];if(getErrorLines().rows.has(r)){activeErrRows.add(r);applyErrClasses();shakeErrLine('row',r);}},500);});
-  curC.forEach(c=>{if(!activeErrCols.has(c)&&!errColTimers[c])errColTimers[c]=setTimeout(()=>{delete errColTimers[c];if(getErrorLines().cols.has(c)){activeErrCols.add(c);applyErrClasses();shakeErrLine('col',c);}},500);});
+  curR.forEach(r=>{if(!activeErrRows.has(r)&&!errRowTimers[r])errRowTimers[r]=setTimeout(()=>{delete errRowTimers[r];if(getErrorLines().rows.has(r)){activeErrRows.add(r);applyErrClasses();shakeErrLine('row',r);}},1000);});
+  curC.forEach(c=>{if(!activeErrCols.has(c)&&!errColTimers[c])errColTimers[c]=setTimeout(()=>{delete errColTimers[c];if(getErrorLines().cols.has(c)){activeErrCols.add(c);applyErrClasses();shakeErrLine('col',c);}},1000);});
   [...Object.keys(errRowTimers).map(Number),...activeErrRows].forEach(r=>{if(!curR.has(r)){if(errRowTimers[r]){clearTimeout(errRowTimers[r]);delete errRowTimers[r];}if(activeErrRows.delete(r))applyErrClasses();}});
   [...Object.keys(errColTimers).map(Number),...activeErrCols].forEach(c=>{if(!curC.has(c)){if(errColTimers[c]){clearTimeout(errColTimers[c]);delete errColTimers[c];}if(activeErrCols.delete(c))applyErrClasses();}});
 }

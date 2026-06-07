@@ -37,6 +37,9 @@ const SOUND_CONFIG = {
 
   // Victoire — petite mélodie ascendante.
   win:   { freqs: [523, 659, 784, 1047], type: 'triangle', step: 0.10, dur: 0.20, vol: 0.42 },
+
+  // Notification (toast) — petit carillon doux à deux notes.
+  notify: { freqs: [659, 988], type: 'sine', step: 0.09, dur: 0.30, vol: 0.40 },
 };
 
 const SOUND = {
@@ -128,6 +131,12 @@ const SOUND = {
     if (!this._ready()) return;
     const w = SOUND_CONFIG.win;
     w.freqs.forEach((f, i) => this._tone({ freq: f, type: w.type, dur: w.dur, vol: w.vol, at: i * w.step }));
+  },
+
+  notify() {
+    if (!this._ready()) return;
+    const n = SOUND_CONFIG.notify;
+    n.freqs.forEach((f, i) => this._tone({ freq: f, type: n.type, dur: n.dur, vol: n.vol, at: i * n.step }));
   },
 
   // ── Coupure (mute) ────────────────────────────────────

@@ -404,6 +404,7 @@ function _getToastContainer() {
 }
 
 function _createToast(html, borderColor, duration = 4500) {
+  if (typeof SOUND !== 'undefined') SOUND.notify();
   const container = _getToastContainer();
   const toast = document.createElement('div');
   toast.className = 'badge-toast';

@@ -117,6 +117,11 @@
 .ci.err {
   animation: anim-err-pulse var(--anim-err-pulse-duration) ease-in-out infinite;
 }
+/* Case en erreur + shake : jouer les deux (sinon le pulse écrase le shake) */
+.ci.err.anim-error {
+  animation: anim-error var(--anim-error-duration) cubic-bezier(0.36, 0.07, 0.19, 0.97) both,
+             anim-err-pulse var(--anim-err-pulse-duration) ease-in-out infinite;
+}
 
 /* ── Lueur de bordure (ligne/colonne complétée) ───── */
 @keyframes anim-line-glow {

@@ -387,6 +387,7 @@ function highlightCell(key,on){
   const cells=rows[r].querySelectorAll('.ci');
   if(cells[c]){
     cells[c].classList.toggle('err',on);
+    if(on&&board[r][c]!==EMPTY&&typeof ANIM!=='undefined')ANIM.error(cells[c]);
   }
 }
 

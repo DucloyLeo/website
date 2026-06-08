@@ -64,21 +64,28 @@
 
   /* ── Mini-grille de démo ── */
   .mini-demo { margin:.85rem 0 .1rem; display:flex; flex-direction:column; align-items:center; gap:.5rem; }
-  .mini-row { display:flex; align-items:center; justify-content:center; }
-  .mc {
-    width:40px; height:40px;
-    border:1.5px solid var(--border2);
-    border-radius:7px;
+  .mini-row {
+    display:inline-flex; align-items:center; justify-content:center;
     background:var(--surface2);
+    border:1.5px solid var(--border2);
+    border-radius:10px;
+    padding:5px 7px;
+  }
+  .mc {
+    width:36px; height:36px;
+    border:1.5px solid var(--border2);
+    border-radius:6px;
+    background:var(--bg);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.05rem;
+    font-size:1rem;
     flex-shrink:0;
     transition:border-color .2s, background .2s, transform .15s;
     user-select:none;
   }
   .mc.mc-bg {
-    opacity:.28;
+    opacity:.22;
     border-style:dashed;
+    background:var(--surface2);
   }
   .mc.mc-target {
     border-style:dashed;
@@ -102,7 +109,7 @@
     100% { transform:scale(1); opacity:1; }
   }
   .mcstr {
-    width:16px; text-align:center;
+    width:10px; text-align:center;
     font-size:11px; font-family:'DM Mono',monospace;
     color:var(--muted);
     flex-shrink:0;
@@ -228,7 +235,7 @@
           <div class="mc">🌙</div><div class="mcstr"></div>
           <div class="mc">🌙</div><div class="mcstr"></div>
           <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">☀</div>
+          <div class="mc">🌙</div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
@@ -256,7 +263,7 @@
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc mc-bg"></div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="🌙">?</div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
@@ -270,7 +277,7 @@
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc">☀</div><div class="mcstr"></div>
@@ -288,44 +295,10 @@
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
           <div class="mc">☀</div>
-        </div>
-        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
-      </div>
-    </div>
-
-    <!-- Chaîne == -->
-    <div class="tip-card">
-      <div class="tip-title">Chaîne = = <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">Deux contraintes "égal" consécutives (A = B = C) signifient que les trois cases sont identiques. Si l'une est connue, les deux autres le sont aussi.</div>
-      <div class="mini-demo">
-        <div class="mini-row">
-          <div class="mc">☀</div><div class="mcstr eq">=</div>
-          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr eq">=</div>
-          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">🌙</div>
-        </div>
-        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
-      </div>
-    </div>
-
-    <!-- Chaîne ×× -->
-    <div class="tip-card">
-      <div class="tip-title">Chaîne × × <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">Deux contraintes "différent" consécutives (A × B × C) : si A ≠ B et B ≠ C, alors A et C sont nécessairement identiques. B, au milieu, est forcé à l'opposé de A et C.</div>
-      <div class="mini-demo">
-        <div class="mini-row">
-          <div class="mc">☀</div><div class="mcstr x">×</div>
-          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr x">×</div>
-          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc mc-bg"></div><div class="mcstr"></div>
-          <div class="mc mc-bg"></div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>

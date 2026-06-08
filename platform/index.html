@@ -621,7 +621,7 @@ async function checkWin(){
   document.getElementById('win-modal').classList.add('show');
 
   // Sauvegarde en arrière-plan — le toast badge arrive via Realtime
-  if(currentUserId&&['easy','medium','hard'].includes(currentDiff)){
+  if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
     saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)
       .catch(e=>console.error('saveGameResult:',e));
   }
@@ -769,7 +769,7 @@ function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=
 /* ── Stats locales ── */
 const STATS_KEY='tango_stats_v2';
 function loadStatsLocal(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
-function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard'].includes(diff))return;const s=loadStatsLocal();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
+function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard','extreme'].includes(diff))return;const s=loadStatsLocal();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
 
 /* ── Start from seed ── */
 function startGameFromSeed(seedStr){

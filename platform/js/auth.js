@@ -71,7 +71,7 @@ async function signOut() {
 // ─── Sauvegarde d'une partie ─────────────────────────
 
 async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false) {
-  if (!userId || !['easy', 'medium', 'hard'].includes(diff) || timeSeconds <= 0) return [];
+  if (!userId || !['easy', 'medium', 'hard', 'extreme'].includes(diff) || timeSeconds <= 0) return [];
 
   const { error: levErr } = await db.from('completed_levels').insert({
     user_id: userId, seed: seed || null, difficulty: diff, time_seconds: timeSeconds

@@ -287,7 +287,7 @@ function _buildSlideHtml(year, month, isCurrent) {
     const diffChip = level ? `<span class="day-diff" style="background:${DIFF_COLORS[level.difficulty]}22;color:${DIFF_COLORS[level.difficulty]}">${DIFF_LABELS[level.difficulty]}</span>` : '';
     const name = level?.name ? `<div class="day-name">${escHtml(level.name)}</div>` : '';
     const manualDot = level?.is_manual ? '<div class="day-manual-dot" title="Niveau manuel"></div>' : '';
-    html += `<div class="${cls}" onclick="selectDay('${dateStr}')"><div class="day-num">${d}</div>${diffChip}${name}${manualDot}</div>`;
+    html += `<div class="${cls}" onclick="selectDay(event,'${dateStr}')"><div class="day-num">${d}</div>${diffChip}${name}${manualDot}</div>`;
   }
   return html;
 }
@@ -304,10 +304,15 @@ function renderCalendar() {
 }
 
 /* ── Selection ── */
-function selectDay(dateStr) {
+function selectDay(e, dateStr) {
   if (_calHasMoved) { _calHasMoved = false; return; }
-  if (selectedDates.has(dateStr)) selectedDates.delete(dateStr);
-  else selectedDates.add(dateStr);
+  if (e.ctrlKey || e.metaKey) {
+    if (selectedDates.has(dateStr)) selectedDates.delete(dateStr);
+    else selectedDates.add(dateStr);
+  } else {
+    selectedDates.clear();
+    selectedDates.add(dateStr);
+  }
   renderCalendar();
   _updateSelectionUI();
 }

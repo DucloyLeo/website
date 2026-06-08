@@ -750,7 +750,8 @@ function startGeneration(diff){
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
     const storedDiff=usedExtreme?'hard':diff;
     currentSeedStr=encodeSeed(solution,fixed,ch,cv,storedDiff);
-    setDiffBadge(usedExtreme?'extreme':diff);_animNextGrid=true;renderGrid();
+    currentDiff=usedExtreme?'extreme':diff;
+    setDiffBadge(currentDiff);_animNextGrid=true;renderGrid();
   },30);
 }
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}

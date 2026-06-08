@@ -196,10 +196,26 @@ async function saveAll() {
   rows.forEach(p => { params[p.id] = p; });
 }
 
-function resetDefaults() {
-  if (!confirm('Réinitialiser les paramètres aux valeurs par défaut ?')) return;
+async function resetDefaults() {
+  if (!confirm('Réinitialiser les paramètres aux valeurs par défaut et enregistrer ?')) return;
   params = JSON.parse(JSON.stringify(DEFAULTS));
   renderForms();
+  const err = document.getElementById('form-error');
+  const ok  = document.getElementById('form-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+  const rows = DIFFS.map(id => {
+    const d = DEFAULTS[id];
+    return { id, label:{ easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' }[id],
+      clues_min:d.clues_min, clues_max:d.clues_max,
+      constraints_min:d.constraints_min, constraints_max:d.constraints_max,
+      eq_ratio_min:d.eq_ratio_min, eq_ratio_max:d.eq_ratio_max,
+      tech_min:d.tech_min, tech_max:d.tech_max,
+      updated_at: new Date().toISOString() };
+  });
+  const { error } = await db.from('difficulty_params').upsert(rows, { onConflict: 'id' });
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
+  ok.textContent = 'Paramètres réinitialisés et enregistrés.';
+  ok.classList.add('show');
 }
 
 async function loadPage() {

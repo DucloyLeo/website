@@ -729,8 +729,8 @@ function genForDiff(diff){
 
 async function startGeneration(diff){
   if(generating)return;
-  // Mode extrême uniquement sur hard (ou si hard sélectionné : 10% de chance)
-  const effectiveDiff=(extremeMode&&diff==='hard')?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
+  // Mode extrême : toujours extrême quelle que soit la diff sélectionnée. Sinon, 10% de chance sur hard.
+  const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
   generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
   document.getElementById('grid-wrap').classList.remove('blurred');
   document.getElementById('win-modal').classList.remove('show');
@@ -753,7 +753,7 @@ async function startGeneration(diff){
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
-    currentDiff=usedExtreme?'extreme':diff;
+    currentDiff=usedExtreme?'extreme':(effectiveDiff==='extreme'?'hard':diff);
     currentSeedStr=encodeSeed(solution,fixed,ch,cv,currentDiff);
     setDiffBadge(currentDiff);_animNextGrid=true;renderGrid();
   },30);

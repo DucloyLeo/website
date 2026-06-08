@@ -718,6 +718,8 @@ function genForDiff(diff){
     const{cch,ccv}=placeConstraints(sol,targetConstraints,targetEqRatio);
     const targetClues=Math.floor(Math.random()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
     const puz=carve(sol,cch,ccv,targetClues,p.techMax);
+    const actualClues=puz.flat().filter(v=>v!==EMPTY).length;
+    if(actualClues<p.cluesMin||actualClues>p.cluesMax)continue;
     const{solved,level}=humanSolve(puz,cch,ccv,p.techMax);
     if(!solved)continue;
     if(level<p.techMin)continue;

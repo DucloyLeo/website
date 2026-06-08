@@ -289,12 +289,14 @@ async function loadModalGameHistory(userId, page) {
   const rangeFrom = page * GAMES_PER_PAGE + 1, rangeTo = page * GAMES_PER_PAGE + games.length;
   const rows = games.map(g => {
     const d = g.difficulty || 'custom';
-    const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    const _dt = new Date(g.completed_at);
+    const date = _dt.toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric', timeZone:'Europe/Paris' });
+    const time = _dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit', timeZone:'Europe/Paris' });
     const seedBtn = g.seed
       ? `<a href="../index.html?seed=${encodeURIComponent(g.seed)}" target="_blank" class="action-btn" style="font-size:10px;padding:2px 8px;text-decoration:none;flex-shrink:0">▶</a>`
       : '';
     return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)">
-      <span style="flex:1;font-size:12px;color:var(--muted)">${date}</span>
+      <span style="flex:1;font-size:12px;color:var(--muted)">${date} <span style="opacity:.6">${time}</span></span>
       ${seedBtn}
       <span style="font-size:11px;font-family:'DM Mono',monospace;min-width:80px;color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
       <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text)">${fmtTime(g.time_seconds)}</span>

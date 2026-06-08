@@ -183,12 +183,14 @@ async function loadGameHistory(userId, page) {
   const rangeFrom = page * GH_PER_PAGE + 1, rangeTo = page * GH_PER_PAGE + games.length;
   const rows = games.map(g => {
     const d = g.difficulty || 'custom';
-    const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    const _dt = new Date(g.completed_at);
+    const date = _dt.toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric', timeZone:'Europe/Paris' });
+    const time = _dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit', timeZone:'Europe/Paris' });
     const seedBtn = g.seed
       ? `<a href="index.html?seed=${encodeURIComponent(g.seed)}" target="_blank" class="gh-seed-btn">▶</a>`
       : '';
     return `<div class="gh-row">
-      <span class="gh-date">${date}</span>
+      <span class="gh-date">${date} <span style="opacity:.6">${time}</span></span>
       ${seedBtn}
       <span class="gh-diff" style="color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
       <span class="gh-time">${fmtTime(g.time_seconds)}</span>

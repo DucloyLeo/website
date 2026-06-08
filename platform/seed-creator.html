@@ -2,40 +2,26 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Créateur de grille — Tango</title>
+<title>Créateur de grille — Tangoléo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css?v=6">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0e0e0f;--surface:#161618;--surface2:#1e1e21;
-  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
-  --text:#f0ede6;--muted:rgba(240,237,230,0.45);
-  --sun:#f5c842;--moon:#8fa8d4;
-  --radius:10px;
-}
-body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding:0 1.5rem}
-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
-.nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;text-align:center}
 main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem}
-.nav-left{display:flex;align-items:center;position:relative}
-.nav-right{display:flex;justify-content:flex-end}
-.hamburger{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px;border-radius:6px;transition:background .15s}
-.hamburger:hover{background:var(--surface2)}
-.hline{display:block;width:20px;height:2px;background:var(--text);border-radius:2px}
-.nav-menu{display:none;position:absolute;top:calc(100% + 8px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;min-width:200px;overflow:hidden;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-.nav-menu.open{display:block}
-.nav-menu-item{display:flex;align-items:center;width:100%;padding:.7rem 1rem;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);background:none;border:none;cursor:pointer;text-align:left;text-decoration:none;transition:background .1s;gap:8px}
-.nav-menu-item:hover{background:var(--surface2)}
 
 /* Grid */
-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden}
+table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)}
 td{position:relative;text-align:center;vertical-align:middle;border:1px solid var(--border)}
 .ci{display:flex;align-items:center;justify-content:center;width:112px;height:112px;font-size:3rem;cursor:pointer;user-select:none;background:var(--surface);transition:background .1s,box-shadow .3s;position:relative}
 .ci:hover{background:var(--surface2)}
 .ci.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,0.85),0 0 14px rgba(220,80,60,0.3)}
-.ci.is-fixed{background:#18181c}
+.ci.is-fixed{background:var(--surface2)}
 .ci.is-fixed::after{content:'⭐';position:absolute;top:5px;right:7px;font-size:10px;opacity:.75}
 
 /* Constraint zones */
@@ -51,25 +37,17 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 .group-header{display:flex;align-items:center;justify-content:space-between}
 .group-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .group-hint{font-size:10px;color:var(--muted);opacity:.5}
-.controls{display:flex;gap:8px;flex-wrap:wrap}
-.btn{font-family:'DM Mono',monospace;font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;text-decoration:none}
-.btn:hover{background:var(--surface2)}
-.btn.sun{border-color:var(--sun);color:var(--sun)}.btn.sun:hover{background:rgba(245,200,66,.08)}
-.btn.moon{border-color:var(--moon);color:var(--moon)}.btn.moon:hover{background:rgba(143,168,212,.08)}
-.btn:disabled{opacity:.28;cursor:not-allowed}
-.btn-ghost{font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
-.btn-ghost:hover{background:var(--surface2);color:var(--text)}
-.btn-ghost.active{border-color:var(--border2);color:var(--text)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
 /* Status */
 .status-bar{max-width:560px;width:100%;padding:.6rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .sdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.sdot.ok{background:#6dbb8a}.sdot.err{background:rgba(220,80,60,.85)}.sdot.warn{background:var(--sun)}
+.sdot.ok{background:var(--green)}.sdot.err{background:rgba(220,80,60,.85)}.sdot.warn{background:var(--sun)}
 
 /* Seed box */
-.seed-box{max-width:560px;width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.8rem;align-items:center}
+.seed-box{max-width:560px;width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.8rem;align-items:center}
 .seed-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.seed-val{font-size:11px;color:var(--text);letter-spacing:.04em;word-break:break-all;text-align:center;min-height:1.4em}
+.seed-val{font-size:11px;color:var(--text);letter-spacing:.08em;word-break:break-all;text-align:center;min-height:1.4em;font-family:'DM Mono',monospace}
 .seed-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 
 .sep{height:1px;background:var(--border);max-width:560px;width:100%}
@@ -78,23 +56,24 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </head>
 <body>
 
-<nav>
+<nav class="site-nav" style="max-width:900px">
   <div class="nav-left">
-    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu">
-      <span class="hline"></span><span class="hline"></span><span class="hline"></span>
-    </button>
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
     <div class="nav-menu" id="nav-menu">
-      <a href="tango.html" class="nav-menu-item">🎮 Retour au jeu</a>
-      <a href="index.html" class="nav-menu-item">🏠 Accueil</a>
+      <a href="index.html" class="nav-menu-item">🎮 Retour au jeu</a>
+      <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <div class="nav-menu-sep"></div>
+      <a href="admin/daily.html" class="nav-menu-item">⚙️ Admin journaliers</a>
+      <a href="admin/levels.html" class="nav-menu-item">⚙️ Admin niveaux</a>
     </div>
   </div>
-  <a href="https://ducloyleo.github.io/website/tango.html" class="nav-title" style="text-decoration:none;color:inherit">☀ Tango 🌙</a>
+  <a href="index.html" class="nav-logo">☀ Tangoléo 🌙</a>
   <div class="nav-right"></div>
 </nav>
 
 <main>
   <p style="font-size:12px;color:var(--muted);line-height:1.7;max-width:400px;text-align:center">
-    Compose ta grille, définis les contraintes et les cases de départ, puis partage la seed.
+    Compose ta grille, définis les contraintes et les cases de départ,<br>choisis la difficulté, puis partage la seed.
   </p>
 
   <div class="status-bar">
@@ -142,11 +121,27 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
     </div>
   </div>
 
+  <!-- Difficulté -->
+  <div class="controls-group">
+    <div class="group-header">
+      <span class="group-label">Difficulté</span>
+      <span class="group-hint">stockée dans la seed</span>
+    </div>
+    <div class="controls">
+      <select id="diff-select" class="form-input" style="width:auto;font-size:12px" onchange="updateSeed()">
+        <option value="easy">Facile</option>
+        <option value="medium" selected>Moyen</option>
+        <option value="hard">Difficile</option>
+        <option value="custom">Personnalisé</option>
+      </select>
+    </div>
+  </div>
+
   <div class="sep"></div>
 
   <!-- Seed -->
   <div class="seed-box">
-    <span class="seed-label">Seed</span>
+    <span class="seed-label">Seed (23 caractères)</span>
     <span class="seed-val" id="seed-val">—</span>
     <div class="seed-actions">
       <button class="btn" id="btn-copy" onclick="copySeedLink()" disabled>📋 Copier le lien</button>
@@ -158,17 +153,16 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 <script>
 const SUN=1,MOON=2,EMPTY=0,N=6;
 const S=['','☀','🌙'];
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 let cBoard=Array.from({length:N},()=>Array(N).fill(EMPTY));
 let cCh={},cCv={};
 let cFixed=Array.from({length:N},()=>Array(N).fill(false));
 let cErrors=new Set();
 
-/* ─── Menu ─── */
 function toggleMenu(e){e.stopPropagation();document.getElementById('nav-menu').classList.toggle('open');}
 document.addEventListener('click',()=>document.getElementById('nav-menu').classList.remove('open'));
 
-/* ─── Errors (instant) ─── */
 function computeErrors(){
   const err=new Set(),b=cBoard;
   for(let r=0;r<N;r++){
@@ -199,7 +193,6 @@ function updateState(){
   updateButtons();
 }
 
-/* ─── Render ─── */
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
   for(let r=0;r<N;r++){
@@ -237,7 +230,6 @@ function renderGrid(){
   }
 }
 
-/* ─── Interactions ─── */
 function cycleCell(r,c){
   cBoard[r][c]=(cBoard[r][c]+1)%3;
   if(cBoard[r][c]===EMPTY)cFixed[r][c]=false;
@@ -247,12 +239,15 @@ function toggleFixed(r,c){if(cBoard[r][c]===EMPTY)return;cFixed[r][c]=!cFixed[r]
 function cycleConstraintH(r,c){const k=r+','+c;if(!cCh[k])cCh[k]='=';else if(cCh[k]==='=')cCh[k]='×';else delete cCh[k];updateState();}
 function cycleConstraintV(r,c){const k=r+','+c;if(!cCv[k])cCv[k]='=';else if(cCv[k]==='=')cCv[k]='×';else delete cCv[k];updateState();}
 
+/* ─── Solver (for status check) ─── */
+function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}const kv=r+','+c;if(ccv[kv]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))return false;}}return true;}
+function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});})}return m;}
+function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o});break;}}}return m;}
+function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}return m;}
+function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON});if(!cM&&cS)m.push({r,c,val:SUN});}return m;}
+function humanSolve(puz,cch,ccv){const b=puz.map(r=>[...r]);for(let i=0;i<200;i++){const sm=[...tBalance(b),...tTriple(b),...tConstraints(b,cch,ccv)];let ap=0;for(const{r,c,val}of sm){if(b[r][c]===EMPTY){b[r][c]=val;ap++;}}if(ap)continue;const em=tElim(b,cch,ccv);let ea=0;for(const{r,c,val}of em){if(b[r][c]===EMPTY){b[r][c]=val;ea++;}}if(ea)continue;break;}return{solved:b.every(row=>row.every(v=>v!==EMPTY))};}
+
 /* ─── Status ─── */
-function isHumanSolvable(){
-  const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(cFixed[r][c])puz[r][c]=cBoard[r][c];
-  return humanSolve(puz,cCh,cCv).solved;
-}
 function updateStatus(){
   const dot=document.getElementById('sdot'),txt=document.getElementById('status-text');
   const filled=cBoard.flat().filter(v=>v!==EMPTY).length;
@@ -266,13 +261,15 @@ function updateStatus(){
     dot.className='sdot warn';txt.textContent=filled+'/36 cases remplies';
   }else if(!fixedCount){
     const{solved}=humanSolve(Array.from({length:N},()=>Array(N).fill(EMPTY)),cCh,cCv);
-    if(solved){dot.className='sdot ok';txt.textContent='Grille solvable par les contraintes seules ✓ — aucune case de départ nécessaire';}
-    else{dot.className='sdot warn';txt.textContent='Grille valide ✓ mais non solvable par la logique seule — définis les cases de départ';}
+    if(solved){dot.className='sdot ok';txt.textContent='Solvable par les contraintes seules ✓ — aucune case de départ nécessaire';}
+    else{dot.className='sdot warn';txt.textContent='Grille valide ✓ mais non solvable seule — définis les cases de départ';}
   }else{
-    if(!isHumanSolvable()){
+    const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(cFixed[r][c])puz[r][c]=cBoard[r][c];
+    if(!humanSolve(puz,cCh,cCv).solved){
       dot.className='sdot err';txt.textContent='⚠ Non solvable avec ces cases de départ — ajoute des contraintes ou plus de cases';
     }else if(fixedCount>4){
-      dot.className='sdot warn';txt.textContent='Solvable ✓ mais '+fixedCount+' cases de départ (objectif : 1–4) — ajoute des contraintes pour réduire';
+      dot.className='sdot warn';txt.textContent='Solvable ✓ mais '+fixedCount+' cases de départ (objectif : 1–4) — ajoute des contraintes';
     }else{
       dot.className='sdot ok';txt.textContent='Puzzle prêt ✓ — '+fixedCount+' case'+(fixedCount>1?'s':'')+' de départ';
     }
@@ -289,36 +286,37 @@ function updateButtons(){
   const bs=document.getElementById('btn-clear-s');
   const bc=document.getElementById('btn-clear-c');
   const bf=document.getElementById('btn-clear-f');
-  bs.disabled=!hasS; bs.classList.toggle('active',hasS);
-  bc.disabled=!hasC; bc.classList.toggle('active',hasC);
-  bf.disabled=!hasF; bf.classList.toggle('active',hasF);
+  bs.disabled=!hasS;bs.classList.toggle('active',hasS);
+  bc.disabled=!hasC;bc.classList.toggle('active',hasC);
+  bf.disabled=!hasF;bf.classList.toggle('active',hasF);
 }
 
 /* ─── Seed ─── */
 function encodeSeed(){
   if(!isFull()||cErrors.size>0)return null;
-  // 36 (solution) + 30 (h-constraints presence) + 30 (v-constraints presence) = 96 bits = 12 bytes → 16 chars
-  // constraint TYPE is derived from the solution (no need to store it)
-  // fixed cells are derived deterministically (same row-major order as decoder)
+  const diff=document.getElementById('diff-select').value;
   const bits=[];
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cBoard[r][c]===MOON?1:0);
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cFixed[r][c]?1:0);
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cCh[r+','+c]?1:0);
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(cCv[r+','+c]?1:0);
-  const bytes=new Uint8Array(12);
-  for(let i=0;i<96;i++)bytes[Math.floor(i/8)]|=bits[i]<<(7-(i%8));
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const d={easy:0,medium:1,hard:2,custom:3}[diff]??3;
+  bits.push((d>>1)&1,d&1,0,0,0,0);
+  let result='';
+  for(let i=0;i<138;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}
+  return result;
 }
 
 function updateSeed(){
   const seed=encodeSeed();
   const el=document.getElementById('seed-val'),cb=document.getElementById('btn-copy'),tl=document.getElementById('btn-test');
-  if(seed){el.textContent=seed;cb.disabled=false;tl.style.display='inline-flex';tl.href='tango.html?seed='+seed;}
+  if(seed){el.textContent=seed;cb.disabled=false;tl.style.display='inline-flex';tl.href='index.html?seed='+seed;}
   else{el.textContent='—';cb.disabled=true;tl.style.display='none';}
 }
 
 function copySeedLink(){
   const seed=encodeSeed();if(!seed)return;
-  const url='https://ducloyleo.github.io/website/tango.html?seed='+seed;
+  const url=window.location.origin+'/platform/index.html?seed='+seed;
   if(navigator.clipboard){
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('btn-copy'),orig=btn.textContent;
@@ -355,7 +353,7 @@ function autoFillSymbols(){
 }
 function autoFillConstraints(){
   if(!isFull()||cErrors.size>0)return;
-  cCh={};cCv={}; // efface les anciennes contraintes avant d'en générer de nouvelles
+  cCh={};cCv={};
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(Math.random()<0.4)cCh[r+','+c]=cBoard[r][c]===cBoard[r][c+1]?'=':'×';}
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(Math.random()<0.4)cCv[r+','+c]=cBoard[r][c]===cBoard[r+1][c]?'=':'×';}
   updateState();
@@ -363,7 +361,6 @@ function autoFillConstraints(){
 function autoSelectFixed(){
   if(!isFull()||cErrors.size>0)return;
   const puz=cBoard.map(r=>[...r]);
-  // Ordre déterministe ligne par ligne (identique au décodeur de seed)
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const sv=puz[r][c];puz[r][c]=EMPTY;
     const{solved}=humanSolve(puz,cCh,cCv);
@@ -377,17 +374,6 @@ function clearSymbols(){cBoard=Array.from({length:N},()=>Array(N).fill(EMPTY));c
 function clearConstraints(){cCh={};cCv={};updateState();}
 function clearFixed(){cFixed=Array.from({length:N},()=>Array(N).fill(false));updateState();}
 
-/* ─── Solver ─── */
-function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}const kv=r+','+c;if(ccv[kv]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))return false;}}return true;}
-function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});}); }return m;}
-function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o});break;}}}return m;}
-function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}return m;}
-function tEnds(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],e=b[r][4];if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a)});const bb=b[r][1],f=b[r][5];if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb)});}for(let c=0;c<N;c++){const a=b[0][c],e=b[4][c];if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a)});const bb=b[1][c],f=b[5][c];if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb)});}for(let r=0;r<N;r++){const a=b[r][0],f=b[r][5];if(a!==EMPTY&&a===f){const o=opp(a);if(b[r][1]===EMPTY)m.push({r,c:1,val:o});if(b[r][4]===EMPTY)m.push({r,c:4,val:o});}}for(let c=0;c<N;c++){const a=b[0][c],f=b[5][c];if(a!==EMPTY&&a===f){const o=opp(a);if(b[1][c]===EMPTY)m.push({r:1,c,val:o});if(b[4][c]===EMPTY)m.push({r:4,c,val:o});}}for(let r=0;r<N;r++){if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0])});if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4])});}for(let c=0;c<N;c++){if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c])});if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c])});}return m;}
-function tChain(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N-2;c++){if(cch[r+','+c]==='='&&cch[r+','+(c+1)]==='='){const vals=[b[r][c],b[r][c+1],b[r][c+2]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r][c+1]===EMPTY)m.push({r,c:c+1,val:v});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:v});}}if(cch[r+','+c]==='×'&&cch[r+','+(c+1)]==='×'){const bv=b[r][c+1];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r][c+2]===EMPTY)m.push({r,c:c+2,val:o});}}}for(let c=0;c<N;c++)for(let r=0;r<N-2;r++){const k1=r+','+c,k2=(r+1)+','+c;if(ccv[k1]==='='&&ccv[k2]==='='){const vals=[b[r][c],b[r+1][c],b[r+2][c]].filter(v=>v!==EMPTY);if(vals.length){const v=vals[0];if(b[r][c]===EMPTY)m.push({r,c,val:v});if(b[r+1][c]===EMPTY)m.push({r:r+1,c,val:v});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:v});}}if(ccv[k1]==='×'&&ccv[k2]==='×'){const bv=b[r+1][c];if(bv!==EMPTY){const o=bv===SUN?MOON:SUN;if(b[r][c]===EMPTY)m.push({r,c,val:o});if(b[r+2][c]===EMPTY)m.push({r:r+2,c,val:o});}}}return m;}
-function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON});if(!cM&&cS)m.push({r,c,val:SUN});}return m;}
-function humanSolve(puz,cch,ccv){const b=puz.map(r=>[...r]);for(let i=0;i<200;i++){const sm=[...tBalance(b),...tTriple(b),...tConstraints(b,cch,ccv)];let ap=0;for(const{r,c,val}of sm){if(b[r][c]===EMPTY){b[r][c]=val;ap++;}}if(ap)continue;const cm=[...tEnds(b),...tChain(b,cch,ccv),...tElim(b,cch,ccv)];let ca=0;for(const{r,c,val}of cm){if(b[r][c]===EMPTY){b[r][c]=val;ca++;}}if(ca)continue;break;}return{solved:b.every(row=>row.every(v=>v!==EMPTY))};}
-
-/* ─── Init ─── */
 renderGrid();updateStatus();updateSeed();updateButtons();
 </script>
 </body>

@@ -50,6 +50,8 @@
       <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
       <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
       <div class="nav-menu-sep"></div>
+      <a href="../seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">← Site public</a>
       <div id="menu-auth-item"></div>
     </div>
@@ -103,14 +105,32 @@
           </div>
         </div>
         <div class="form-group" style="margin-bottom:1rem">
-          <label class="form-label">Seed (7 ou 16 caractères) — laisser vide pour générer automatiquement</label>
-          <input class="form-input" type="text" id="edit-seed" placeholder="Seed du puzzle" maxlength="16">
+          <label class="form-label">Seed (23 caractères) — laisser vide pour générer automatiquement</label>
+          <input class="form-input" type="text" id="edit-seed" placeholder="Seed du puzzle" maxlength="23">
         </div>
         <div class="alert error" id="edit-error"></div>
         <div style="display:flex;gap:8px;margin-top:.5rem">
           <button class="btn sun" onclick="saveLevel()">Sauvegarder</button>
           <button class="btn" onclick="closeEdit()">Annuler</button>
           <button class="btn danger" id="delete-btn" onclick="deleteLevel()" style="margin-left:auto">Supprimer</button>
+        </div>
+      </div>
+
+      <!-- Suppression en masse -->
+      <div class="card" style="margin-top:2rem;border-color:rgba(220,80,60,.25)">
+        <h3 style="margin-bottom:1rem;font-size:1rem;color:rgba(220,80,60,.8)">Zone de suppression</h3>
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Supprimer un niveau par date</label>
+            <input class="form-input" type="date" id="del-date" style="width:180px">
+          </div>
+          <button class="btn danger" onclick="deleteSingleByDate()">Supprimer ce jour</button>
+          <div style="width:1px;height:36px;background:var(--border);flex-shrink:0"></div>
+          <div>
+            <label class="form-label">Supprimer tout un mois (mois affiché)</label>
+            <br>
+            <button class="btn danger" onclick="deleteWholeMonth()">Supprimer le mois affiché</button>
+          </div>
         </div>
       </div>
 
@@ -122,6 +142,29 @@
 <script src="../js/supabase-client.js"></script>
 <script src="../js/auth.js?v=5"></script>
 <script>
+/* ── Puzzle engine ── */
+const SUN=1,MOON=2,EMPTY=0,N=6;
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function encodeSeed(sol,fix,cch,ccv,diff){const bits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(sol[r][c]===MOON?1:0);for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(fix[r][c]?1:0);for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cch[r+','+c]?1:0);for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(ccv[r+','+c]?1:0);const d={easy:0,medium:1,hard:2,custom:3}[diff]??3;bits.push((d>>1)&1,d&1,0,0,0,0);let result='';for(let i=0;i<138;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}return result;}
+function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}if(ccv[kh]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kh]==='='&&!s)||(ccv[kh]==='×'&&s))return false;}}return true;}
+function tTriple(b){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(c>=2&&b[r][c-2]===val&&b[r][c-1]===val)f=true;if(c<=N-3&&b[r][c+1]===val&&b[r][c+2]===val)f=true;if(c>=1&&c<=N-2&&b[r][c-1]===val&&b[r][c+1]===val)f=true;if(f){m.push({r,c,val:o});break;}}if(b[r][c]!==EMPTY)continue;for(const val of[SUN,MOON]){const o=val===SUN?MOON:SUN;let f=false;if(r>=2&&b[r-2][c]===val&&b[r-1][c]===val)f=true;if(r<=N-3&&b[r+1][c]===val&&b[r+2][c]===val)f=true;if(r>=1&&r<=N-2&&b[r-1][c]===val&&b[r+1][c]===val)f=true;if(f){m.push({r,c,val:o});break;}}}return m;}
+function tBalance(b){const m=[];for(let r=0;r<N;r++){const s=b[r].filter(v=>v===SUN).length,mn=b[r].filter(v=>v===MOON).length;if(s===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)b[r].forEach((v,c)=>{if(v===EMPTY)m.push({r,c,val:SUN});});}for(let c=0;c<N;c++){const col=b.map(row=>row[c]);const s=col.filter(v=>v===SUN).length,mn=col.filter(v=>v===MOON).length;if(s===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:MOON});});if(mn===N/2)col.forEach((v,r)=>{if(v===EMPTY)m.push({r,c,val:SUN});})}return m;}
+function tConstraints(b,cch,ccv){const m=[];for(const[k,t]of Object.entries(cch)){const[r,c]=k.split(',').map(Number);if(c+1>=N)continue;const a=b[r][c],bv=b[r][c+1];if(a!==EMPTY&&bv===EMPTY)m.push({r,c:c+1,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}for(const[k,t]of Object.entries(ccv)){const[r,c]=k.split(',').map(Number);if(r+1>=N)continue;const a=b[r][c],bv=b[r+1][c];if(a!==EMPTY&&bv===EMPTY)m.push({r:r+1,c,val:t==='='?a:(a===SUN?MOON:SUN)});if(bv!==EMPTY&&a===EMPTY)m.push({r,c,val:t==='='?bv:(bv===SUN?MOON:SUN)});}return m;}
+function tPairEnd(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){if(b[r][0]!==EMPTY&&b[r][0]===b[r][1]&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(b[r][0])});if(b[r][4]!==EMPTY&&b[r][4]===b[r][5]&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(b[r][4])});}for(let c=0;c<N;c++){if(b[0][c]!==EMPTY&&b[0][c]===b[1][c]&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(b[0][c])});if(b[4][c]!==EMPTY&&b[4][c]===b[5][c]&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(b[4][c])});}return m;}
+function tDistIdent(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],f=b[r][5];if(a!==EMPTY&&a===f){const o=opp(a);if(b[r][1]===EMPTY)m.push({r,c:1,val:o});if(b[r][4]===EMPTY)m.push({r,c:4,val:o});}}for(let c=0;c<N;c++){const a=b[0][c],f=b[5][c];if(a!==EMPTY&&a===f){const o=opp(a);if(b[1][c]===EMPTY)m.push({r:1,c,val:o});if(b[4][c]===EMPTY)m.push({r:4,c,val:o});}}return m;}
+function tDist4(b){const m=[];const opp=v=>v===SUN?MOON:SUN;for(let r=0;r<N;r++){const a=b[r][0],e=b[r][4];if(a!==EMPTY&&a===e&&b[r][5]===EMPTY)m.push({r,c:5,val:opp(a)});const bb=b[r][1],f=b[r][5];if(bb!==EMPTY&&bb===f&&b[r][0]===EMPTY)m.push({r,c:0,val:opp(bb)});}for(let c=0;c<N;c++){const a=b[0][c],e=b[4][c];if(a!==EMPTY&&a===e&&b[5][c]===EMPTY)m.push({r:5,c,val:opp(a)});const bb=b[1][c],f=b[5][c];if(bb!==EMPTY&&bb===f&&b[0][c]===EMPTY)m.push({r:0,c,val:opp(bb)});}return m;}
+function tElim(b,cch,ccv){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[r][c]!==EMPTY)continue;let cS=true,cM=true;for(const val of[SUN,MOON]){const b2=b.map(row=>[...row]);b2[r][c]=val;if(!isConsistent(b2,cch,ccv)){if(val===SUN)cS=false;else cM=false;}}if(!cS&&cM)m.push({r,c,val:MOON});if(!cM&&cS)m.push({r,c,val:SUN});}return m;}
+const SOLVE_LEVELS=[{level:1,fn:(b,ch,cv)=>tTriple(b)},{level:2,fn:(b,ch,cv)=>tBalance(b)},{level:3,fn:(b,ch,cv)=>tConstraints(b,ch,cv)},{level:4,fn:(b,ch,cv)=>tPairEnd(b)},{level:5,fn:(b,ch,cv)=>tDistIdent(b)},{level:6,fn:(b,ch,cv)=>tDist4(b)},{level:7,fn:(b,ch,cv)=>tElim(b,ch,cv)}];
+function humanSolve(puz,cch,ccv,maxLevel=7){const b=puz.map(r=>[...r]);let changed=true;let level=0;while(changed){changed=false;for(const{level:lv,fn}of SOLVE_LEVELS){if(lv>maxLevel)continue;const moves=fn(b,cch,ccv);for(const{r,c,val}of moves){if(b[r][c]===EMPTY){b[r][c]=val;changed=true;level=Math.max(level,lv);}}}}const solved=b.every(row=>row.every(v=>v!==EMPTY));return{solved,board:b,level};}
+const DIFF_PARAMS={easy:{cluesMin:14,cluesMax:20,constraintsMin:18,constraintsMax:26,eqRatioMin:0.60,eqRatioMax:0.80,techMin:1,techMax:3},medium:{cluesMin:8,cluesMax:14,constraintsMin:10,constraintsMax:18,eqRatioMin:0.40,eqRatioMax:0.65,techMin:3,techMax:5},hard:{cluesMin:4,cluesMax:9,constraintsMin:3,constraintsMax:10,eqRatioMin:0.30,eqRatioMax:0.55,techMin:5,techMax:7}};
+function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
+function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}bt();return cnt;}
+function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=Math.random()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
+function placeConstraints(sol,targetCount,eqRatio){const eqPool=[],xPool=[];for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){(sol[r][c]===sol[r][c+1]?eqPool:xPool).push({r,c,dir:'h'});}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){(sol[r][c]===sol[r+1][c]?eqPool:xPool).push({r,c,dir:'v'});}eqPool.sort(()=>Math.random()-.5);xPool.sort(()=>Math.random()-.5);const eqCount=Math.min(Math.round(targetCount*eqRatio),eqPool.length);const xCount=Math.min(targetCount-eqCount,xPool.length);const cch={},ccv={};for(const{r,c,dir}of[...eqPool.slice(0,eqCount),...xPool.slice(0,xCount)]){if(dir==='h')cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';else ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}return{cch,ccv};}
+function carve(sol,cch,ccv,targetClues,maxLevel){const puz=sol.map(r=>[...r]);const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);cells.sort(()=>Math.random()-.5);for(const[r,c]of cells){if(puz.flat().filter(v=>v!==EMPTY).length<=targetClues)break;const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,cch,ccv,maxLevel);if(!solved)puz[r][c]=sv;}return puz;}
+function genForDiff(diff){const p=DIFF_PARAMS[diff]||DIFF_PARAMS.medium;for(let att=0;att<500;att++){const sol=genSolution();if(!sol)continue;const targetConstraints=Math.floor(Math.random()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;const targetEqRatio=p.eqRatioMin+Math.random()*(p.eqRatioMax-p.eqRatioMin);const{cch,ccv}=placeConstraints(sol,targetConstraints,targetEqRatio);const targetClues=Math.floor(Math.random()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;const puz=carve(sol,cch,ccv,targetClues,p.techMax);const{solved,level}=humanSolve(puz,cch,ccv,p.techMax);if(!solved)continue;if(level<p.techMin)continue;if(countBT(puz,cch,ccv,2)!==1)continue;return{puzzle:puz,solution:sol,ch:cch,cv:ccv};}return null;}
+function generatePuzzleSeed(diff){let res=null;for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}if(!res)return null;const fix=res.puzzle.map(r=>r.map(v=>v!==EMPTY));return encodeSeed(res.solution,fix,res.ch,res.cv,diff);}
+
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -200,13 +243,7 @@ function selectDay(dateStr) {
     `${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}${level?.name ? ' — ' + level.name : ''}`;
   document.getElementById('edit-name').value = level?.name || '';
   document.getElementById('edit-diff').value = level?.difficulty || 'medium';
-  document.getElementById('edit-seed').value = level?.is_manual ? (level?.seed || '') : '';
-  const isPastWithLevel = dateStr < getParisTodayStr() && !!level;
-  const seedInput = document.getElementById('edit-seed');
-  seedInput.disabled = isPastWithLevel;
-  seedInput.title = isPastWithLevel ? 'Seed verrouillée — niveau déjà passé' : '';
-  if(isPastWithLevel){ seedInput.value = level.seed; seedInput.style.opacity='.45'; }
-  else { seedInput.style.opacity=''; }
+  document.getElementById('edit-seed').value = level?.seed || '';
   document.getElementById('edit-error').classList.remove('show');
   document.getElementById('delete-btn').style.display = level ? '' : 'none';
   panel.classList.add('show');
@@ -226,12 +263,13 @@ async function saveLevel() {
   const errEl = document.getElementById('edit-error');
   errEl.classList.remove('show');
 
-  if (seed && seed.length !== 7 && seed.length !== 16) {
-    errEl.textContent = 'La seed doit faire 7 ou 16 caractères (ou vide pour auto).';
+  if (seed && seed.length !== 23) {
+    errEl.textContent = 'La seed doit faire 23 caractères (ou vide pour générer automatiquement).';
     errEl.classList.add('show'); return;
   }
 
-  const finalSeed = seed || generateSeedForDate(selectedDate, diff);
+  const finalSeed = seed || generatePuzzleSeed(diff);
+  if (!finalSeed) { errEl.textContent = 'Échec de génération du puzzle. Réessayez.'; errEl.classList.add('show'); return; }
   const payload = { date: selectedDate, seed: finalSeed, difficulty: diff, is_manual: true, name: name || null };
   const existing = levelsMap[selectedDate];
 
@@ -259,18 +297,23 @@ async function generateMonth() {
   if (!confirm(`Générer les jours manquants de ${MONTHS_FR[calMonth]} ${calYear} ?`)) return;
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const diffs = balancedDiffs(daysInMonth);
-  let count = 0;
+  let count = 0, failed = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     if (levelsMap[dateStr]) continue;
     const diff = diffs[d - 1];
-    const seed = generateSeedForDate(dateStr, diff);
+    const seed = generatePuzzleSeed(diff);
+    if (!seed) { failed++; continue; }
     await db.from('daily_levels').insert({ date: dateStr, seed, difficulty: diff, is_manual: false });
     count++;
   }
   await loadMonth();
-  if (count === 0) alert('Tous les jours du mois sont déjà générés.');
-  else alert(`${count} niveau${count > 1 ? 'x' : ''} généré${count > 1 ? 's' : ''}.`);
+  if (count === 0 && failed === 0) alert('Tous les jours du mois sont déjà générés.');
+  else {
+    let msg = `${count} niveau${count > 1 ? 'x' : ''} généré${count > 1 ? 's' : ''}.`;
+    if (failed) msg += ` ${failed} échec${failed > 1 ? 's' : ''} de génération.`;
+    alert(msg);
+  }
 }
 
 function balancedDiffs(total) {
@@ -289,14 +332,24 @@ function balancedDiffs(total) {
   return diffs;
 }
 
-function generateSeedForDate(dateStr, diff) {
-  const d = { easy:0, medium:1, hard:2 }[diff];
-  const hash = dateStr.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-  const nb = (Math.abs(hash) * 1664525 + 1013904223) >>> 0;
-  const bytes = new Uint8Array(5);
-  bytes[0] = (nb >>> 24) & 0xFF; bytes[1] = (nb >>> 16) & 0xFF;
-  bytes[2] = (nb >>> 8) & 0xFF;  bytes[3] = nb & 0xFF; bytes[4] = d << 6;
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+async function deleteSingleByDate() {
+  const dateStr = document.getElementById('del-date').value;
+  if (!dateStr) { alert('Sélectionnez une date.'); return; }
+  const level = levelsMap[dateStr];
+  if (!level) { alert(`Aucun niveau pour le ${dateStr}.`); return; }
+  if (!confirm(`Supprimer le niveau du ${dateStr} ?`)) return;
+  await db.from('daily_levels').delete().eq('id', level.id);
+  await loadMonth();
+  alert('Niveau supprimé.');
+}
+
+async function deleteWholeMonth() {
+  if (!confirm(`Supprimer TOUS les niveaux de ${MONTHS_FR[calMonth]} ${calYear} ? Cette action est irréversible.`)) return;
+  const ids = Object.values(levelsMap).map(l => l.id);
+  if (!ids.length) { alert('Aucun niveau ce mois-ci.'); return; }
+  await db.from('daily_levels').delete().in('id', ids);
+  await loadMonth();
+  alert(`${ids.length} niveau${ids.length > 1 ? 'x' : ''} supprimé${ids.length > 1 ? 's' : ''}.`);
 }
 
 const ADMIN_MIN_YEAR=2026, ADMIN_MIN_MONTH=4;

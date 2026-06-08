@@ -320,15 +320,40 @@ let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
 let generating=false,currentDiff=null,rememberDiff=false,extremeMode=false;
 let errRowTimers={},errColTimers={},activeErrRows=new Set(),activeErrCols=new Set(),hintCell=null,gameWon=false;
-let currentSeedStr=null,rng=Math.random;
+let currentSeedStr=null;
 let currentUserId=null;
 let isAssisted=false;
 
-/* ── PRNG ── */
-function makePRNG(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
-function genNumSeed(){return Math.floor(Math.random()*0x100000000);}
-function seedToStr(diff,n){const d={easy:0,medium:1,hard:2}[diff];const nb=n>>>0;const bytes=new Uint8Array(5);bytes[0]=(nb>>>24)&0xFF;bytes[1]=(nb>>>16)&0xFF;bytes[2]=(nb>>>8)&0xFF;bytes[3]=nb&0xFF;bytes[4]=d<<6;return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
-function strToSeed(str){const b64=str.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;const diff=['easy','medium','hard'][bytes[4]>>6];return{diff,numSeed};}
+/* ── Seed encoding (23 chars, base64url) ── */
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function encodeSeed(sol,fix,cch,ccv,diff){
+  const bits=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(sol[r][c]===MOON?1:0);
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(fix[r][c]?1:0);
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cch[r+','+c]?1:0);
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(ccv[r+','+c]?1:0);
+  const d={easy:0,medium:1,hard:2,custom:3}[diff]??3;
+  bits.push((d>>1)&1,d&1,0,0,0,0);
+  let result='';
+  for(let i=0;i<138;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}
+  return result;
+}
+function decodeSeed(s){
+  if(s.length!==23)return null;
+  const bits=[];
+  for(let i=0;i<23;i++){const v=B64.indexOf(s[i]);if(v<0)return null;for(let j=5;j>=0;j--)bits.push((v>>j)&1);}
+  let p=0;const nb=()=>bits[p++];
+  const sol=Array.from({length:N},()=>Array(N).fill(SUN));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;
+  const fix=Array.from({length:N},()=>Array(N).fill(false));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)fix[r][c]=!!nb();
+  const cch={},ccv={};
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}
+  const d0=nb(),d1=nb();
+  const diff=['easy','medium','hard','custom'][(d0<<1)|d1];
+  return{sol,fix,cch,ccv,diff};
+}
 
 /* ── Menu ── */
 function menuDiff(){closeMenu();openChangeDiff();}
@@ -653,13 +678,13 @@ let DIFF_PARAMS={
 
 function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
 function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}bt();return cnt;}
-function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=rng()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
+function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=Math.random()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
 
 function placeConstraints(sol,targetCount,eqRatio){
   const eqPool=[],xPool=[];
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){(sol[r][c]===sol[r][c+1]?eqPool:xPool).push({r,c,dir:'h'});}
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){(sol[r][c]===sol[r+1][c]?eqPool:xPool).push({r,c,dir:'v'});}
-  eqPool.sort(()=>rng()-.5);xPool.sort(()=>rng()-.5);
+  eqPool.sort(()=>Math.random()-.5);xPool.sort(()=>Math.random()-.5);
   const eqCount=Math.min(Math.round(targetCount*eqRatio),eqPool.length);
   const xCount=Math.min(targetCount-eqCount,xPool.length);
   const cch={},ccv={};
@@ -674,7 +699,7 @@ function carve(sol,cch,ccv,targetClues,maxLevel){
   const puz=sol.map(r=>[...r]);
   const cells=[];
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
-  cells.sort(()=>rng()-.5);
+  cells.sort(()=>Math.random()-.5);
   for(const[r,c]of cells){
     if(puz.flat().filter(v=>v!==EMPTY).length<=targetClues)break;
     const sv=puz[r][c];puz[r][c]=EMPTY;
@@ -688,10 +713,10 @@ function genForDiff(diff){
   const p=DIFF_PARAMS[diff]||DIFF_PARAMS.medium;
   for(let att=0;att<500;att++){
     const sol=genSolution();if(!sol)continue;
-    const targetConstraints=Math.floor(rng()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;
-    const targetEqRatio=p.eqRatioMin+rng()*(p.eqRatioMax-p.eqRatioMin);
+    const targetConstraints=Math.floor(Math.random()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;
+    const targetEqRatio=p.eqRatioMin+Math.random()*(p.eqRatioMax-p.eqRatioMin);
     const{cch,ccv}=placeConstraints(sol,targetConstraints,targetEqRatio);
-    const targetClues=Math.floor(rng()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
+    const targetClues=Math.floor(Math.random()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
     const puz=carve(sol,cch,ccv,targetClues,p.techMax);
     const{solved,level}=humanSolve(puz,cch,ccv,p.techMax);
     if(!solved)continue;
@@ -702,7 +727,7 @@ function genForDiff(diff){
   return null;
 }
 
-function startGeneration(diff,forceSeedNum=null){
+function startGeneration(diff){
   if(generating)return;
   // Mode extrême : toujours extrême. Sinon, 10% de chance sur hard.
   const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
@@ -713,8 +738,6 @@ function startGeneration(diff,forceSeedNum=null){
   // N'afficher la modale que si la génération prend > 100ms (évite le flash)
   const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);
   resetTimer();hist=[];renderEmptyGrid();
-  const numSeed=forceSeedNum!==null?forceSeedNum:genNumSeed();
-  currentSeedStr=seedToStr(diff,numSeed);rng=makePRNG(numSeed);
   setTimeout(()=>{
     let res=null;
     for(let i=0;i<5;i++){res=genForDiff(effectiveDiff);if(res)break;}
@@ -724,6 +747,8 @@ function startGeneration(diff,forceSeedNum=null){
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
+    const storedDiff=effectiveDiff==='extreme'?'hard':diff;
+    currentSeedStr=encodeSeed(solution,fixed,ch,cv,storedDiff);
     setDiffBadge(effectiveDiff==='extreme'?'extreme':diff);_animNextGrid=true;renderGrid();
   },30);
 }
@@ -734,9 +759,22 @@ const STATS_KEY='tango_stats_v2';
 function loadStatsLocal(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
 function saveStatsLocal(diff,seconds){if(!diff||seconds<=0||!['easy','medium','hard'].includes(diff))return;const s=loadStatsLocal();const d=s[diff];d.count++;d.totalTime+=seconds;if(d.best===0||seconds<d.best)d.best=seconds;try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}}
 
-/* ── Custom seed ── */
-function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{sol,sCh,sCv};}
-function startGameFromCustomSeed(decoded,seedStr){const{sol,sCh,sCv}=decoded;const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=sol[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}clearAllErrors();clearHintPreview();gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');document.getElementById('gen-modal').classList.remove('show');resetTimer();hist=[];puzzle=puz;solution=sol;ch=sCh;cv=sCv;board=puz.map(r=>[...r]);fixed=puz.map(r=>r.map(v=>v!==EMPTY));currentDiff='custom';currentSeedStr=seedStr;setDiffBadge('custom');_animNextGrid=true;renderGrid();}
+/* ── Start from seed ── */
+function startGameFromSeed(seedStr){
+  const decoded=decodeSeed(seedStr);
+  if(!decoded)throw new Error('invalid seed');
+  const{sol,fix,cch,ccv,diff}=decoded;
+  const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fix[r][c])puz[r][c]=sol[r][c];
+  clearAllErrors();clearHintPreview();gameWon=false;
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('gen-modal').classList.remove('show');
+  resetTimer();hist=[];
+  puzzle=puz;solution=sol;ch=cch;cv=ccv;
+  board=puz.map(r=>[...r]);fixed=fix;
+  currentDiff=diff;currentSeedStr=seedStr;
+  setDiffBadge(diff);_animNextGrid=true;renderGrid();
+}
 
 /* ── Init ── */
 async function init(){
@@ -774,9 +812,7 @@ async function init(){
   const seedParam=urlParams.get('seed');
   if(seedParam){
     try{
-      if(seedParam.length===16){const decoded=decodeCustomSeed(seedParam);startGameFromCustomSeed(decoded,seedParam);}
-      else if(seedParam.length===7){const{diff,numSeed}=strToSeed(seedParam);if(diff&&!isNaN(numSeed)){currentDiff=diff;startGeneration(diff,numSeed);}else throw new Error('invalid');}
-      else throw new Error('invalid length');
+      startGameFromSeed(seedParam);
     }catch(e){document.getElementById('diff-modal-sub').textContent='Seed invalide. Quel niveau pour commencer ?';document.getElementById('diff-modal').classList.add('show');}
   }else if(rememberDiff&&currentDiff){startGeneration(currentDiff);}
   else{document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quel niveau pour commencer ?';document.getElementById('diff-modal').classList.add('show');}

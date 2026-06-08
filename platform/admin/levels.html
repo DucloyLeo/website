@@ -27,6 +27,8 @@
       <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
       <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
       <div class="nav-menu-sep"></div>
+      <a href="../seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">← Site public</a>
       <div id="menu-auth-item"></div>
     </div>
@@ -74,8 +76,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Seed (7 caractères pour générée, 16 pour personnalisée)</label>
-            <input class="form-input" type="text" id="level-seed" placeholder="Seed du puzzle" required minlength="7" maxlength="16">
+            <label class="form-label">Seed (23 caractères)</label>
+            <input class="form-input" type="text" id="level-seed" placeholder="Seed du puzzle" required minlength="23" maxlength="23">
           </div>
           <div class="alert error" id="add-error"></div>
           <div class="alert success" id="add-success"></div>
@@ -177,8 +179,8 @@ async function addLevel(e) {
   const diff   = document.getElementById('level-diff').value;
   const seed   = document.getElementById('level-seed').value.trim();
 
-  if (seed.length !== 7 && seed.length !== 16) {
-    err.textContent = 'La seed doit faire 7 caractères (générée) ou 16 (personnalisée)';
+  if (seed.length !== 23) {
+    err.textContent = 'La seed doit faire 23 caractères.';
     err.classList.add('show'); return;
   }
 

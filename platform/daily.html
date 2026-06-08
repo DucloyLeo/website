@@ -268,11 +268,24 @@ let board=[],fixed=[],puzzle=[],solution=[],ch={},cv={};
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
 let errRowTimers={},errColTimers={},activeErrRows=new Set(),activeErrCols=new Set(),gameWon=false;
-let rng=Math.random;
-
-/* PRNG */
-function makePRNG(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
-function strToSeed(str){const b64=str.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64+'='),c=>c.charCodeAt(0));const numSeed=((bytes[0]<<24)|(bytes[1]<<16)|(bytes[2]<<8)|bytes[3])>>>0;const diff=['easy','medium','hard'][bytes[4]>>6];return{diff,numSeed};}
+/* Seed decoding (23 chars, base64url) */
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function decodeSeed(s){
+  if(s.length!==23)return null;
+  const bits=[];
+  for(let i=0;i<23;i++){const v=B64.indexOf(s[i]);if(v<0)return null;for(let j=5;j>=0;j--)bits.push((v>>j)&1);}
+  let p=0;const nb=()=>bits[p++];
+  const sol=Array.from({length:N},()=>Array(N).fill(SUN));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;
+  const fix=Array.from({length:N},()=>Array(N).fill(false));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)fix[r][c]=!!nb();
+  const cch={},ccv={};
+  for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}
+  for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}
+  const d0=nb(),d1=nb();
+  const diff=['easy','medium','hard','custom'][(d0<<1)|d1];
+  return{sol,fix,cch,ccv,diff};
+}
 
 /* Solver (7 niveaux) */
 function isConsistent(b,cch,ccv){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=b[r][c];if(v===EMPTY)continue;if(c+2<N&&b[r][c+1]===v&&b[r][c+2]===v)return false;if(r+2<N&&b[r+1][c]===v&&b[r+2][c]===v)return false;let rs=0,rm=0;b[r].forEach(x=>{if(x===SUN)rs++;if(x===MOON)rm++;});if(rs>N/2||rm>N/2)return false;let cs=0,cm=0;b.forEach(row=>{if(row[c]===SUN)cs++;if(row[c]===MOON)cm++;});if(cs>N/2||cm>N/2)return false;const kh=r+','+c;if(cch[kh]&&c+1<N&&b[r][c+1]!==EMPTY){const s=v===b[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))return false;}if(ccv[kh]&&r+1<N&&b[r+1][c]!==EMPTY){const s=v===b[r+1][c];if((ccv[kh]==='='&&!s)||(ccv[kh]==='×'&&s))return false;}}return true;}
@@ -314,12 +327,12 @@ let DIFF_PARAMS={
 };
 function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
 function countBT(b,cch,ccv,lim){let cnt=0;const brd=b.map(r=>[...r]);function bt(){if(cnt>=lim)return;for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(brd[r][c]===EMPTY){for(const val of[SUN,MOON]){if(!isValid(brd,r,c,val))continue;let ok=true;const kh=r+','+c;if(cch[kh]&&c+1<N&&brd[r][c+1]!==EMPTY){const s=val===brd[r][c+1];if((cch[kh]==='='&&!s)||(cch[kh]==='×'&&s))ok=false;}const khl=r+','+(c-1);if(ok&&c>0&&cch[khl]&&brd[r][c-1]!==EMPTY){const s=val===brd[r][c-1];if((cch[khl]==='='&&!s)||(cch[khl]==='×'&&s))ok=false;}const kv=r+','+c;if(ok&&ccv[kv]&&r+1<N&&brd[r+1][c]!==EMPTY){const s=val===brd[r+1][c];if((ccv[kv]==='='&&!s)||(ccv[kv]==='×'&&s))ok=false;}const kvl=(r-1)+','+c;if(ok&&r>0&&ccv[kvl]&&brd[r-1][c]!==EMPTY){const s=val===brd[r-1][c];if((ccv[kvl]==='='&&!s)||(ccv[kvl]==='×'&&s))ok=false;}if(ok){brd[r][c]=val;bt();brd[r][c]=EMPTY;}}return;}}cnt++;}bt();return cnt;}
-function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=rng()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
+function genSolution(){const b=Array.from({length:N},()=>Array(N).fill(EMPTY));function fill(pos){if(pos===N*N)return true;const r=Math.floor(pos/N),c=pos%N;const vals=Math.random()<.5?[SUN,MOON]:[MOON,SUN];for(const v of vals){if(isValid(b,r,c,v)){b[r][c]=v;if(fill(pos+1))return true;b[r][c]=EMPTY;}}return false;}return fill(0)?b:null;}
 function placeConstraints(sol,targetCount,eqRatio){
   const eqPool=[],xPool=[];
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){(sol[r][c]===sol[r][c+1]?eqPool:xPool).push({r,c,dir:'h'});}
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){(sol[r][c]===sol[r+1][c]?eqPool:xPool).push({r,c,dir:'v'});}
-  eqPool.sort(()=>rng()-.5);xPool.sort(()=>rng()-.5);
+  eqPool.sort(()=>Math.random()-.5);xPool.sort(()=>Math.random()-.5);
   const eqCount=Math.min(Math.round(targetCount*eqRatio),eqPool.length);
   const xCount=Math.min(targetCount-eqCount,xPool.length);
   const cch={},ccv={};
@@ -332,7 +345,7 @@ function placeConstraints(sol,targetCount,eqRatio){
 function carve(sol,cch,ccv,targetClues,maxLevel){
   const puz=sol.map(r=>[...r]);
   const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
-  cells.sort(()=>rng()-.5);
+  cells.sort(()=>Math.random()-.5);
   for(const[r,c]of cells){
     if(puz.flat().filter(v=>v!==EMPTY).length<=targetClues)break;
     const sv=puz[r][c];puz[r][c]=EMPTY;
@@ -345,10 +358,10 @@ function genForDiff(diff){
   const p=DIFF_PARAMS[diff]||DIFF_PARAMS.medium;
   for(let att=0;att<500;att++){
     const sol=genSolution();if(!sol)continue;
-    const targetConstraints=Math.floor(rng()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;
-    const targetEqRatio=p.eqRatioMin+rng()*(p.eqRatioMax-p.eqRatioMin);
+    const targetConstraints=Math.floor(Math.random()*(p.constraintsMax-p.constraintsMin+1))+p.constraintsMin;
+    const targetEqRatio=p.eqRatioMin+Math.random()*(p.eqRatioMax-p.eqRatioMin);
     const{cch,ccv}=placeConstraints(sol,targetConstraints,targetEqRatio);
-    const targetClues=Math.floor(rng()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
+    const targetClues=Math.floor(Math.random()*(p.cluesMax-p.cluesMin+1))+p.cluesMin;
     const puz=carve(sol,cch,ccv,targetClues,p.techMax);
     const{solved,level}=humanSolve(puz,cch,ccv,p.techMax);
     if(!solved)continue;
@@ -359,8 +372,6 @@ function genForDiff(diff){
   return null;
 }
 
-/* Custom seed decoder */
-function decodeCustomSeed(seedStr){const b64=seedStr.replace(/-/g,'+').replace(/_/g,'/');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));let pos=0;function nb(){const b=Math.floor(pos/8),bi=7-(pos%8);pos++;return(bytes[b]>>bi)&1;}const sol=Array.from({length:N},()=>Array(N).fill(SUN));for(let r=0;r<N;r++)for(let c=0;c<N;c++)sol[r][c]=nb()?MOON:SUN;const sCh={},sCv={};for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())sCh[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())sCv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}const puz=sol.map(r=>[...r]);for(let r=0;r<N;r++)for(let c=0;c<N;c++){const sv=puz[r][c];puz[r][c]=EMPTY;const{solved}=humanSolve(puz,sCh,sCv);if(!solved)puz[r][c]=sv;}return{puzzle:puz,solution:sol,ch:sCh,cv:sCv};}
 
 /* Errors */
 function getErrorLines(){
@@ -585,21 +596,14 @@ async function init(){
 }
 
 function loadAndRenderPuzzle(level){
-  const seed=level.seed;
-  let res;
-  if(seed.length===16){
-    const d=decodeCustomSeed(seed);
-    puzzle=d.puzzle;solution=d.solution;ch=d.ch;cv=d.cv;
-  }else{
-    const{diff,numSeed}=strToSeed(seed);
-    rng=makePRNG(numSeed);
-    res=null;
-    for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
-    if(!res)return;
-    puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
-  }
+  const decoded=decodeSeed(level.seed);
+  if(!decoded)return;
+  const{sol,fix,cch,ccv}=decoded;
+  solution=sol;ch=cch;cv=ccv;
+  puzzle=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fix[r][c])puzzle[r][c]=sol[r][c];
   board=puzzle.map(r=>[...r]);
-  fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
+  fixed=fix;
   hist=[];gameWon=false;clearAllErrors();
   _animNextGrid=true;renderGrid();
 }
@@ -970,22 +974,12 @@ async function selectCalDay(dateStr){
 }
 
 function loadAndRenderMiniPuzzle(level){
-  const seed=level.seed;
-  let puzData;
-  if(seed.length===16){
-    const d=decodeCustomSeed(seed);
-    puzData={puzzle:d.puzzle,ch:d.ch,cv:d.cv};
-  }else{
-    const{diff,numSeed}=strToSeed(seed);
-    const savedRng=rng;
-    rng=makePRNG(numSeed);
-    let res=null;
-    for(let i=0;i<5;i++){res=genForDiff(diff);if(res)break;}
-    rng=savedRng;
-    if(!res)return;
-    puzData={puzzle:res.puzzle,ch:res.ch,cv:res.cv};
-  }
-  renderMiniGrid(puzData,'mini-grid','');
+  const decoded=decodeSeed(level.seed);
+  if(!decoded)return;
+  const{sol,fix,cch,ccv}=decoded;
+  const puz=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fix[r][c])puz[r][c]=sol[r][c];
+  renderMiniGrid({puzzle:puz,ch:cch,cv:ccv},'mini-grid','');
 }
 
 /* Calendar navigation */

@@ -727,10 +727,10 @@ function genForDiff(diff){
   return null;
 }
 
-function startGeneration(diff){
+async function startGeneration(diff){
   if(generating)return;
-  // Mode extrême : toujours extrême. Sinon, 10% de chance sur hard.
-  const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
+  // Mode extrême uniquement sur hard (ou si hard sélectionné : 10% de chance)
+  const effectiveDiff=(extremeMode&&diff==='hard')?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
   generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
   document.getElementById('grid-wrap').classList.remove('blurred');
   document.getElementById('win-modal').classList.remove('show');
@@ -738,6 +738,11 @@ function startGeneration(diff){
   // N'afficher la modale que si la génération prend > 100ms (évite le flash)
   const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);
   resetTimer();hist=[];renderEmptyGrid();
+  // Recharger les params depuis la DB (prend en compte les modifs admin sans rafraîchir)
+  try{
+    const{data}=await db.from('difficulty_params').select('*');
+    if(data&&data.length)data.forEach(p=>{if(DIFF_PARAMS[p.id])DIFF_PARAMS[p.id]={cluesMin:p.clues_min,cluesMax:p.clues_max,constraintsMin:p.constraints_min,constraintsMax:p.constraints_max,eqRatioMin:p.eq_ratio_min,eqRatioMax:p.eq_ratio_max,techMin:p.tech_min,techMax:p.tech_max};});
+  }catch(e){}
   setTimeout(()=>{
     let res=null;let usedExtreme=false;
     for(let i=0;i<5;i++){res=genForDiff(effectiveDiff);if(res)break;}

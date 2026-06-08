@@ -54,6 +54,13 @@
   }
   .skin-label { font-size:12px; color:var(--text); font-weight:500; }
   .skin-desc { font-size:10px; color:var(--muted); }
+  .gh-row { display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .gh-row:last-child { border-bottom:none; }
+  .gh-date { flex:1; font-size:12px; color:var(--muted); }
+  .gh-diff { font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.04em; min-width:80px; }
+  .gh-time { font-family:'DM Mono',monospace; font-size:13px; font-weight:500; color:var(--text); }
+  .gh-nav { display:flex; align-items:center; justify-content:space-between; margin-top:.75rem; gap:8px; }
+  .gh-counter { font-size:11px; color:var(--muted); text-align:center; flex:1; }
 </style>
 </head>
 <body>
@@ -75,7 +82,7 @@
   <div id="loading" style="color:var(--muted);font-size:13px;padding:3rem 0">Chargement…</div>
   <div id="admin-banner" style="display:none;background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;font-size:12px;color:var(--sun)">
     Vue admin — profil de <strong id="admin-banner-name"></strong>
-    <a href="/platform/admin/users.html" style="margin-left:1rem;color:var(--muted);font-size:11px">← Admin utilisateurs</a>
+    <a href="admin/users.html" style="margin-left:1rem;color:var(--muted);font-size:11px">← Admin utilisateurs</a>
   </div>
   <div id="profile-content" style="display:none">
 
@@ -153,6 +160,9 @@ const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
 let _ghUserId = null, _ghPage = 0, _ghTotal = 0;
 const GH_PER_PAGE = 10;
 
+const GH_DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
+const GH_DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', extreme:'#c0392b', custom:'var(--muted)' };
+
 async function loadGameHistory(userId, page) {
   _ghUserId = userId; _ghPage = page;
   const from = page * GH_PER_PAGE, to = from + GH_PER_PAGE - 1;
@@ -163,25 +173,27 @@ async function loadGameHistory(userId, page) {
     .range(from, to);
   _ghTotal = count || 0;
   const wrap = document.getElementById('game-history-wrap');
-  const DLABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
-  const DCOLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', extreme:'#c0392b', custom:'var(--muted)' };
   const games = data || [];
-  if (!games.length && page === 0) { wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucune partie enregistrée.</p>'; return; }
+  if (!games.length && page === 0) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucune partie enregistrée.</p>';
+    return;
+  }
   const rangeFrom = page * GH_PER_PAGE + 1, rangeTo = page * GH_PER_PAGE + games.length;
   const rows = games.map(g => {
     const d = g.difficulty || 'custom';
     const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="flex:1;color:var(--muted)">${date}</span>
-      <span style="color:${DCOLORS[d]||'var(--muted)'};min-width:72px">${DLABELS[d]||d}</span>
-      <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmtTime(g.time_seconds)}</span>
+    return `<div class="gh-row">
+      <span class="gh-date">${date}</span>
+      <span class="gh-diff" style="color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
+      <span class="gh-time">${fmtTime(g.time_seconds)}</span>
     </div>`;
   }).join('');
-  wrap.innerHTML = `<div>${rows}</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem">
-      <button class="btn" onclick="ghPage(-1)" ${page > 0 ? '' : 'disabled'} style="padding:4px 12px;font-size:11px">◀</button>
-      <span style="font-size:11px;color:var(--muted)">${rangeFrom}–${rangeTo} / ${_ghTotal}</span>
-      <button class="btn" onclick="ghPage(1)" ${rangeTo < _ghTotal ? '' : 'disabled'} style="padding:4px 12px;font-size:11px">▶</button>
+  wrap.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.5rem 1rem">${rows}</div>
+    <div class="gh-nav">
+      <button class="btn" onclick="ghPage(-1)" ${page > 0 ? '' : 'disabled'}>◀</button>
+      <span class="gh-counter">${rangeFrom}–${rangeTo} / ${_ghTotal}</span>
+      <button class="btn" onclick="ghPage(1)" ${rangeTo < _ghTotal ? '' : 'disabled'}>▶</button>
     </div>`;
 }
 async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }

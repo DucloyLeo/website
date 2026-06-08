@@ -56,21 +56,39 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 </head>
 <body>
 
-<nav class="site-nav" style="max-width:900px">
+<nav class="site-nav" style="max-width:1100px">
   <div class="nav-left">
     <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
     <div class="nav-menu" id="nav-menu">
-      <a href="index.html" class="nav-menu-item">🎮 Retour au jeu</a>
-      <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <a href="admin/index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="admin/users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="admin/levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="admin/daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <a href="admin/badges.html" class="nav-menu-item">🏅 Badges</a>
+      <a href="admin/difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <a href="seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
       <div class="nav-menu-sep"></div>
-      <a href="admin/daily.html" class="nav-menu-item">⚙️ Admin journaliers</a>
-      <a href="admin/levels.html" class="nav-menu-item">⚙️ Admin niveaux</a>
+      <a href="/index.html" class="nav-menu-item">← Site public</a>
     </div>
   </div>
-  <a href="index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
   <div class="nav-right"></div>
 </nav>
 
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="admin/index.html"      class="admin-nav-item">📊 Dashboard</a>
+    <a href="admin/users.html"      class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="admin/levels.html"     class="admin-nav-item">🎮 Niveaux</a>
+    <a href="admin/daily.html"      class="admin-nav-item">📅 Journaliers</a>
+    <a href="admin/badges.html"     class="admin-nav-item">🏅 Badges</a>
+    <a href="admin/difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
+    <a href="seed-creator.html"     class="admin-nav-item active">🔧 Créateur de seed</a>
+    <hr class="sep">
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
+  </aside>
+  <div class="admin-content">
 <main>
   <p style="font-size:12px;color:var(--muted);line-height:1.7;max-width:400px;text-align:center">
     Compose ta grille, définis les contraintes et les cases de départ,<br>choisis la difficulté, puis partage la seed.
@@ -377,5 +395,8 @@ function clearFixed(){cFixed=Array.from({length:N},()=>Array(N).fill(false));upd
 
 renderGrid();updateStatus();updateSeed();updateButtons();
 </script>
+</main>
+  </div>
+</div>
 </body>
 </html>

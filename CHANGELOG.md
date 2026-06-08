@@ -5,6 +5,39 @@
 
 ---
 
+## [v0.8] — Profils admin, historique des parties & corrections extrême
+
+### 👤 Profil joueur (vue admin)
+- Nouvelle page **`/profile.html?user=username`** accessible aux admins depuis la modale utilisateurs.
+- Affiche les stats globales, les badges, et l'historique des parties de l'utilisateur consulté.
+- Sections skin et zone dangereuse masquées en vue admin.
+
+### 📋 Modale admin — détail utilisateur
+- **Stats globales** au sommet de la modale.
+- **Bouton « 👤 Voir le profil »** grand, centré, remplace la section "par difficulté".
+- **Historique des parties paginé** (10 par page, navigation ◀ ▶) directement dans la modale.
+
+### 🕹 Historique des parties
+- Chaque ligne : date · heure FR (`hh:mm:ss`, fuseau `Europe/Paris`) · difficulté colorée · temps · bouton **▶** pour rejouer le seed.
+- **Hauteur fixe** : les pages incomplètes sont complétées par des lignes fantômes (`opacity:0`) — le cadre ne rétrécit plus.
+
+### ⏱ Statistiques — format horaire
+- Les temps ≥ 1 h sont maintenant affichés en **hh:mm:ss** dans les stats (page de jeu, profil, admin).
+
+### 🗓️ Daily — améliorations visuelles
+- **Ombre portée** légère autour du calendrier pour le distinguer du fond.
+- **Z-index du panneau de résultat** corrigé : la modale de fin de partie s'affiche bien devant les contraintes de la grille.
+
+### 🔧 Créateur de seed — navigation admin
+- Lien **🔧 Créateur de seed** ajouté à la sidebar et au menu hamburger de toutes les pages admin.
+
+### 🐛 Corrections
+- **Parties extrêmes non sauvegardées** : migration SQL (`migration_extreme_difficulty.sql`) pour étendre les CHECK constraints de `completed_levels` et `player_stats` à `'extreme'`. Guards JS mis à jour en parallèle.
+- **Modale de victoire bloquée en extrême** : `TypeError` silencieux dans `checkWin` (async) causé par une clé `extreme` absente de `loadStatsLocal` — corrigé, la clé est toujours initialisée.
+- **Bouton retour** sur `profile.html?user=` renvoyait vers `/platform/admin/users.html` → corrigé en `admin/users.html`.
+
+---
+
 ## [v0.7] — Sons, navigation unifiée & finitions
 
 ### 🔊 Effets sonores

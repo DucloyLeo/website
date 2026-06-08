@@ -132,6 +132,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
         <option value="easy">Facile</option>
         <option value="medium" selected>Moyen</option>
         <option value="hard">Difficile</option>
+        <option value="extreme">Extrême</option>
         <option value="custom">Personnalisé</option>
       </select>
     </div>
@@ -300,8 +301,8 @@ function encodeSeed(){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(cFixed[r][c]?1:0);
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cCh[r+','+c]?1:0);
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(cCv[r+','+c]?1:0);
-  const d={easy:0,medium:1,hard:2,custom:3}[diff]??3;
-  bits.push((d>>1)&1,d&1,0,0,0,0);
+  const d={easy:0,medium:1,hard:2,extreme:3,custom:4}[diff]??4;
+  bits.push((d>>2)&1,(d>>1)&1,d&1,0,0,0);
   let result='';
   for(let i=0;i<138;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}
   return result;

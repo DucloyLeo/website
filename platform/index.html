@@ -332,8 +332,8 @@ function encodeSeed(sol,fix,cch,ccv,diff){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)bits.push(fix[r][c]?1:0);
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++)bits.push(cch[r+','+c]?1:0);
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++)bits.push(ccv[r+','+c]?1:0);
-  const d={easy:0,medium:1,hard:2,custom:3}[diff]??3;
-  bits.push((d>>1)&1,d&1,0,0,0,0);
+  const d={easy:0,medium:1,hard:2,extreme:3,custom:4}[diff]??4;
+  bits.push((d>>2)&1,(d>>1)&1,d&1,0,0,0);
   let result='';
   for(let i=0;i<138;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}
   return result;
@@ -350,8 +350,8 @@ function decodeSeed(s){
   const cch={},ccv={};
   for(let r=0;r<N;r++)for(let c=0;c<N-1;c++){if(nb())cch[r+','+c]=sol[r][c]===sol[r][c+1]?'=':'×';}
   for(let r=0;r<N-1;r++)for(let c=0;c<N;c++){if(nb())ccv[r+','+c]=sol[r][c]===sol[r+1][c]?'=':'×';}
-  const d0=nb(),d1=nb();
-  const diff=['easy','medium','hard','custom'][(d0<<1)|d1];
+  const d0=nb(),d1=nb(),d2=nb();
+  const diff=['easy','medium','hard','extreme','custom'][(d0<<2)|(d1<<1)|d2]??'custom';
   return{sol,fix,cch,ccv,diff};
 }
 
@@ -748,9 +748,8 @@ function startGeneration(diff){
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
-    const storedDiff=usedExtreme?'hard':diff;
-    currentSeedStr=encodeSeed(solution,fixed,ch,cv,storedDiff);
     currentDiff=usedExtreme?'extreme':diff;
+    currentSeedStr=encodeSeed(solution,fixed,ch,cv,currentDiff);
     setDiffBadge(currentDiff);_animNextGrid=true;renderGrid();
   },30);
 }

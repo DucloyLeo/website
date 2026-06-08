@@ -73,6 +73,10 @@
 
 <div class="page-wrap">
   <div id="loading" style="color:var(--muted);font-size:13px;padding:3rem 0">Chargement…</div>
+  <div id="admin-banner" style="display:none;background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;font-size:12px;color:var(--sun)">
+    Vue admin — profil de <strong id="admin-banner-name"></strong>
+    <a href="/platform/admin/users.html" style="margin-left:1rem;color:var(--muted);font-size:11px">← Admin utilisateurs</a>
+  </div>
   <div id="profile-content" style="display:none">
 
     <div class="profile-header">
@@ -101,14 +105,20 @@
       <div class="badges-grid" id="badges-grid"></div>
     </div>
 
+    <!-- Dernières parties (admin view) -->
+    <div class="diff-section" id="game-history-section" style="display:none">
+      <p class="diff-title">Dernières parties</p>
+      <div id="game-history-wrap"></div>
+    </div>
+
     <!-- Apparence -->
-    <div class="diff-section">
+    <div class="diff-section" id="skin-section">
       <p class="diff-title">Apparence des symboles</p>
       <div class="skin-grid" id="skin-options"></div>
     </div>
 
     <!-- Zone RGPD -->
-    <div class="danger-zone">
+    <div class="danger-zone" id="danger-zone">
       <p class="danger-title">Mes données</p>
       <div class="danger-actions">
         <button class="btn" onclick="handleExport()">⬇ Exporter mes données</button>
@@ -140,6 +150,41 @@
 <script src="js/skins.js?v=4"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
+let _ghUserId = null, _ghPage = 0, _ghTotal = 0;
+const GH_PER_PAGE = 10;
+
+async function loadGameHistory(userId, page) {
+  _ghUserId = userId; _ghPage = page;
+  const from = page * GH_PER_PAGE, to = from + GH_PER_PAGE - 1;
+  const { data, count } = await db.from('completed_levels')
+    .select('difficulty, time_seconds, completed_at', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('completed_at', { ascending: false })
+    .range(from, to);
+  _ghTotal = count || 0;
+  const wrap = document.getElementById('game-history-wrap');
+  const DLABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
+  const DCOLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', extreme:'#c0392b', custom:'var(--muted)' };
+  const games = data || [];
+  if (!games.length && page === 0) { wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucune partie enregistrée.</p>'; return; }
+  const rangeFrom = page * GH_PER_PAGE + 1, rangeTo = page * GH_PER_PAGE + games.length;
+  const rows = games.map(g => {
+    const d = g.difficulty || 'custom';
+    const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="flex:1;color:var(--muted)">${date}</span>
+      <span style="color:${DCOLORS[d]||'var(--muted)'};min-width:72px">${DLABELS[d]||d}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmtTime(g.time_seconds)}</span>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div>${rows}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem">
+      <button class="btn" onclick="ghPage(-1)" ${page > 0 ? '' : 'disabled'} style="padding:4px 12px;font-size:11px">◀</button>
+      <span style="font-size:11px;color:var(--muted)">${rangeFrom}–${rangeTo} / ${_ghTotal}</span>
+      <button class="btn" onclick="ghPage(1)" ${rangeTo < _ghTotal ? '' : 'disabled'} style="padding:4px 12px;font-size:11px">▶</button>
+    </div>`;
+}
+async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }
 
 function renderSkinOptions() {
   const cur = getSkin();
@@ -161,32 +206,12 @@ function chooseSkin(k) {
 }
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
-async function loadProfile() {
-  const user = await requireAuth();
-  if (!user) return;
-
-  const [profileRes, statsRes, badgesRes, earnedRes] = await Promise.all([
-    db.from('profiles').select('*').eq('id', user.id).single(),
-    db.from('player_stats').select('*').eq('user_id', user.id),
-    db.from('badges').select('*').order('sort_order'),
-    db.from('player_badges').select('badge_id, earned_at').eq('user_id', user.id)
-  ]);
-
-  const profile  = profileRes.data;
-  const stats    = statsRes.data || [];
-  const badges   = badgesRes.data || [];
-  const earnedMap = Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at]));
-
-  // Header
-  const vipBadge = profile.role === 'vip'   ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--moon);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">✦ VIP</span>' : '';
+function renderProfileData(profile, stats, badges, earnedMap, adminView) {
+  const vipBadge   = profile.role === 'vip'   ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--moon);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">✦ VIP</span>' : '';
   const adminBadge = profile.role === 'admin' ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--sun);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">Admin</span>' : '';
   document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
   document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
-  if (profile.role === 'admin') {
-    document.getElementById('profile-meta').textContent += ' · Administrateur';
-  }
 
-  // Global stats
   const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
   const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);
   const allBests   = stats.filter(r => r.best_time > 0).map(r => r.best_time);
@@ -199,41 +224,88 @@ async function loadProfile() {
     <div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">${fmtTime(totalTime)}</span></div>
   `;
 
-  // Stats par difficulté
-  const diffHtml = ['easy', 'medium', 'hard'].map(diff => {
+  document.getElementById('diff-stats').innerHTML = ['easy', 'medium', 'hard'].map(diff => {
     const s = stats.find(r => r.difficulty === diff) || { games_played: 0, best_time: 0, total_time: 0 };
     const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
-    return `
-      <div style="margin-bottom:1.2rem">
-        <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
-        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>
-          <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmtTime(s.best_time)}</span></div>
-          <div class="stat-card"><span class="stat-label">Moyenne</span><span class="stat-val avg">${fmtTime(avg)}</span></div>
-        </div>
-      </div>`;
+    return `<div style="margin-bottom:1.2rem">
+      <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>
+        <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmtTime(s.best_time)}</span></div>
+        <div class="stat-card"><span class="stat-label">Moyenne</span><span class="stat-val avg">${fmtTime(avg)}</span></div>
+      </div>
+    </div>`;
   }).join('');
-  document.getElementById('diff-stats').innerHTML = diffHtml;
 
-  // Badges
-  const badgesHtml = badges.map(badge => {
+  document.getElementById('badges-grid').innerHTML = badges.map(badge => {
     const earned = earnedMap[badge.id];
-    return `
-      <div class="badge-item ${earned ? 'earned' : 'locked'}">
-        <span class="badge-ico">${badge.icon}</span>
-        <div>
-          <div class="badge-name">${badge.name}</div>
-          <div class="badge-desc">${badge.description}${earned ? ' · ' + fmtDate(earned) : ''}</div>
-        </div>
-      </div>`;
-  }).join('');
-  document.getElementById('badges-grid').innerHTML = badgesHtml || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
+    return `<div class="badge-item ${earned ? 'earned' : 'locked'}">
+      <span class="badge-ico">${badge.icon}</span>
+      <div>
+        <div class="badge-name">${badge.name}</div>
+        <div class="badge-desc">${badge.description}${earned ? ' · ' + fmtDate(earned) : ''}</div>
+      </div>
+    </div>`;
+  }).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
 
-  renderSkinOptions();
+  if (adminView) {
+    document.getElementById('skin-section').style.display       = 'none';
+    document.getElementById('danger-zone').style.display        = 'none';
+    document.getElementById('admin-banner').style.display       = 'block';
+    document.getElementById('admin-banner-name').textContent    = profile.username;
+    document.getElementById('game-history-section').style.display = '';
+    document.title = 'Profil de ' + profile.username + ' — Tangoléo';
+    loadGameHistory(profile.id, 0);
+  } else {
+    renderSkinOptions();
+  }
 
-  document.getElementById('loading').style.display = 'none';
+  document.getElementById('loading').style.display   = 'none';
   document.getElementById('profile-content').style.display = '';
   initNavAuth();
+}
+
+async function loadProfile() {
+  const targetUsername = new URLSearchParams(location.search).get('user');
+
+  if (targetUsername) {
+    const ok = await requireAdmin('/index.html');
+    if (!ok) return;
+
+    const { data: profileData } = await db.from('profiles').select('*').eq('username', targetUsername).maybeSingle();
+    if (!profileData) {
+      document.getElementById('loading').textContent = 'Utilisateur introuvable.';
+      return;
+    }
+    const [statsRes, badgesRes, earnedRes] = await Promise.all([
+      db.from('player_stats').select('*').eq('user_id', profileData.id),
+      db.from('badges').select('*').order('sort_order'),
+      db.from('player_badges').select('badge_id, earned_at').eq('user_id', profileData.id)
+    ]);
+    renderProfileData(
+      profileData,
+      statsRes.data || [],
+      badgesRes.data || [],
+      Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
+      true
+    );
+  } else {
+    const user = await requireAuth();
+    if (!user) return;
+    const [profileRes, statsRes, badgesRes, earnedRes] = await Promise.all([
+      db.from('profiles').select('*').eq('id', user.id).single(),
+      db.from('player_stats').select('*').eq('user_id', user.id),
+      db.from('badges').select('*').order('sort_order'),
+      db.from('player_badges').select('badge_id, earned_at').eq('user_id', user.id)
+    ]);
+    renderProfileData(
+      profileRes.data,
+      statsRes.data || [],
+      badgesRes.data || [],
+      Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
+      false
+    );
+  }
 }
 
 async function handleExport() {

@@ -85,7 +85,7 @@
 
       <div style="margin-top:1.5rem;display:flex;gap:8px;align-items:center">
         <button class="btn sun" onclick="saveAll()">💾 Enregistrer tout</button>
-        <button class="btn" onclick="resetDefaults()">↺ Réinitialiser les défauts</button>
+        <button class="btn" onclick="resetDefaults()">↺ Paramètres par défaut</button>
       </div>
       <div class="alert error"   id="form-error"   style="margin-top:.75rem"></div>
       <div class="alert success" id="form-success" style="margin-top:.75rem"></div>
@@ -197,7 +197,7 @@ async function saveAll() {
 }
 
 async function resetDefaults() {
-  if (!confirm('Réinitialiser les paramètres aux valeurs par défaut et enregistrer ?')) return;
+  if (!confirm('Appliquer les paramètres par défaut et enregistrer ?')) return;
   params = JSON.parse(JSON.stringify(DEFAULTS));
   renderForms();
   const err = document.getElementById('form-error');

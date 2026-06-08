@@ -116,6 +116,10 @@
 let allUsers = [];
 let allBadges = [];
 let currentAdminId = null;
+let currentModalUserId = null;
+let gameHistoryPage = 0;
+let gameHistoryTotal = 0;
+const GAMES_PER_PAGE = 10;
 
 async function loadUsers() {
   const ok = await requireAdmin('/index.html');
@@ -198,6 +202,8 @@ function filterUsers() {
 async function openUserModal(userId) {
   const u = allUsers.find(u => u.id === userId);
   if (!u) return;
+  currentModalUserId = userId;
+  gameHistoryPage = 0;
 
   document.getElementById('modal-username').textContent = u.username;
   document.getElementById('modal-body').innerHTML = '<p style="font-size:12px;color:var(--muted)">Chargement…</p>';
@@ -213,10 +219,9 @@ async function openUserModal(userId) {
   const earnedMap = Object.fromEntries(earned.map(b => [b.badge_id, b.earned_at]));
   const earnedIds = new Set(Object.keys(earnedMap));
 
-  const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
-  const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
+  const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' };
+  const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', extreme:'#c0392b' };
 
-  // Globales
   const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
   const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);
   const allBests   = stats.filter(r => r.best_time > 0).map(r => r.best_time);
@@ -230,7 +235,6 @@ async function openUserModal(userId) {
       <div class="stat-card"><span class="stat-label">Temps total</span><span class="stat-val">${fmtTime(totalTime)}</span></div>
     </div>`;
 
-  // Par difficulté
   const diffHtml = ['easy','medium','hard'].map(diff => {
     const s = stats.find(r => r.difficulty === diff) || { games_played:0, best_time:0, total_time:0 };
     const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
@@ -244,7 +248,6 @@ async function openUserModal(userId) {
     </div>`;
   }).join('');
 
-  // Badges
   const badgesHtml = allBadges.map(b => {
     const has = earnedIds.has(b.id);
     return `<span id="badge-chip-${b.id}" class="badge-chip ${has ? 'earned' : ''}" style="cursor:pointer"
@@ -263,14 +266,81 @@ async function openUserModal(userId) {
       <p class="detail-section-title">Statistiques globales</p>
       ${globalHtml}
     </div>
-    <div>
-      <p class="detail-section-title">Par difficulté</p>
-      ${diffHtml}
+    <div style="margin-top:.5rem">
+      <button class="action-btn" onclick="toggleProfile()" id="profile-toggle">▸ Profil détaillé</button>
+      <div id="profile-details" style="display:none;margin-top:.75rem">
+        <p class="detail-section-title">Par difficulté</p>
+        ${diffHtml}
+        <p class="detail-section-title">Badges — cliquer pour attribuer / retirer</p>
+        <div class="badge-list">${badgesHtml || '<span style="font-size:12px;color:var(--muted)">Aucun badge défini.</span>'}</div>
+      </div>
     </div>
     <div>
-      <p class="detail-section-title">Badges — cliquer pour attribuer / retirer</p>
-      <div class="badge-list">${badgesHtml || '<span style="font-size:12px;color:var(--muted)">Aucun badge défini.</span>'}</div>
+      <p class="detail-section-title" style="margin-top:.75rem">Dernières parties</p>
+      <div id="game-history-wrap"><p style="font-size:12px;color:var(--muted)">Chargement…</p></div>
     </div>`;
+
+  await loadGameHistory(userId, 0);
+}
+
+function toggleProfile() {
+  const el  = document.getElementById('profile-details');
+  const btn = document.getElementById('profile-toggle');
+  const open = el.style.display === 'none';
+  el.style.display = open ? '' : 'none';
+  btn.textContent = (open ? '▾' : '▸') + ' Profil détaillé';
+}
+
+async function loadGameHistory(userId, page) {
+  gameHistoryPage = page;
+  const from = page * GAMES_PER_PAGE;
+  const to   = from + GAMES_PER_PAGE - 1;
+  const { data, count } = await db.from('completed_levels')
+    .select('difficulty, time_seconds, completed_at', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('completed_at', { ascending: false })
+    .range(from, to);
+  gameHistoryTotal = count || 0;
+  renderGameHistory(data || [], page);
+}
+
+function renderGameHistory(games, page) {
+  const wrap = document.getElementById('game-history-wrap');
+  if (!wrap) return;
+  const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
+  const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50', extreme:'#c0392b', custom:'var(--muted)' };
+  if (games.length === 0 && page === 0) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucune partie enregistrée.</p>';
+    return;
+  }
+  const from  = page * GAMES_PER_PAGE + 1;
+  const to    = page * GAMES_PER_PAGE + games.length;
+  const rows  = games.map(g => {
+    const diff  = g.difficulty || 'custom';
+    const date  = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
+      <span style="flex:1;color:var(--muted)">${date}</span>
+      <span style="color:${DIFF_COLORS[diff]||'var(--muted)'};min-width:68px">${DIFF_LABELS[diff]||diff}</span>
+      <span style="color:var(--text);font-family:'DM Mono',monospace">${fmtTime(g.time_seconds)}</span>
+    </div>`;
+  }).join('');
+  const hasPrev = page > 0;
+  const hasNext = to < gameHistoryTotal;
+  wrap.innerHTML = `
+    <div>${rows}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.5rem">
+      <button class="action-btn" onclick="changeGamesPage(-1)" ${hasPrev ? '' : 'disabled'} style="min-width:32px">◀</button>
+      <span style="font-size:10px;color:var(--muted)">${from}–${to} / ${gameHistoryTotal}</span>
+      <button class="action-btn" onclick="changeGamesPage(1)" ${hasNext ? '' : 'disabled'} style="min-width:32px">▶</button>
+    </div>`;
+}
+
+async function changeGamesPage(delta) {
+  if (!currentModalUserId) return;
+  const newPage = gameHistoryPage + delta;
+  if (newPage < 0) return;
+  document.getElementById('game-history-wrap').innerHTML = '<p style="font-size:12px;color:var(--muted)">Chargement…</p>';
+  await loadGameHistory(currentModalUserId, newPage);
 }
 
 function closeModal() {

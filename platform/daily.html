@@ -429,7 +429,7 @@ function renderMiniGrid(puzData,targetId,miniClass){
 }
 
 /* Timer */
-function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+function fmt(s){if(s>=3600){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return h+':'+(m<10?'0':'')+m+':'+(ss<10?'0':'')+ss;}const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
 function startTimer(){if(timerOn)return;timerOn=true;document.getElementById('tdot').className='tdot run';clearInterval(timerInt);timerInt=setInterval(()=>{timerSec++;document.getElementById('tval').textContent=fmt(timerSec);},1000);}
 function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementById('tdot').className='tdot done';}
 function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}

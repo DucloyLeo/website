@@ -279,6 +279,10 @@ function translateAuthError(msg) {
 
 function fmtTime(s) {
   if (!s || s === 0) return '—';
+  if (s >= 3600) {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    return h + ':' + (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss;
+  }
   const m = Math.floor(s / 60), ss = s % 60;
   return m + ':' + (ss < 10 ? '0' : '') + ss;
 }

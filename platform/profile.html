@@ -195,9 +195,11 @@ async function loadGameHistory(userId, page) {
       <span class="gh-diff" style="color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
       <span class="gh-time">${fmtTime(g.time_seconds)}</span>
     </div>`;
-  }).join('');
+  });
+  const filler = `<div class="gh-row" style="opacity:0" aria-hidden="true"><span class="gh-date">—</span><span class="gh-diff">—</span><span class="gh-time">—</span></div>`;
+  for (let i = games.length; i < GH_PER_PAGE; i++) rows.push(filler);
   wrap.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.5rem 1rem">${rows}</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.5rem 1rem">${rows.join('')}</div>
     <div class="gh-nav">
       <button class="btn" onclick="ghPage(-1)" ${page > 0 ? '' : 'disabled'}>◀</button>
       <span class="gh-counter">${rangeFrom}–${rangeTo} / ${_ghTotal}</span>

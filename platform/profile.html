@@ -61,6 +61,8 @@
   .gh-time { font-family:'DM Mono',monospace; font-size:13px; font-weight:500; color:var(--text); }
   .gh-nav { display:flex; align-items:center; justify-content:space-between; margin-top:.75rem; gap:8px; }
   .gh-counter { font-size:11px; color:var(--muted); text-align:center; flex:1; }
+  .gh-seed-btn { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); border:1px solid var(--border2); border-radius:6px; padding:2px 7px; text-decoration:none; flex-shrink:0; transition:all .15s; }
+  .gh-seed-btn:hover { background:var(--surface2); color:var(--text); }
 </style>
 </head>
 <body>
@@ -167,7 +169,7 @@ async function loadGameHistory(userId, page) {
   _ghUserId = userId; _ghPage = page;
   const from = page * GH_PER_PAGE, to = from + GH_PER_PAGE - 1;
   const { data, count } = await db.from('completed_levels')
-    .select('difficulty, time_seconds, completed_at', { count: 'exact' })
+    .select('difficulty, time_seconds, completed_at, seed', { count: 'exact' })
     .eq('user_id', userId)
     .order('completed_at', { ascending: false })
     .range(from, to);
@@ -182,8 +184,12 @@ async function loadGameHistory(userId, page) {
   const rows = games.map(g => {
     const d = g.difficulty || 'custom';
     const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    const seedBtn = g.seed
+      ? `<a href="index.html?seed=${encodeURIComponent(g.seed)}" target="_blank" class="gh-seed-btn">▶</a>`
+      : '';
     return `<div class="gh-row">
       <span class="gh-date">${date}</span>
+      ${seedBtn}
       <span class="gh-diff" style="color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
       <span class="gh-time">${fmtTime(g.time_seconds)}</span>
     </div>`;

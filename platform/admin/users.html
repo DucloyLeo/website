@@ -252,7 +252,7 @@ async function openUserModal(userId) {
       ${globalHtml}
     </div>
     <div style="text-align:center;margin:.75rem 0 .5rem">
-      <a href="../profile.html?user=${encodeURIComponent(u.username)}" target="_blank"
+      <a href="../profile.html?user=${encodeURIComponent(u.username)}"
          class="btn sun" style="display:inline-flex;align-items:center;gap:8px;font-size:14px;padding:10px 28px;text-decoration:none">
         👤 Voir le profil de ${escHtml(u.username)}
       </a>
@@ -274,7 +274,7 @@ async function loadModalGameHistory(userId, page) {
   gameHistoryPage = page;
   const from = page * GAMES_PER_PAGE, to = from + GAMES_PER_PAGE - 1;
   const { data, count } = await db.from('completed_levels')
-    .select('difficulty, time_seconds, completed_at', { count: 'exact' })
+    .select('difficulty, time_seconds, completed_at, seed', { count: 'exact' })
     .eq('user_id', userId)
     .order('completed_at', { ascending: false })
     .range(from, to);
@@ -290,8 +290,12 @@ async function loadModalGameHistory(userId, page) {
   const rows = games.map(g => {
     const d = g.difficulty || 'custom';
     const date = new Date(g.completed_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
-    return `<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)">
+    const seedBtn = g.seed
+      ? `<a href="../index.html?seed=${encodeURIComponent(g.seed)}" target="_blank" class="action-btn" style="font-size:10px;padding:2px 8px;text-decoration:none;flex-shrink:0">▶</a>`
+      : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)">
       <span style="flex:1;font-size:12px;color:var(--muted)">${date}</span>
+      ${seedBtn}
       <span style="font-size:11px;font-family:'DM Mono',monospace;min-width:80px;color:${GH_DIFF_COLORS[d]||'var(--muted)'}">${GH_DIFF_LABELS[d]||d}</span>
       <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text)">${fmtTime(g.time_seconds)}</span>
     </div>`;
@@ -307,7 +311,6 @@ async function loadModalGameHistory(userId, page) {
 
 async function modalGhPage(d) {
   if (!currentModalUserId) return;
-  document.getElementById('modal-game-history').innerHTML = '<p style="font-size:12px;color:var(--muted)">Chargement…</p>';
   await loadModalGameHistory(currentModalUserId, gameHistoryPage + d);
 }
 

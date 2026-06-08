@@ -673,7 +673,7 @@ let DIFF_PARAMS={
   easy:   {cluesMin:14,cluesMax:20,constraintsMin:18,constraintsMax:26,eqRatioMin:0.60,eqRatioMax:0.80,techMin:1,techMax:3},
   medium: {cluesMin:8, cluesMax:14,constraintsMin:10,constraintsMax:18,eqRatioMin:0.40,eqRatioMax:0.65,techMin:3,techMax:5},
   hard:   {cluesMin:4, cluesMax:9, constraintsMin:3, constraintsMax:10,eqRatioMin:0.30,eqRatioMax:0.55,techMin:5,techMax:7},
-  extreme:{cluesMin:4, cluesMax:6, constraintsMin:2, constraintsMax:5, eqRatioMin:0.00,eqRatioMax:0.30,techMin:5,techMax:7},
+  extreme:{cluesMin:2, cluesMax:6, constraintsMin:10, constraintsMax:18, eqRatioMin:0.00,eqRatioMax:0.15,techMin:6,techMax:7},
 };
 
 function isValid(b,r,c,val){const h=N/2;let rs=0,rm=0;for(let i=0;i<N;i++){if(b[r][i]===SUN)rs++;if(b[r][i]===MOON)rm++;}if(val===SUN&&rs>=h)return false;if(val===MOON&&rm>=h)return false;let cs=0,cm=0;for(let i=0;i<N;i++){if(b[i][c]===SUN)cs++;if(b[i][c]===MOON)cm++;}if(val===SUN&&cs>=h)return false;if(val===MOON&&cm>=h)return false;if(c>=2&&b[r][c-1]===val&&b[r][c-2]===val)return false;if(c>=1&&c<N-1&&b[r][c-1]===val&&b[r][c+1]===val)return false;if(c<N-2&&b[r][c+1]===val&&b[r][c+2]===val)return false;if(r>=2&&b[r-1][c]===val&&b[r-2][c]===val)return false;if(r>=1&&r<N-1&&b[r-1][c]===val&&b[r+1][c]===val)return false;if(r<N-2&&b[r+1][c]===val&&b[r+2][c]===val)return false;return true;}
@@ -739,17 +739,18 @@ function startGeneration(diff){
   const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);
   resetTimer();hist=[];renderEmptyGrid();
   setTimeout(()=>{
-    let res=null;
+    let res=null;let usedExtreme=false;
     for(let i=0;i<5;i++){res=genForDiff(effectiveDiff);if(res)break;}
+    if(res&&effectiveDiff==='extreme')usedExtreme=true;
     // Fallback : si pas de puzzle extrême trouvé, repasser en hard
     if(!res&&effectiveDiff==='extreme'){for(let i=0;i<5;i++){res=genForDiff('hard');if(res)break;}}
     clearTimeout(genModalTimer);document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);
     if(!res)return;
     puzzle=res.puzzle;solution=res.solution;ch=res.ch;cv=res.cv;
     board=puzzle.map(r=>[...r]);fixed=puzzle.map(r=>r.map(v=>v!==EMPTY));
-    const storedDiff=effectiveDiff==='extreme'?'hard':diff;
+    const storedDiff=usedExtreme?'hard':diff;
     currentSeedStr=encodeSeed(solution,fixed,ch,cv,storedDiff);
-    setDiffBadge(effectiveDiff==='extreme'?'extreme':diff);_animNextGrid=true;renderGrid();
+    setDiffBadge(usedExtreme?'extreme':diff);_animNextGrid=true;renderGrid();
   },30);
 }
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}

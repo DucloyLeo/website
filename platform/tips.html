@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Conseils & Stratégies — Tangoléo</title>
-<meta name="description" content="Apprenez les techniques et stratégies pour résoudre les puzzles Tangoléo. Tutoriel complet des 3 règles et 9 techniques avancées.">
+<meta name="description" content="Apprenez les techniques et stratégies pour résoudre les puzzles Tangoléo. Tutoriel complet des 3 règles et 10 techniques avancées.">
 <meta name="keywords" content="tangoléo, tutoriel, stratégie, puzzle, conseils, technique">
 <link rel="canonical" href="https://tangoleo.fr/tips.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,17 +49,6 @@
   .tip-tag.med   { border-color:#f5c84244; color:var(--sun); }
   .tip-tag.hard  { border-color:#d87a5044; color:#d87a50; }
   .tip-body { font-size:12px; color:var(--muted); line-height:1.7; }
-  .tip-example {
-    font-family:'DM Mono', monospace;
-    font-size:12px;
-    background:var(--surface2);
-    border-radius:6px;
-    padding:.5rem .75rem;
-    margin-top:.6rem;
-    color:var(--text);
-    line-height:1.9;
-    letter-spacing:.04em;
-  }
   .rule-row {
     display:flex;
     align-items:flex-start;
@@ -72,6 +61,62 @@
   .rule-text { font-size:13px; color:var(--muted); line-height:1.6; }
   .rule-text strong { color:var(--text); }
   h2 { margin-bottom:1rem; }
+
+  /* ── Mini-grille de démo ── */
+  .mini-demo { margin:.85rem 0 .1rem; display:flex; flex-direction:column; align-items:center; gap:.5rem; }
+  .mini-row { display:flex; align-items:center; justify-content:center; }
+  .mc {
+    width:40px; height:40px;
+    border:1.5px solid var(--border2);
+    border-radius:7px;
+    background:var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem;
+    flex-shrink:0;
+    transition:border-color .2s, background .2s, transform .15s;
+    user-select:none;
+  }
+  .mc.mc-bg {
+    opacity:.28;
+    border-style:dashed;
+  }
+  .mc.mc-target {
+    border-style:dashed;
+    border-color:var(--moon);
+    color:var(--muted);
+    font-size:.65rem;
+    font-family:'DM Mono',monospace;
+    cursor:pointer;
+  }
+  .mc.mc-target:hover { background:rgba(143,168,212,.08); }
+  .mc.mc-revealed {
+    border-color:var(--green);
+    border-style:solid;
+    background:rgba(109,187,138,.13);
+    animation:mc-pop .25s ease;
+    cursor:pointer;
+  }
+  @keyframes mc-pop {
+    0%   { transform:scale(.75); opacity:.4; }
+    70%  { transform:scale(1.08); }
+    100% { transform:scale(1); opacity:1; }
+  }
+  .mcstr {
+    width:16px; text-align:center;
+    font-size:11px; font-family:'DM Mono',monospace;
+    color:var(--muted);
+    flex-shrink:0;
+  }
+  .mcstr.eq { color:var(--green); font-weight:500; }
+  .mcstr.x  { color:var(--sun); font-weight:500; }
+  .mini-btn {
+    font-size:10px;
+    padding:3px 12px;
+    font-family:'DM Mono',monospace;
+    letter-spacing:.04em;
+  }
+  .mini-btn:disabled { opacity:.35; cursor:default; }
+  .mini-spacer { height:.4rem; }
 </style>
 </head>
 <body>
@@ -126,70 +171,189 @@
   <div class="tips-section">
     <h2>Techniques de résolution</h2>
 
+    <!-- Équilibre forcé -->
     <div class="tip-card">
       <div class="tip-title">Équilibre forcé <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">
-        Si une ligne (ou colonne) contient déjà 3 ☀, toutes les cases vides restantes sont forcément des 🌙 — et inversement.
+      <div class="tip-body">Si une ligne (ou colonne) contient déjà 3 ☀, toutes les cases vides restantes sont forcément des 🌙 — et inversement.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ 🌙 ☀ ☀ _ _ → les 2 cases vides sont 🌙</div>
     </div>
 
+    <!-- Anti-triplet -->
     <div class="tip-card">
       <div class="tip-title">Anti-triplet <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">
-        Deux symboles identiques côte à côte forcent les cases adjacentes à être l'opposé pour éviter un triplet.
+      <div class="tip-body">Deux symboles identiques côte à côte forcent les cases adjacentes à l'opposé. De même, si deux cases identiques encadrent une case vide (sandwich), cette case est forcée à l'opposé.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">☀</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">_ ☀ ☀ _ → les cases aux extrémités sont 🌙<br>☀ _ ☀ → la case du milieu est 🌙</div>
+      <div class="mini-spacer"></div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
+      </div>
     </div>
 
+    <!-- Contrainte directe -->
     <div class="tip-card">
       <div class="tip-title">Contrainte directe <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">
-        Si une case est connue et qu'une contrainte = ou × la relie à une case vide, cette case vide est directement déterminée.
+      <div class="tip-body">Si une case est connue et qu'une contrainte = ou × la relie à une case vide, cette case vide est directement déterminée.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr eq">=</div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ = _ → la case vide est ☀<br>☀ × _ → la case vide est 🌙</div>
+      <div class="mini-spacer"></div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr x">×</div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">☀</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
+      </div>
     </div>
 
+    <!-- Paire en extrémité -->
     <div class="tip-card">
       <div class="tip-title">Paire en extrémité <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">
-        Si les deux premières cases d'une ligne sont identiques (ex. ☀☀), la dernière case est forcément l'opposé — et vice versa pour les cases [4-5].
+      <div class="tip-body">Si les deux premières cases d'une ligne sont identiques (ex. ☀☀), la dernière case est forcément l'opposé — et vice versa pour les cases [4-5].</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ ☀ _ _ _ _ → la case [5] est 🌙</div>
     </div>
 
+    <!-- Distance 4 -->
     <div class="tip-card">
       <div class="tip-title">Distance 4 <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">
-        Si deux cases identiques sont séparées de 4 positions (positions 0 et 4), la 6e case (position 5) est forcée vers l'opposé.
+      <div class="tip-body">Si deux cases identiques sont séparées de 4 positions (positions 0 et 4), la 6e case (position 5) est forcée vers l'opposé.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ _ _ _ ☀ _ → la case [5] est 🌙</div>
     </div>
 
+    <!-- Extrémités identiques -->
     <div class="tip-card">
       <div class="tip-title">Extrémités identiques <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">
-        Si les cases [0] et [5] d'une ligne sont identiques, alors les cases [1] et [4] sont forcées vers l'opposé (sinon il y aurait violation d'équilibre ou de triplet).
+      <div class="tip-body">Si les cases [0] et [5] d'une ligne sont identiques, alors les cases [1] et [4] sont forcées vers l'opposé (sinon il y aurait violation d'équilibre ou de triplet).</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc">☀</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ _ _ _ _ ☀ → les cases [1] et [4] sont 🌙</div>
     </div>
 
+    <!-- Chaîne == -->
     <div class="tip-card">
       <div class="tip-title">Chaîne = = <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">
-        Deux contraintes "égal" consécutives (A = B = C) signifient que les trois cases sont identiques. Si l'une est connue, les deux autres le sont aussi.
+      <div class="tip-body">Deux contraintes "égal" consécutives (A = B = C) signifient que les trois cases sont identiques. Si l'une est connue, les deux autres le sont aussi.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr eq">=</div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr eq">=</div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc">🌙</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ = _ = _ → les 2 cases vides sont ☀</div>
     </div>
 
+    <!-- Chaîne ×× -->
     <div class="tip-card">
       <div class="tip-title">Chaîne × × <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">
-        Deux contraintes "différent" consécutives (A × B × C) : si A ≠ B et B ≠ C, alors A et C sont nécessairement identiques.
+      <div class="tip-body">Deux contraintes "différent" consécutives (A × B × C) : si A ≠ B et B ≠ C, alors A et C sont nécessairement identiques. B, au milieu, est forcé à l'opposé de A et C.</div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr x">×</div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr x">×</div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-example">☀ × _ × _ → les 2 cases vides sont 🌙 et ☀</div>
     </div>
 
+    <!-- Balance + contrainte × (nouvelle technique) -->
+    <div class="tip-card">
+      <div class="tip-title">Balance + contrainte × <span class="tip-tag hard">Difficile</span></div>
+      <div class="tip-body">
+        Si une ligne (ou colonne) a exactement 3 cases vides, et que deux d'entre elles sont adjacentes et liées par <strong>×</strong>, ces deux cases apportent forcément <strong>1 ☀ et 1 🌙</strong>. La troisième case vide est alors déterminée par l'équilibre.
+      </div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr x">×</div>
+          <div class="mc mc-bg"></div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
+      </div>
+      <div class="tip-body" style="margin-top:.6rem;font-size:11px">
+        2 ☀ et 1 🌙 connus → il manque 1 ☀ et 2 🌙. La paire × apporte 1 ☀ + 1 🌙, donc la case libre = 🌙.
+      </div>
+    </div>
+
+    <!-- Élimination -->
     <div class="tip-card">
       <div class="tip-title">Élimination <span class="tip-tag hard">Difficile</span></div>
       <div class="tip-body">
@@ -220,6 +384,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js?v=6"></script>
-<script>initNavAuth();</script>
+<script>
+initNavAuth();
+
+function revealDemo(btn) {
+  const demo = btn.closest('.mini-demo');
+  demo.querySelectorAll('.mc-target').forEach(mc => {
+    mc.textContent = mc.dataset.val;
+    mc.classList.remove('mc-target');
+    mc.classList.add('mc-revealed');
+    mc.title = 'Cliquer pour réinitialiser';
+    mc.onclick = function(){ resetDemo(this); };
+  });
+  btn.disabled = true;
+  btn.textContent = '✓';
+}
+
+function resetDemo(mc) {
+  const demo = mc.closest('.mini-demo');
+  demo.querySelectorAll('.mc-revealed').forEach(m => {
+    m.textContent = '?';
+    m.classList.remove('mc-revealed');
+    m.classList.add('mc-target');
+    m.title = '';
+    m.onclick = null;
+  });
+  const btn = demo.querySelector('.mini-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '→ Déduire'; }
+}
+</script>
 </body>
 </html>

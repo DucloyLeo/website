@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Économie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css?v=6">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+  .eco-section { margin-bottom: 2.5rem; }
+  .eco-section-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+  .diff-tab-bar { display:flex; gap:6px; margin-bottom:1.2rem; flex-wrap:wrap; }
+  .diff-tab { background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:5px 16px; font-size:12px; cursor:pointer; color:var(--muted); }
+  .diff-tab.active { border-color:var(--moon); color:var(--text); }
+  .xp-form { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.2rem; display:flex; flex-direction:column; gap:1rem; max-width:520px; }
+  .form-row { display:flex; flex-direction:column; gap:4px; }
+  .form-label { font-size:11px; color:var(--muted); letter-spacing:.04em; }
+  .form-input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:7px 12px; font-size:13px; font-family:'DM Mono',monospace; color:var(--text); width:100%; }
+  .form-input:focus { outline:none; border-color:var(--moon); }
+  .tiers-list { display:flex; flex-direction:column; gap:6px; }
+  .tier-row { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center; }
+  .tier-row input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:6px 10px; font-size:12px; font-family:'DM Mono',monospace; color:var(--text); }
+  .tier-row input:focus { outline:none; border-color:var(--moon); }
+  .tier-remove { background:none; border:1px solid rgba(220,80,60,.4); color:rgba(220,80,60,.8); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px; }
+  .tier-remove:hover { background:rgba(220,80,60,.08); }
+  .tier-header { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; }
+  .tier-header span { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+  .shop-table { width:100%; border-collapse:collapse; }
+  .shop-table th { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:6px 10px; text-align:left; border-bottom:1px solid var(--border); }
+  .shop-table td { font-size:12px; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .shop-table tr:last-child td { border-bottom:none; }
+  .item-active-toggle { cursor:pointer; }
+  .add-item-form { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.2rem; display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:640px; }
+  .add-item-form .full-width { grid-column: 1 / -1; }
+  .status-ok { color:var(--green); font-size:12px; }
+  .status-err { color:var(--red); font-size:12px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
+      <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <a href="economy.html" class="nav-menu-item">💰 Économie</a>
+      <a href="../seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <div class="nav-menu-sep"></div>
+      <a href="/index.html" class="nav-menu-item">← Site public</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="index.html"      class="admin-nav-item">📊 Dashboard</a>
+    <a href="users.html"      class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="levels.html"     class="admin-nav-item">🎮 Niveaux</a>
+    <a href="daily.html"      class="admin-nav-item">📅 Journaliers</a>
+    <a href="badges.html"     class="admin-nav-item">🏅 Badges</a>
+    <a href="difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
+    <a href="economy.html"    class="admin-nav-item active">💰 Économie</a>
+    <a href="../seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
+    <hr class="sep">
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 class="page-title" style="margin-bottom:2rem">Économie</h1>
+
+      <!-- ── Paramètres XP ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Paramètres XP par difficulté</p>
+        <div class="diff-tab-bar" id="diff-tabs"></div>
+        <div id="xp-form-wrap"></div>
+        <div style="margin-top:.75rem;display:flex;gap:10px;align-items:center">
+          <button class="btn sun" onclick="saveXpParams()">Enregistrer</button>
+          <span id="xp-status"></span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:.6rem;line-height:1.7">
+          <strong>Paliers de vitesse :</strong> max_seconds = temps limite pour ce multiplicateur (le premier palier atteint s'applique).<br>
+          <strong>Malus par indice :</strong> soustrait à l'XP de base × multiplicateur (minimum 10 XP garanti).<br>
+          <strong>Ctrl+H :</strong> récompense toujours nulle, quelle que soit la configuration.
+        </p>
+      </div>
+
+      <hr class="sep">
+
+      <!-- ── Boutique ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Articles de la boutique</p>
+        <div id="shop-table-wrap"></div>
+
+        <p class="eco-section-title" style="margin-top:1.5rem">Ajouter un article</p>
+        <div class="add-item-form" id="add-item-form">
+          <div class="form-row">
+            <label class="form-label">ID (unique, ex: skin-stars)</label>
+            <input class="form-input" id="ni-id" placeholder="skin-stars">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Nom</label>
+            <input class="form-input" id="ni-name" placeholder="Étoiles">
+          </div>
+          <div class="form-row full-width">
+            <label class="form-label">Description</label>
+            <input class="form-input" id="ni-desc" placeholder="Description de l'article">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Icône (emoji)</label>
+            <input class="form-input" id="ni-icon" placeholder="⭐" style="width:80px">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Type</label>
+            <select class="form-input" id="ni-type">
+              <option value="skin">skin</option>
+              <option value="cosmetic">cosmetic</option>
+              <option value="badge">badge</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Clé (item_key, ex: bw)</label>
+            <input class="form-input" id="ni-key" placeholder="stars">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Prix (pièces)</label>
+            <input class="form-input" id="ni-cost" type="number" min="0" value="0">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Niveau débloquant (vide = achat seul)</label>
+            <input class="form-input" id="ni-level" type="number" min="1" placeholder="—">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Ordre d'affichage</label>
+            <input class="form-input" id="ni-sort" type="number" value="0">
+          </div>
+          <div class="full-width" style="display:flex;gap:10px;align-items:center">
+            <button class="btn sun" onclick="addShopItem()">Ajouter l'article</button>
+            <span id="shop-status"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/auth.js?v=6"></script>
+<script>
+const DIFFS = ['easy','medium','hard','extreme'];
+const DIFF_LABELS_FR = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' };
+let _xpParams = {};
+let _activeDiff = 'easy';
+
+async function init() {
+  const ok = await requireAdmin('/index.html');
+  if (!ok) return;
+  await initNavAuth();
+  await Promise.all([loadXpParams(), loadShopItems()]);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+}
+
+// ── XP Params ──
+
+async function loadXpParams() {
+  const { data } = await db.from('xp_params').select('*');
+  (data || []).forEach(p => { _xpParams[p.id] = p; });
+  renderDiffTabs();
+  renderXpForm(_activeDiff);
+}
+
+function renderDiffTabs() {
+  document.getElementById('diff-tabs').innerHTML = DIFFS.map(d =>
+    `<button class="diff-tab${d===_activeDiff?' active':''}" onclick="switchDiff('${d}')">${DIFF_LABELS_FR[d]}</button>`
+  ).join('');
+}
+
+function switchDiff(d) {
+  _activeDiff = d;
+  renderDiffTabs();
+  renderXpForm(d);
+}
+
+function renderXpForm(diff) {
+  const p = _xpParams[diff] || { base_xp: 50, hint_penalty: 15, speed_tiers: [] };
+  const tiers = (p.speed_tiers || []).slice().sort((a,b) => a.max_seconds - b.max_seconds);
+  const tiersHtml = tiers.map((t,i) => `
+    <div class="tier-row" id="tier-${i}">
+      <input type="number" min="1" value="${t.max_seconds}" id="ts-${i}" placeholder="sec">
+      <input type="number" min="1" step="0.1" value="${t.multiplier}" id="tm-${i}" placeholder="×">
+      <button class="tier-remove" onclick="removeTier(${i})">✕</button>
+    </div>`).join('');
+
+  document.getElementById('xp-form-wrap').innerHTML = `
+    <div class="xp-form">
+      <div class="form-row">
+        <label class="form-label">XP de base</label>
+        <input class="form-input" type="number" min="0" id="xp-base" value="${p.base_xp}" style="max-width:120px">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Malus par indice (XP)</label>
+        <input class="form-input" type="number" min="0" id="xp-penalty" value="${p.hint_penalty}" style="max-width:120px">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Paliers de vitesse</label>
+        <div class="tier-header">
+          <span>Temps max (sec)</span><span>Multiplicateur</span><span></span>
+        </div>
+        <div class="tiers-list" id="tiers-list">${tiersHtml}</div>
+        <button class="btn" style="margin-top:6px;font-size:12px" onclick="addTier()">+ Ajouter un palier</button>
+      </div>
+    </div>`;
+}
+
+function addTier() {
+  const list = document.getElementById('tiers-list');
+  const i = list.children.length;
+  const row = document.createElement('div');
+  row.className = 'tier-row';
+  row.id = 'tier-' + i;
+  row.innerHTML = `
+    <input type="number" min="1" id="ts-${i}" placeholder="ex: 60">
+    <input type="number" min="1" step="0.1" id="tm-${i}" placeholder="ex: 1.5">
+    <button class="tier-remove" onclick="removeTier(${i})">✕</button>`;
+  list.appendChild(row);
+}
+
+function removeTier(i) {
+  const row = document.getElementById('tier-' + i);
+  if (row) row.remove();
+  // Renumber remaining tiers
+  const rows = document.getElementById('tiers-list').children;
+  for (let j = 0; j < rows.length; j++) {
+    rows[j].id = 'tier-' + j;
+    const sec = rows[j].querySelector('input:nth-child(1)');
+    const mul = rows[j].querySelector('input:nth-child(2)');
+    const btn = rows[j].querySelector('button');
+    if (sec) sec.id = 'ts-' + j;
+    if (mul) mul.id = 'tm-' + j;
+    if (btn) btn.setAttribute('onclick', 'removeTier(' + j + ')');
+  }
+}
+
+async function saveXpParams() {
+  const statusEl = document.getElementById('xp-status');
+  statusEl.textContent = '';
+  const base_xp    = parseInt(document.getElementById('xp-base').value) || 0;
+  const hint_penalty = parseInt(document.getElementById('xp-penalty').value) || 0;
+
+  const tiers = [];
+  const rows = document.getElementById('tiers-list').children;
+  for (let i = 0; i < rows.length; i++) {
+    const sec = parseFloat(document.getElementById('ts-' + i)?.value);
+    const mul = parseFloat(document.getElementById('tm-' + i)?.value);
+    if (!isNaN(sec) && !isNaN(mul) && sec > 0 && mul > 0) {
+      tiers.push({ max_seconds: sec, multiplier: mul });
+    }
+  }
+  tiers.sort((a,b) => a.max_seconds - b.max_seconds);
+
+  const diff = _activeDiff;
+  const label = DIFF_LABELS_FR[diff];
+  const { error } = await db.from('xp_params').upsert({
+    id: diff, label, base_xp, hint_penalty,
+    speed_tiers: tiers, updated_at: new Date().toISOString()
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    _xpParams[diff] = { id: diff, label, base_xp, hint_penalty, speed_tiers: tiers };
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+}
+
+// ── Shop Items ──
+
+async function loadShopItems() {
+  const { data } = await db.from('shop_items').select('*').order('sort_order');
+  const items = data || [];
+  const wrap = document.getElementById('shop-table-wrap');
+  if (!items.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucun article.</p>';
+    return;
+  }
+  wrap.innerHTML = `<div style="overflow-x:auto"><table class="shop-table">
+    <thead><tr>
+      <th>Icône</th><th>Nom</th><th>Type</th><th>Clé</th>
+      <th>Prix</th><th>Niv. débloquant</th><th>Actif</th>
+    </tr></thead>
+    <tbody>${items.map(it => `<tr>
+      <td>${it.icon}</td>
+      <td>${it.name}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${it.type}</span></td>
+      <td><code style="font-size:11px">${it.item_key}</code></td>
+      <td style="color:var(--sun)">${it.cost} 🪙</td>
+      <td>${it.unlock_level !== null ? 'Niv. ' + it.unlock_level : '—'}</td>
+      <td>
+        <label class="toggle item-active-toggle" title="Activer/désactiver">
+          <input type="checkbox" ${it.is_active ? 'checked' : ''} onchange="toggleItem('${it.id}',this.checked)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function toggleItem(id, active) {
+  const { error } = await db.from('shop_items').update({ is_active: active }).eq('id', id);
+  if (error) alert('Erreur : ' + error.message);
+}
+
+async function addShopItem() {
+  const statusEl = document.getElementById('shop-status');
+  statusEl.textContent = '';
+  const id   = document.getElementById('ni-id').value.trim();
+  const name = document.getElementById('ni-name').value.trim();
+  const desc = document.getElementById('ni-desc').value.trim();
+  const icon = document.getElementById('ni-icon').value.trim() || '🎁';
+  const type = document.getElementById('ni-type').value;
+  const key  = document.getElementById('ni-key').value.trim();
+  const cost = parseInt(document.getElementById('ni-cost').value) || 0;
+  const lvlVal = document.getElementById('ni-level').value.trim();
+  const unlock_level = lvlVal ? parseInt(lvlVal) : null;
+  const sort_order   = parseInt(document.getElementById('ni-sort').value) || 0;
+
+  if (!id || !name || !key) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'ID, Nom et Clé sont obligatoires';
+    return;
+  }
+
+  const { error } = await db.from('shop_items').insert({
+    id, name, description: desc, icon, type, item_key: key,
+    cost, unlock_level, sort_order, is_active: true
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Article ajouté ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    await loadShopItems();
+    ['ni-id','ni-name','ni-desc','ni-key'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('ni-cost').value = '0';
+    document.getElementById('ni-level').value = '';
+    document.getElementById('ni-sort').value = '0';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

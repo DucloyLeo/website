@@ -68,16 +68,79 @@ async function signOut() {
   window.location.href = '/index.html';
 }
 
+// ─── Formules XP / Niveaux ───────────────────────────
+
+// XP nécessaire pour passer du niveau n au niveau n+1
+function xpToNextLevel(n) {
+  return Math.min(1200, Math.floor(100 * Math.pow(1.4, n - 1)));
+}
+
+// Niveau correspondant à un total d'XP
+function levelFromXp(totalXp) {
+  let level = 1, cumXp = 0;
+  while (true) {
+    const needed = xpToNextLevel(level);
+    if (cumXp + needed > totalXp) break;
+    cumXp += needed;
+    level++;
+  }
+  return level;
+}
+
+// XP dans le niveau actuel + XP requis pour passer au suivant
+function xpProgressInLevel(totalXp) {
+  let level = 1, cumXp = 0;
+  while (true) {
+    const needed = xpToNextLevel(level);
+    if (cumXp + needed > totalXp) return { current: totalXp - cumXp, needed };
+    cumXp += needed;
+    level++;
+  }
+}
+
+// ─── Déblocage des items par niveau ──────────────────
+
+async function checkLevelUnlocks(userId, newLevel) {
+  try {
+    const { data: items } = await db.from('shop_items')
+      .select('id')
+      .eq('is_active', true)
+      .lte('unlock_level', newLevel)
+      .not('unlock_level', 'is', null);
+    if (!items?.length) return;
+
+    for (const item of items) {
+      const { data: existing } = await db.from('player_inventory')
+        .select('id').eq('user_id', userId).eq('item_id', item.id).maybeSingle();
+      if (!existing) {
+        const { error } = await db.from('player_inventory').insert({
+          user_id: userId, item_id: item.id, acquired_via: 'level_unlock'
+        });
+        if (error) console.warn('level_unlock insert:', error.message);
+      }
+    }
+  } catch(e) { console.warn('checkLevelUnlocks:', e); }
+}
+
 // ─── Sauvegarde d'une partie ─────────────────────────
+// Retourne { xp_earned, coins_earned, new_level, old_level, leveled_up,
+//            xp_in_level, xp_to_next, new_badges }
 
-async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false) {
-  if (!userId || !['easy', 'medium', 'hard', 'extreme'].includes(diff) || timeSeconds <= 0) return [];
+async function saveGameResult(userId, diff, timeSeconds, seed, hintCount = 0, ctrlHUsed = false) {
+  const emptyResult = { xp_earned: 0, coins_earned: 0, new_level: 1, old_level: 1,
+                        leveled_up: false, xp_in_level: 0, xp_to_next: 100, new_badges: [] };
+  if (!userId || !['easy', 'medium', 'hard', 'extreme'].includes(diff) || timeSeconds <= 0) return emptyResult;
 
+  const assisted = hintCount > 0 || ctrlHUsed;
+
+  // ── Enregistrement de la partie ──
   const { error: levErr } = await db.from('completed_levels').insert({
-    user_id: userId, seed: seed || null, difficulty: diff, time_seconds: timeSeconds
+    user_id: userId, seed: seed || null, difficulty: diff,
+    time_seconds: timeSeconds, hints_used: hintCount, ctrl_h_used: ctrlHUsed
   });
   if (levErr) console.warn('completed_levels insert:', levErr.message);
 
+  // ── Statistiques par difficulté ──
   const { data: existing, error: selErr } = await db
     .from('player_stats').select('*').eq('user_id', userId).eq('difficulty', diff).maybeSingle();
   if (selErr) console.warn('player_stats select:', selErr.message);
@@ -101,15 +164,60 @@ async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false)
     if (insErr) console.warn('player_stats insert:', insErr.message);
   }
 
-  let newBadges = [];
-  try { newBadges = await checkAndAwardBadges(userId, diff, timeSeconds, assisted) || []; }
+  // ── Calcul XP & Pièces ──
+  let xp_earned = 0, coins_earned = 0;
+  if (!ctrlHUsed) {
+    const { data: params } = await db.from('xp_params').select('*').eq('id', diff).maybeSingle();
+    if (params) {
+      const tiers = (params.speed_tiers || []).slice().sort((a, b) => a.max_seconds - b.max_seconds);
+      let multiplier = 1.0;
+      for (const tier of tiers) {
+        if (timeSeconds <= tier.max_seconds) { multiplier = tier.multiplier; break; }
+      }
+      const baseWithSpeed = Math.floor(params.base_xp * multiplier);
+      const penalty = hintCount * params.hint_penalty;
+      xp_earned    = Math.max(10, baseWithSpeed - penalty);
+      coins_earned = Math.floor(xp_earned / 5);
+    }
+  }
+
+  // ── Mise à jour profil XP / Niveau / Pièces ──
+  let old_level = 1, new_level = 1, leveled_up = false, total_xp = 0;
+
+  const { data: profile } = await db.from('profiles')
+    .select('xp, level, coins').eq('id', userId).maybeSingle();
+
+  if (profile) {
+    old_level = profile.level || 1;
+    total_xp  = (profile.xp || 0) + xp_earned;
+    new_level = levelFromXp(total_xp);
+    leveled_up = new_level > old_level;
+
+    if (xp_earned > 0 || coins_earned > 0) {
+      const { error: upErr } = await db.from('profiles').update({
+        xp:     total_xp,
+        level:  new_level,
+        coins:  (profile.coins || 0) + coins_earned
+      }).eq('id', userId);
+      if (upErr) console.warn('profiles xp update:', upErr.message);
+    }
+
+    if (leveled_up) await checkLevelUnlocks(userId, new_level);
+  }
+
+  const { current: xp_in_level, needed: xp_to_next } = xpProgressInLevel(total_xp);
+
+  // ── Badges ──
+  let new_badges = [];
+  try { new_badges = await checkAndAwardBadges(userId, diff, timeSeconds, assisted, new_level) || []; }
   catch(e) { console.warn('badges:', e); }
-  return newBadges || [];
+
+  return { xp_earned, coins_earned, new_level, old_level, leveled_up, xp_in_level, xp_to_next, new_badges };
 }
 
 // ─── Badges ──────────────────────────────────────────
 
-async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) {
+async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false, level = 1) {
   const [statsRes, badgesRes, earnedRes, compRes, profRes] = await Promise.all([
     db.from('player_stats').select('*').eq('user_id', userId),
     db.from('badges').select('*').order('sort_order'),
@@ -126,7 +234,6 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
   const totalTime  = stats.reduce((s, r) => s + (r.total_time || 0), 0);
   const newlyEarned = [];
 
-  // ── Données dérivées des parties (jours, séries) ──
   const dayKey = ts => { const x = new Date(ts); x.setHours(0, 0, 0, 0); return x.getTime(); };
   const perDay = {};
   completions.forEach(c => { const k = dayKey(c.completed_at); perDay[k] = (perDay[k] || 0) + 1; });
@@ -140,7 +247,6 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
     prev = k;
   }
 
-  // ── Contexte de la partie en cours ──
   const nowHour    = new Date().getHours();
   const accountAge = profRes.data?.created_at
     ? Math.floor((Date.now() - new Date(profRes.data.created_at).getTime()) / 86400000)
@@ -208,6 +314,10 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
       case 'all_difficulties':
         earned = ['easy', 'medium', 'hard'].every(d => playedDiffs.has(d));
         break;
+
+      case 'level':
+        earned = (level || 1) >= val;
+        break;
     }
 
     if (earned) {
@@ -226,21 +336,61 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
   return newlyEarned;
 }
 
+// ─── Boutique ─────────────────────────────────────────
+
+async function getShopItems() {
+  const { data } = await db.from('shop_items').select('*').eq('is_active', true).order('sort_order');
+  return data || [];
+}
+
+async function getPlayerInventory(userId) {
+  const { data } = await db.from('player_inventory').select('item_id, acquired_via, acquired_at').eq('user_id', userId);
+  return data || [];
+}
+
+async function purchaseItem(userId, itemId) {
+  const { data: item } = await db.from('shop_items').select('*').eq('id', itemId).eq('is_active', true).maybeSingle();
+  if (!item) throw new Error('Article introuvable');
+  if (item.unlock_level !== null) throw new Error('Cet article se débloque par le niveau');
+
+  const { data: profile } = await db.from('profiles').select('coins, level').eq('id', userId).maybeSingle();
+  if (!profile) throw new Error('Profil introuvable');
+  if ((profile.coins || 0) < item.cost) throw new Error('Pièces insuffisantes');
+
+  const { data: existing } = await db.from('player_inventory')
+    .select('id').eq('user_id', userId).eq('item_id', itemId).maybeSingle();
+  if (existing) throw new Error('Article déjà possédé');
+
+  const { error: invErr } = await db.from('player_inventory').insert({
+    user_id: userId, item_id: itemId, acquired_via: 'shop'
+  });
+  if (invErr) throw new Error('Erreur lors de l\'achat');
+
+  const { error: coinsErr } = await db.from('profiles').update({
+    coins: (profile.coins || 0) - item.cost
+  }).eq('id', userId);
+  if (coinsErr) console.warn('coins deduct:', coinsErr.message);
+
+  return item;
+}
+
 // ─── Export RGPD ─────────────────────────────────────
 
 async function exportUserData(userId) {
-  const [profile, stats, levels, badges] = await Promise.all([
-    db.from('profiles').select('username, role, created_at').eq('id', userId).single(),
+  const [profile, stats, levels, badges, inventory] = await Promise.all([
+    db.from('profiles').select('username, role, xp, level, coins, created_at').eq('id', userId).single(),
     db.from('player_stats').select('difficulty, games_played, best_time, total_time').eq('user_id', userId),
-    db.from('completed_levels').select('difficulty, time_seconds, completed_at').eq('user_id', userId).order('completed_at', { ascending: false }).limit(500),
-    db.from('player_badges').select('badge_id, earned_at, badges(name, icon)').eq('user_id', userId)
+    db.from('completed_levels').select('difficulty, time_seconds, hints_used, ctrl_h_used, completed_at').eq('user_id', userId).order('completed_at', { ascending: false }).limit(500),
+    db.from('player_badges').select('badge_id, earned_at, badges(name, icon)').eq('user_id', userId),
+    db.from('player_inventory').select('item_id, acquired_via, acquired_at').eq('user_id', userId)
   ]);
 
   const data = {
-    profil:   profile.data,
-    stats:    stats.data,
-    parties:  levels.data,
-    badges:   badges.data
+    profil:    profile.data,
+    stats:     stats.data,
+    parties:   levels.data,
+    badges:    badges.data,
+    inventaire: inventory.data
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -253,6 +403,7 @@ async function exportUserData(userId) {
 // ─── Suppression de compte ───────────────────────────
 
 async function deleteAccount(userId) {
+  await db.from('player_inventory').delete().eq('user_id', userId);
   await db.from('completed_levels').delete().eq('user_id', userId);
   await db.from('player_stats').delete().eq('user_id', userId);
   await db.from('player_badges').delete().eq('user_id', userId);
@@ -317,10 +468,6 @@ function saveUserPref(userId, patch) {
 }
 
 // ── Menu hamburger commun (pages hors admin) ──────────
-// Source unique du menu de jeu, injecté sur chaque page non-admin.
-// Les actions de jeu (Nouvelle partie, Difficulté, Commandes) et les
-// toggles sont surchargés par le moteur de jeu sur la page de jeu ;
-// ailleurs, les fonctions de repli ci-dessous prennent le relais.
 function renderGameMenu() {
   if (location.pathname.includes('/admin/')) return;
   const menu = document.getElementById('nav-menu');
@@ -330,6 +477,7 @@ function renderGameMenu() {
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <a href="/shop.html" class="nav-menu-item">🛒 Boutique</a>
       <div id="menu-auth-item"></div>
       <div class="nav-menu-sep"></div>
       <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
@@ -375,7 +523,6 @@ async function initNavAuth(opts = {}) {
     const [profile, prefs] = await Promise.all([getCurrentProfile(), getUserPrefs(user.id).catch(() => ({}))]);
     window._userPrefs = prefs;
 
-    // Appliquer le thème sauvegardé en DB si différent de l'état actuel
     if (prefs.theme && prefs.theme !== document.documentElement.getAttribute('data-theme')) {
       document.documentElement.setAttribute('data-theme', prefs.theme);
       try { localStorage.setItem('tango_theme', prefs.theme); } catch(e) {}
@@ -385,14 +532,17 @@ async function initNavAuth(opts = {}) {
 
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';
+    const coins   = profile?.coins || 0;
     if (el) el.innerHTML = `
       <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}${isVip ? ' <span style="color:var(--moon);font-size:10px">✦ VIP</span>' : ''}</a>
+      <span class="nav-coins" title="Pièces">🪙 ${coins}</span>
       ${isAdmin ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
+      <span class="nav-menu-item" style="pointer-events:none;color:var(--sun)">🪙 ${coins} pièces · Niv. ${profile?.level || 1}</span>
       ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
@@ -421,7 +571,6 @@ document.addEventListener('click', closeMenu);
 const _notifHandlers = {};
 let _notifChannel = null;
 
-// Enregistrer un handler pour un type d'événement
 function onNotification(type, handler) {
   if (!_notifHandlers[type]) _notifHandlers[type] = [];
   _notifHandlers[type].push(handler);
@@ -441,7 +590,6 @@ function _initRealtime(userId) {
     .subscribe();
 }
 
-// Envoyer une notification globale (admin uniquement)
 async function sendAdminNotification(type, payload) {
   return db.from('notifications').insert({ user_id: null, type, payload });
 }
@@ -494,6 +642,15 @@ function showBadgeToast(badges) {
   _createToast(`<span class="badge-toast-label">🏅 Badge${badges.length > 1 ? 's' : ''} débloqué${badges.length > 1 ? 's' : ''}</span>${rows}`);
 }
 
+function showLevelUpToast(newLevel) {
+  _createToast(`
+    <span class="badge-toast-label" style="color:var(--sun)">⬆ Niveau supérieur !</span>
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">🏆</span>
+      <div><div class="badge-toast-name">Niveau ${newLevel} atteint</div><div class="badge-toast-desc">Continuez à jouer pour débloquer de nouvelles récompenses</div></div>
+    </div>`, 'rgba(245,200,66,.4)', 5000);
+}
+
 function showAdminToast(message) {
   _createToast(`
     <span class="badge-toast-label" style="color:var(--moon)">📢 Message de l'équipe</span>
@@ -514,7 +671,7 @@ function showRoleToast(role, message) {
     </div>`, borderColors[role] || 'var(--border2)', 6000);
 }
 
-onNotification('badge',       ({ badges })  => { if (badges?.length) showBadgeToast(badges); });
+onNotification('badge',        ({ badges })  => { if (badges?.length) showBadgeToast(badges); });
 onNotification('admin_message',({ message }) => { if (message) showAdminToast(message); });
 onNotification('role_change',  ({ role, message }) => { if (message) showRoleToast(role, message); });
 

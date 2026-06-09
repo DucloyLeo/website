@@ -443,3 +443,190 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 /* Pas de contour de base (la grille delimite deja les cases).
    En erreur, contour rouge net — visible sur fond blanc comme noir. */
 .ci.skin-bw.err { outline: 3px solid #dc503c !important; outline-offset: -3px; }
+
+/* ═══ Pièces dans la nav ═══════════════════════════ */
+.nav-coins {
+  font-size: 12px;
+  color: var(--sun);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .04em;
+  padding: 4px 10px;
+  border: 1px solid rgba(245,200,66,.25);
+  border-radius: 99px;
+}
+
+/* ═══ Modale de victoire — récompenses ═══════════════ */
+.win-rewards-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: .75rem 0 .6rem;
+}
+.win-reward-chip {
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+}
+.win-reward-chip.xp    { color: var(--moon); border-color: rgba(143,168,212,.35); }
+.win-reward-chip.coins { color: var(--sun);  border-color: rgba(245,200,66,.35); }
+
+.win-level-block {
+  width: 100%;
+  margin-bottom: .5rem;
+}
+.win-level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.win-level-label {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: .04em;
+}
+.win-level-xp-text {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+.win-xp-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.win-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--moon), #b8cfef);
+  border-radius: 99px;
+  width: 0%;
+}
+
+.win-levelup-banner {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sun);
+  text-align: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(245,200,66,.3);
+  border-radius: 8px;
+  margin-bottom: .5rem;
+  animation: levelupPulse .5s ease;
+}
+@keyframes levelupPulse {
+  0%   { transform: scale(.9); opacity: 0; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.win-login-prompt {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: .5rem 0 .25rem;
+  line-height: 1.6;
+}
+.win-login-prompt a { color: var(--moon); text-decoration: none; }
+.win-login-prompt a:hover { text-decoration: underline; }
+
+/* ═══ Profil — niveau & XP ══════════════════════════ */
+.level-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: .75rem;
+}
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.level-badge {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: rgba(143,168,212,.12);
+  border: 1px solid rgba(143,168,212,.3);
+  color: var(--moon);
+}
+.level-coins {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--sun);
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: rgba(245,200,66,.08);
+  border: 1px solid rgba(245,200,66,.25);
+}
+.xp-track {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--moon), #b8cfef);
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+.xp-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ═══ Boutique ══════════════════════════════════════ */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 1rem;
+}
+.shop-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .15s;
+}
+.shop-item:hover { border-color: var(--border2); }
+.shop-item.owned { border-color: rgba(109,187,138,.3); }
+.shop-item-icon { font-size: 1.8rem; }
+.shop-item-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.shop-item-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.shop-item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.shop-item-cost {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--sun);
+}
+.shop-item-status {
+  font-size: 11px;
+  color: var(--muted);
+}
+.shop-item-status.owned { color: var(--green); }
+.shop-item-unlock {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Skin verrouillé sur la page profil */
+.skin-opt.skin-locked { opacity: .5; cursor: default; }
+.skin-opt.skin-locked:hover { border-color: var(--border); box-shadow: none; }

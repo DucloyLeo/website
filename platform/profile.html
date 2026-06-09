@@ -90,9 +90,20 @@
 
     <div class="profile-header">
       <div class="profile-avatar" id="profile-avatar">👤</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="profile-name" id="profile-name">—</div>
         <div class="profile-meta" id="profile-meta">—</div>
+        <!-- Niveau + XP + Pièces (masqué en vue admin) -->
+        <div class="level-block" id="level-block" style="display:none">
+          <div class="level-header">
+            <span class="level-badge" id="level-badge">Niv. 1</span>
+            <span class="level-coins" id="level-coins">🪙 0</span>
+          </div>
+          <div class="xp-track">
+            <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+          </div>
+          <span class="xp-label" id="xp-label">0 / 100 XP</span>
+        </div>
       </div>
     </div>
 
@@ -208,23 +219,31 @@ async function loadGameHistory(userId, page) {
 }
 async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }
 
-function renderSkinOptions() {
+async function renderSkinOptions() {
   const cur = getSkin();
   const order = ['emoji', 'circles', 'bw'];
-  document.getElementById('skin-options').innerHTML = order.map(k => {
+  const unlockInfo = { bw: 5 };
+  const results = await Promise.all(order.map(k => isSkinUnlocked(k)));
+  document.getElementById('skin-options').innerHTML = order.map((k, i) => {
     const s = SKINS[k];
-    return `<button class="skin-opt ${k === cur ? 'active' : ''}" onclick="chooseSkin('${k}')">
+    const unlocked = results[i];
+    const locked = !unlocked;
+    const lockLabel = locked && unlockInfo[k] ? '🔒 Niveau ' + unlockInfo[k] : '🔒';
+    return `<button class="skin-opt ${k === cur ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
+      onclick="${locked ? '' : 'chooseSkin(\'' + k + '\')'}"
+      ${locked ? 'title="' + lockLabel + '" tabindex="-1"' : ''}>
       <span class="skin-preview">
         <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
       </span>
       <span class="skin-label">${s.label}</span>
-      <span class="skin-desc">${s.desc}</span>
+      <span class="skin-desc">${locked ? lockLabel : s.desc}</span>
     </button>`;
   }).join('');
 }
 
 function chooseSkin(k) {
-  setSkin(k);  // applique en local + rafraîchit + sauvegarde dans le compte
+  setSkin(k);
+  renderSkinOptions();
 }
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
@@ -233,6 +252,20 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   const adminBadge = profile.role === 'admin' ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--sun);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">Admin</span>' : '';
   document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
   document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
+
+  // Bloc niveau / XP / pièces (profil propre uniquement)
+  if (!adminView && typeof levelFromXp === 'function') {
+    const totalXp = profile.xp || 0;
+    const level   = profile.level || 1;
+    const coins   = profile.coins || 0;
+    const { current, needed } = xpProgressInLevel(totalXp);
+    const pct = needed > 0 ? Math.round(current / needed * 100) : 0;
+    document.getElementById('level-badge').textContent = 'Niv. ' + level;
+    document.getElementById('level-coins').textContent = '🪙 ' + coins;
+    document.getElementById('xp-label').textContent   = current + ' / ' + needed + ' XP';
+    document.getElementById('xp-fill').style.width    = pct + '%';
+    document.getElementById('level-block').style.display = '';
+  }
 
   const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
   const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);

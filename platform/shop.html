@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutique — Tangoléo</title>
+<meta name="description" content="Dépensez vos pièces pour débloquer des skins et cosmétiques.">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css?v=6">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+  .shop-header { padding: 2.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .shop-header-row { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  .shop-title { font-family: 'Crimson Pro', serif; font-size: 2rem; font-weight: 600; }
+  .shop-coins-badge {
+    font-size: 13px; font-family: 'DM Mono', monospace;
+    color: var(--sun); padding: 4px 14px;
+    border: 1px solid rgba(245,200,66,.3); border-radius: 99px;
+  }
+  .shop-section-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+  .btn-buy {
+    font-size: 12px; font-family: 'DM Mono', monospace;
+    background: rgba(245,200,66,.1); border: 1px solid rgba(245,200,66,.35);
+    color: var(--sun); border-radius: 8px; padding: 5px 14px; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-buy:hover { background: rgba(245,200,66,.18); }
+  .btn-buy:disabled { opacity: .4; cursor: default; }
+  .btn-owned { font-size: 12px; color: var(--green); font-family: 'DM Mono', monospace; }
+  .btn-locked { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .login-banner {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; font-size: 14px;
+    color: var(--muted); line-height: 1.8;
+  }
+  .login-banner a { color: var(--moon); text-decoration: none; }
+  .login-banner a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/index.html" class="nav-menu-item">🎮 Jouer</a>
+      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="page-wrap">
+  <div class="shop-header">
+    <div class="shop-header-row">
+      <h1 class="shop-title">Boutique</h1>
+      <span class="shop-coins-badge" id="coins-badge" style="display:none">🪙 0 pièces</span>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-top:.5rem">
+      Dépensez vos pièces gagnées en jouant pour débloquer des skins et cosmétiques.
+    </p>
+  </div>
+
+  <div id="login-banner" style="display:none" class="login-banner">
+    <a href="/login.html">Connectez-vous</a> pour voir votre solde et acheter des articles.<br>
+    <span style="font-size:12px">Les pièces s'obtiennent en terminant des parties.</span>
+  </div>
+
+  <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+
+  <div id="shop-content" style="display:none">
+    <p class="shop-section-title">Articles disponibles</p>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span>Tangoléo</span>
+  <span style="display:flex;gap:1.2rem">
+    <a href="legal/mentions-legales.html">Mentions légales</a>
+    <a href="legal/politique-confidentialite.html">Confidentialité</a>
+    <a href="legal/cgu.html">CGU</a>
+  </span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js?v=6"></script>
+<script src="js/skins.js?v=4"></script>
+<script>
+let _userId = null;
+let _userCoins = 0;
+let _userLevel = 1;
+let _inventory = [];
+
+async function init() {
+  const user = await initNavAuth();
+  _userId = user?.id || null;
+
+  const [items] = await Promise.all([
+    getShopItems(),
+    _userId ? loadUserData() : Promise.resolve()
+  ]);
+
+  document.getElementById('loading').style.display = 'none';
+
+  if (!_userId) {
+    document.getElementById('login-banner').style.display = '';
+  }
+
+  renderShop(items);
+  document.getElementById('shop-content').style.display = '';
+}
+
+async function loadUserData() {
+  const { data: profile } = await db.from('profiles').select('coins, level').eq('id', _userId).maybeSingle();
+  _userCoins = profile?.coins || 0;
+  _userLevel = profile?.level || 1;
+  _inventory = await getPlayerInventory(_userId);
+
+  const badge = document.getElementById('coins-badge');
+  badge.textContent = '🪙 ' + _userCoins + ' pièce' + (_userCoins !== 1 ? 's' : '');
+  badge.style.display = '';
+}
+
+function renderShop(items) {
+  if (!items.length) {
+    document.getElementById('shop-grid').innerHTML = '<p style="font-size:13px;color:var(--muted)">Aucun article disponible pour l\'instant.</p>';
+    return;
+  }
+
+  const ownedIds = new Set(_inventory.map(i => i.item_id));
+
+  document.getElementById('shop-grid').innerHTML = items.map(item => {
+    const owned = ownedIds.has(item.id);
+    const levelLocked = item.unlock_level !== null && _userLevel < item.unlock_level;
+    const canAfford = _userId && !owned && !levelLocked && _userCoins >= item.cost;
+    const isFree = item.cost === 0 && item.unlock_level !== null;
+
+    let footerHtml;
+    if (owned) {
+      footerHtml = `<span class="btn-owned">✓ Obtenu</span>`;
+    } else if (!_userId) {
+      footerHtml = `<span class="shop-item-cost">${isFree ? 'Gratuit' : '🪙 ' + item.cost}</span>
+                    <a href="/login.html" style="font-size:12px;color:var(--moon)">Se connecter</a>`;
+    } else if (levelLocked) {
+      footerHtml = `<span class="btn-locked">🔒 Niveau ${item.unlock_level}</span>
+                    <span style="font-size:11px;color:var(--muted)">Niv. actuel : ${_userLevel}</span>`;
+    } else if (isFree) {
+      footerHtml = `<span class="btn-locked">Obtenu au niveau ${item.unlock_level}</span>`;
+    } else {
+      footerHtml = `<span class="shop-item-cost">🪙 ${item.cost}</span>
+                    <button class="btn-buy" onclick="buy('${item.id}')" ${canAfford ? '' : 'disabled'}>
+                      ${_userCoins < item.cost ? 'Pièces insuffisantes' : 'Acheter'}
+                    </button>`;
+    }
+
+    return `<div class="shop-item${owned ? ' owned' : ''}" id="shopitem-${item.id}">
+      <span class="shop-item-icon">${item.icon}</span>
+      <div class="shop-item-name">${item.name}</div>
+      <div class="shop-item-desc">${item.description}</div>
+      <div class="shop-item-footer">${footerHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+async function buy(itemId) {
+  if (!_userId) { window.location.href = '/login.html'; return; }
+  try {
+    const item = await purchaseItem(_userId, itemId);
+    _userCoins -= item.cost;
+    _inventory.push({ item_id: itemId, acquired_via: 'shop' });
+
+    const badge = document.getElementById('coins-badge');
+    badge.textContent = '🪙 ' + _userCoins + ' pièce' + (_userCoins !== 1 ? 's' : '');
+
+    const itemEl = document.getElementById('shopitem-' + itemId);
+    if (itemEl) {
+      itemEl.classList.add('owned');
+      const footer = itemEl.querySelector('.shop-item-footer');
+      if (footer) footer.innerHTML = `<span class="btn-owned">✓ Obtenu</span>`;
+    }
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

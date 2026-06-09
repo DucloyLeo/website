@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classement — Tangoléo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css?v=7">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<style>
+  .lb-header { display:flex; align-items:baseline; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+  .lb-subtitle { font-size:13px; color:var(--muted); }
+  .lb-wrap { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .lb-empty { padding:3rem; text-align:center; font-size:13px; color:var(--muted); }
+  .lb-player-cell { display:flex; align-items:center; gap:10px; }
+  .lb-xp-bar-wrap { width:80px; height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+  .lb-xp-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--moon),var(--sun)); }
+  .lb-private-tooltip { position:relative; display:inline-block; }
+  .lb-private-tooltip::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:var(--surface2); border:1px solid var(--border2); border-radius:6px; padding:4px 10px; font-size:11px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .15s; }
+  .lb-private-tooltip:hover::after { opacity:1; }
+  .lb-admin-exclude { font-size:11px; border-radius:6px; padding:3px 10px; border:1px solid var(--border2); background:none; color:var(--muted); cursor:pointer; }
+  .lb-admin-exclude:hover { border-color:rgba(220,80,60,.4); color:rgba(220,80,60,.8); }
+  .lb-admin-exclude.excluded { border-color:rgba(220,80,60,.4); color:rgba(220,80,60,.8); background:rgba(220,80,60,.06); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/index.html" class="nav-menu-item">🎮 Jouer</a>
+      <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
+      <a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a>
+      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="page-wrap">
+  <div class="lb-header">
+    <h1>Classement</h1>
+    <span class="lb-subtitle">Top 50 — XP total</span>
+  </div>
+
+  <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+
+  <div id="content" style="display:none">
+    <div id="admin-bar" style="display:none;margin-bottom:1rem;font-size:12px;color:var(--muted)">
+      Mode admin : cliquer sur ✕ pour exclure un joueur du classement.
+    </div>
+    <div class="lb-wrap">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Joueur</th>
+            <th>Niveau</th>
+            <th>XP</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="lb-body"></tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:1rem;text-align:center">Mis à jour en temps réel · Profils privés masqués</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js?v=7"></script>
+<script>
+let _isAdmin = false;
+let _currentUserId = null;
+
+async function init() {
+  const user = await initNavAuth();
+  _currentUserId = user?.id || null;
+  if (_currentUserId) {
+    const profile = await getCurrentProfile();
+    _isAdmin = profile?.role === 'admin';
+  }
+  if (_isAdmin) document.getElementById('admin-bar').style.display = '';
+  await loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const { data, error } = await db
+    .from('profiles')
+    .select('id, username, xp, level, coins, is_public, active_frame, active_effect, active_title, lb_excluded')
+    .order('xp', { ascending: false })
+    .limit(50);
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+
+  if (error || !data?.length) {
+    document.getElementById('lb-body').innerHTML =
+      `<tr><td colspan="5"><div class="lb-empty">Aucun joueur pour l'instant.</div></td></tr>`;
+    return;
+  }
+
+  const rankLabels = ['🥇','🥈','🥉'];
+  const rankClasses = ['gold','silver','bronze'];
+  let displayRank = 0;
+
+  const rows = data.map((p, i) => {
+    if (!_isAdmin && p.lb_excluded) return '';
+
+    displayRank++;
+    const rankLabel = displayRank <= 3
+      ? `<span class="lb-rank ${rankClasses[displayRank-1]}">${rankLabels[displayRank-1]}</span>`
+      : `<span class="lb-rank">${displayRank}</span>`;
+
+    const isMe = p.id === _currentUserId;
+    const avatar = renderAvatarHtml(p, 32);
+
+    let nameHtml;
+    if (p.is_public !== false) {
+      nameHtml = `<a href="/profile.html?user=${encodeURIComponent(p.username)}">${escHtml(p.username)}${isMe ? ' <span style="font-size:10px;color:var(--moon)">(moi)</span>' : ''}</a>`;
+    } else {
+      nameHtml = `<span class="lb-private lb-private-tooltip" data-tip="Profil privé">🔒 ${escHtml(p.username)}</span>`;
+    }
+    const titleHtml = p.active_title ? `<div class="lb-title">${escHtml(p.active_title)}</div>` : '';
+
+    const prog = typeof xpProgressInLevel === 'function' ? xpProgressInLevel(p.xp || 0) : { current: 0, needed: 100 };
+    const pct  = Math.round(prog.current / prog.needed * 100);
+
+    const adminBtn = _isAdmin
+      ? `<button class="lb-admin-exclude ${p.lb_excluded ? 'excluded' : ''}" onclick="toggleExclude('${p.id}',${!!p.lb_excluded})" title="${p.lb_excluded ? 'Réintégrer' : 'Exclure'}">${p.lb_excluded ? '+ Réintégrer' : '✕ Exclure'}</button>`
+      : '';
+
+    return `<tr style="${isMe ? 'background:rgba(143,168,212,.05)' : ''}">
+      <td>${rankLabel}</td>
+      <td>
+        <div class="lb-player-cell">
+          ${avatar}
+          <div>
+            <div class="lb-username">${nameHtml}</div>
+            ${titleHtml}
+          </div>
+        </div>
+      </td>
+      <td><span class="lb-level">Niv. ${p.level || 1}</span></td>
+      <td>
+        <div class="lb-xp">${(p.xp || 0).toLocaleString('fr-FR')} XP</div>
+        <div class="lb-xp-bar-wrap" style="margin-top:3px">
+          <div class="lb-xp-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </td>
+      <td>${adminBtn}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('lb-body').innerHTML = rows || `<tr><td colspan="5"><div class="lb-empty">Aucun profil public.</div></td></tr>`;
+}
+
+async function toggleExclude(userId, isExcluded) {
+  const { error } = await db.from('profiles').update({ lb_excluded: !isExcluded }).eq('id', userId);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await loadLeaderboard();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 <title>Admin — Économie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/common.css?v=6">
+<link rel="stylesheet" href="../css/common.css?v=7">
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
   .eco-section { margin-bottom: 2.5rem; }
@@ -104,6 +104,39 @@
 
       <hr class="sep">
 
+      <!-- ── Streak ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Streak journalier</p>
+        <div style="max-width:520px">
+          <div class="xp-form" style="margin-bottom:1rem">
+            <div class="form-row">
+              <label class="form-label">Nombre de jours max (streak plafonné à)</label>
+              <input class="form-input" id="streak-max-days" type="number" min="1" max="30" value="7">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bonus XP quotidien (flat, en plus de l'XP de partie)</label>
+              <input class="form-input" id="daily-bonus-xp" type="number" min="0" value="50">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bonus pièces quotidien (flat)</label>
+              <input class="form-input" id="daily-bonus-coins" type="number" min="0" value="20">
+            </div>
+          </div>
+          <p class="eco-section-title" style="margin-bottom:.6rem">Multiplicateurs XP par jour de streak</p>
+          <div class="tier-header" style="grid-template-columns:60px 1fr 1fr auto;margin-bottom:4px">
+            <span>Jour</span><span>Label</span><span>Multiplicateur XP</span><span></span>
+          </div>
+          <div id="streak-rows"></div>
+          <button class="btn" style="margin-top:.5rem" onclick="addStreakRow()">+ Ajouter un palier</button>
+        </div>
+        <div style="margin-top:.75rem;display:flex;gap:10px;align-items:center">
+          <button class="btn sun" onclick="saveStreakParams()">Enregistrer</button>
+          <span id="streak-status"></span>
+        </div>
+      </div>
+
+      <hr class="sep">
+
       <!-- ── Boutique ── -->
       <div class="eco-section">
         <p class="eco-section-title">Articles de la boutique</p>
@@ -130,9 +163,12 @@
           <div class="form-row">
             <label class="form-label">Type</label>
             <select class="form-input" id="ni-type">
-              <option value="skin">skin</option>
-              <option value="cosmetic">cosmetic</option>
-              <option value="badge">badge</option>
+              <option value="skin">skin (symboles)</option>
+              <option value="grid_skin">grid_skin (grille)</option>
+              <option value="frame">frame (cadre avatar)</option>
+              <option value="effect">effect (effet avatar)</option>
+              <option value="background">background (fond page)</option>
+              <option value="title">title (titre profil)</option>
             </select>
           </div>
           <div class="form-row">
@@ -157,13 +193,34 @@
           </div>
         </div>
       </div>
+
+      <hr class="sep">
+
+      <!-- ── Historique transactions ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Historique des achats boutique</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.8rem">
+          <input class="form-input" id="tx-search-user" placeholder="Pseudo joueur…" style="max-width:180px" oninput="filterTransactions()">
+          <select class="form-input" id="tx-search-item" style="max-width:200px" onchange="filterTransactions()">
+            <option value="">Tous les articles</option>
+          </select>
+          <input class="form-input" id="tx-search-date" type="date" style="max-width:160px" oninput="filterTransactions()">
+          <button class="btn" onclick="clearTxFilters()">✕ Réinitialiser</button>
+        </div>
+        <div id="tx-table-wrap"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem;gap:8px">
+          <button class="btn" id="tx-prev" onclick="txPage(-1)" disabled>◀</button>
+          <span id="tx-counter" style="font-size:11px;color:var(--muted)"></span>
+          <button class="btn" id="tx-next" onclick="txPage(1)" disabled>▶</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
-<script src="../js/auth.js?v=6"></script>
+<script src="../js/auth.js?v=7"></script>
 <script>
 const DIFFS = ['easy','medium','hard','extreme'];
 const DIFF_LABELS_FR = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' };
@@ -174,10 +231,157 @@ async function init() {
   const ok = await requireAdmin('/index.html');
   if (!ok) return;
   await initNavAuth();
-  await Promise.all([loadXpParams(), loadShopItems()]);
+  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions()]);
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
 }
+
+// ── Streak Params ──
+
+let _streakRows = [];
+
+async function loadStreakParams() {
+  const [streakRes, bonusRes] = await Promise.all([
+    db.from('streak_params').select('*').order('day_count'),
+    db.from('daily_bonus_params').select('*').eq('id', 'default').maybeSingle()
+  ]);
+  _streakRows = (streakRes.data || []).map(r => ({ ...r }));
+  const bonus = bonusRes.data || {};
+  document.getElementById('streak-max-days').value   = bonus.max_streak_days || 7;
+  document.getElementById('daily-bonus-xp').value    = bonus.bonus_xp    ?? 50;
+  document.getElementById('daily-bonus-coins').value = bonus.bonus_coins  ?? 20;
+  renderStreakRows();
+}
+
+function renderStreakRows() {
+  document.getElementById('streak-rows').innerHTML = _streakRows.map((r, i) => `
+    <div class="tier-row" style="grid-template-columns:60px 1fr 1fr auto">
+      <input type="number" min="1" max="30" value="${r.day_count}" oninput="_streakRows[${i}].day_count=+this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <input type="text" value="${r.label||''}" placeholder="Label…" oninput="_streakRows[${i}].label=this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <input type="number" step="0.01" min="1" value="${r.xp_multiplier}" oninput="_streakRows[${i}].xp_multiplier=+this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <button class="tier-remove" onclick="_streakRows.splice(${i},1);renderStreakRows()">✕</button>
+    </div>`).join('');
+}
+
+function addStreakRow() {
+  const maxDay = _streakRows.reduce((m, r) => Math.max(m, r.day_count), 0);
+  _streakRows.push({ day_count: maxDay + 1, xp_multiplier: 1.0, label: '' });
+  renderStreakRows();
+}
+
+async function saveStreakParams() {
+  const statusEl = document.getElementById('streak-status');
+  statusEl.textContent = 'Enregistrement…';
+
+  const maxDays   = parseInt(document.getElementById('streak-max-days').value) || 7;
+  const bonusXp   = parseInt(document.getElementById('daily-bonus-xp').value)  || 0;
+  const bonusCoins= parseInt(document.getElementById('daily-bonus-coins').value)|| 0;
+
+  // Upsert daily_bonus_params
+  const { error: bonusErr } = await db.from('daily_bonus_params').upsert({
+    id: 'default', bonus_xp: bonusXp, bonus_coins: bonusCoins, max_streak_days: maxDays
+  });
+  if (bonusErr) { statusEl.textContent = 'Erreur bonus : ' + bonusErr.message; return; }
+
+  // Remplacer tous les streak_params
+  await db.from('streak_params').delete().neq('day_count', -1);
+  if (_streakRows.length) {
+    const { error } = await db.from('streak_params').insert(
+      _streakRows.map(r => ({ day_count: r.day_count, xp_multiplier: r.xp_multiplier, label: r.label || null }))
+    );
+    if (error) { statusEl.textContent = 'Erreur streak : ' + error.message; return; }
+  }
+
+  statusEl.textContent = 'Enregistré ✓';
+  setTimeout(() => { statusEl.textContent = ''; }, 2500);
+}
+
+// ── Transactions ──
+
+const TX_PER_PAGE = 25;
+let _txPage = 0, _txTotal = 0, _txUserFilter = '', _txItemFilter = '', _txDateFilter = '';
+
+async function loadTransactions() {
+  // Populate item filter
+  const { data: items } = await db.from('shop_items').select('id, name').order('name');
+  const sel = document.getElementById('tx-search-item');
+  (items || []).forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it.id; opt.textContent = it.name;
+    sel.appendChild(opt);
+  });
+  await renderTransactions();
+}
+
+async function renderTransactions() {
+  const from = _txPage * TX_PER_PAGE, to = from + TX_PER_PAGE - 1;
+  let q = db.from('shop_transactions')
+    .select('id, cost, acquired_at, profiles(username), shop_items(name, icon)', { count: 'exact' })
+    .order('acquired_at', { ascending: false })
+    .range(from, to);
+
+  if (_txItemFilter) q = q.eq('item_id', _txItemFilter);
+  if (_txDateFilter) q = q.gte('acquired_at', _txDateFilter).lt('acquired_at', _txDateFilter + 'T23:59:59Z');
+
+  const { data, count, error } = await q;
+  _txTotal = count || 0;
+
+  const wrap = document.getElementById('tx-table-wrap');
+  if (error || !data?.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:.5rem 0">Aucune transaction.</p>';
+    document.getElementById('tx-counter').textContent = '';
+    document.getElementById('tx-prev').disabled = true;
+    document.getElementById('tx-next').disabled = true;
+    return;
+  }
+
+  // Filtre pseudo côté client (pas de full-text search côté Supabase sans extension)
+  let rows = data;
+  if (_txUserFilter) {
+    const q2 = _txUserFilter.toLowerCase();
+    rows = rows.filter(r => (r.profiles?.username || '').toLowerCase().includes(q2));
+  }
+
+  const html = `<div style="overflow-x:auto"><table class="shop-table">
+    <thead><tr><th>Date</th><th>Joueur</th><th>Article</th><th>Coût</th></tr></thead>
+    <tbody>${rows.map(r => {
+      const date = new Date(r.acquired_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' });
+      const user = r.profiles?.username || '—';
+      const item = `${r.shop_items?.icon||''} ${r.shop_items?.name||r.item_id||'—'}`;
+      return `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${date}</td>
+        <td><a href="../profile.html?user=${encodeURIComponent(user)}" style="color:var(--text);text-decoration:none;font-size:12px">${user}</a></td>
+        <td style="font-size:12px">${item}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--sun)">${r.cost} 🪙</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+
+  wrap.innerHTML = html;
+  const rangeFrom = from + 1, rangeTo = Math.min(from + rows.length, _txTotal);
+  document.getElementById('tx-counter').textContent = `${rangeFrom}–${rangeTo} / ${_txTotal}`;
+  document.getElementById('tx-prev').disabled = _txPage === 0;
+  document.getElementById('tx-next').disabled = rangeTo >= _txTotal;
+}
+
+function filterTransactions() {
+  _txUserFilter = document.getElementById('tx-search-user').value.trim();
+  _txItemFilter = document.getElementById('tx-search-item').value;
+  _txDateFilter = document.getElementById('tx-search-date').value;
+  _txPage = 0;
+  renderTransactions();
+}
+
+function clearTxFilters() {
+  document.getElementById('tx-search-user').value = '';
+  document.getElementById('tx-search-item').value = '';
+  document.getElementById('tx-search-date').value = '';
+  _txUserFilter = ''; _txItemFilter = ''; _txDateFilter = '';
+  _txPage = 0;
+  renderTransactions();
+}
+
+function txPage(d) { _txPage += d; renderTransactions(); }
 
 // ── XP Params ──
 

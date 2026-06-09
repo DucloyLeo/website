@@ -41,7 +41,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=6">
+<link rel="stylesheet" href="css/common.css?v=7">
 <link rel="stylesheet" href="css/animations.css">
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
@@ -184,6 +184,22 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
           <div class="result-time" id="result-time">—</div>
           <div class="result-rank" id="result-rank"></div>
         </div>
+        <!-- Récompenses daily (masqué si non connecté ou replay) -->
+        <div id="daily-rewards" style="display:none;width:100%;margin:.4rem 0">
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:.5rem">
+            <span class="win-reward-chip xp"    id="dr-xp">+0 XP</span>
+            <span class="win-reward-chip coins"  id="dr-coins">+0 🪙</span>
+            <span class="win-reward-chip"        id="dr-streak" style="background:rgba(255,120,30,.1);border-color:rgba(255,120,30,.4);color:#ff7820"></span>
+          </div>
+          <div class="win-level-block" style="width:100%">
+            <div class="win-level-header">
+              <span class="win-level-label">Niveau <strong id="dr-level-num">1</strong></span>
+              <span class="win-level-xp-text" id="dr-xp-text">0 / 100 XP</span>
+            </div>
+            <div class="win-xp-track"><div class="win-xp-fill" id="dr-xp-fill" style="width:0%"></div></div>
+          </div>
+          <div class="win-levelup-banner" id="dr-levelup-banner" style="display:none">⬆ Niveau supérieur !</div>
+        </div>
         <hr class="sep" style="margin:.2rem 0">
         <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:left">Classement</p>
         <div class="lb-wrap" id="result-lb"></div>
@@ -253,7 +269,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=6"></script>
+<script src="js/auth.js?v=7"></script>
 <script src="js/skins.js?v=4"></script>
 <script src="js/animations.js"></script>
 <script src="js/sounds.js"></script>
@@ -492,9 +508,18 @@ async function checkWin(){
   document.getElementById('result-time').textContent=fmt(elapsed);
   document.getElementById('result-panel').style.display='flex';
 
-  // Sauvegarde + classement en arrière-plan
+  // Sauvegarde + récompenses + classement en arrière-plan
   (async()=>{
     if(currentUserId&&currentDailyLevel&&!currentIsReplay){
+      const diff=currentDailyLevel.difficulty||'medium';
+
+      // Récompenses daily (XP, streak, bonus)
+      const rewards=await saveDailyResult(currentUserId,diff,elapsed);
+      if(rewards.is_new_day!==false){
+        _showDailyRewards(rewards,elapsed);
+        if(rewards.coins_earned>0)updateNavCoins((await db.from('profiles').select('coins').eq('id',currentUserId).maybeSingle()).data?.coins||0);
+      }
+
       const{data:saved,error}=await db.from('daily_completions').insert({
         user_id:currentUserId,daily_level_id:currentDailyLevel.id,time_seconds:elapsed
       }).select().single();
@@ -511,6 +536,25 @@ async function checkWin(){
     }
     await showResultLeaderboard(currentDailyLevel?.id,elapsed);
   })();
+
+function _showDailyRewards(r,elapsed){
+  const wrap=document.getElementById('daily-rewards');
+  if(!wrap)return;
+  wrap.style.display='';
+  const xpEl=document.getElementById('dr-xp');
+  const coinsEl=document.getElementById('dr-coins');
+  const streakEl=document.getElementById('dr-streak');
+  xpEl.textContent='+'+r.xp_earned+' XP';
+  coinsEl.textContent='+'+r.coins_earned+' 🪙';
+  streakEl.textContent='🔥 Streak ×'+(r.streak_multiplier||1).toFixed(2);
+  [xpEl,coinsEl,streakEl].forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation='rewardPop .4s cubic-bezier(.17,.67,.4,1.4) forwards';});
+  document.getElementById('dr-level-num').textContent=r.new_level;
+  document.getElementById('dr-xp-text').textContent=r.xp_in_level+' / '+r.xp_to_next+' XP';
+  const fill=document.getElementById('dr-xp-fill');
+  if(fill){fill.style.width='0%';setTimeout(()=>{fill.style.width=Math.round(r.xp_in_level/r.xp_to_next*100)+'%';},100);}
+  const banner=document.getElementById('dr-levelup-banner');
+  if(banner){banner.style.display=r.leveled_up?'':'none';}
+}
 }
 
 /* ═══ DAILY LOGIC ════════════════════════════════════════ */

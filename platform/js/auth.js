@@ -371,7 +371,162 @@ async function purchaseItem(userId, itemId) {
   }).eq('id', userId);
   if (coinsErr) console.warn('coins deduct:', coinsErr.message);
 
+  // Log de transaction
+  await db.from('shop_transactions').insert({ user_id: userId, item_id: itemId, cost: item.cost });
+
   return item;
+}
+
+// ─── Cosmétiques actifs ───────────────────────────────
+
+async function setActiveCosmetic(userId, slot, itemId) {
+  // slot = 'active_frame' | 'active_effect' | 'active_title'
+  const allowed = ['active_frame', 'active_effect', 'active_title'];
+  if (!allowed.includes(slot)) return;
+  const { error } = await db.from('profiles').update({ [slot]: itemId || null }).eq('id', userId);
+  if (error) console.warn('setActiveCosmetic:', error.message);
+}
+
+// Retourne { frame, effect, title } pour un profil donné
+function getCosmeticsFromProfile(profile) {
+  return {
+    frame:  profile?.active_frame  || null,
+    effect: profile?.active_effect || null,
+    title:  profile?.active_title  || null,
+  };
+}
+
+// Génère le HTML d'un avatar avec cadre + effet appliqués
+function renderAvatarHtml(profile, size = 48) {
+  const frame  = profile?.active_frame  || '';
+  const effect = profile?.active_effect || '';
+  const inner = `<div class="avatar-inner" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px">👤</div>`;
+  const fx = effect ? `<div class="avatar-effect ${effect}"></div>` : '';
+  return `<div class="avatar-wrap ${frame}" style="width:${size}px;height:${size}px">${inner}${fx}</div>`;
+}
+
+// ─── Streak journalier ────────────────────────────────
+
+function getParisTodayStr() {
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+}
+
+function getParisYesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(d);
+}
+
+// Mise à jour du streak après completion du daily.
+// Retourne { streak_current, streak_max, streak_multiplier, is_new_day }
+async function updateDailyStreak(userId) {
+  const today     = getParisTodayStr();
+  const yesterday = getParisYesterdayStr();
+
+  const [profileRes, paramsRes, streakParamsRes] = await Promise.all([
+    db.from('profiles').select('streak_current, streak_max, last_daily_date').eq('id', userId).maybeSingle(),
+    db.from('daily_bonus_params').select('max_streak_days').eq('id', 'default').maybeSingle(),
+    db.from('streak_params').select('*').order('day_count')
+  ]);
+
+  const profile    = profileRes.data;
+  const maxDays    = paramsRes.data?.max_streak_days || 7;
+  const streakRows = streakParamsRes.data || [];
+
+  const lastDate = profile?.last_daily_date || null;
+
+  // Déjà fait aujourd'hui
+  if (lastDate === today) {
+    const cur = profile?.streak_current || 1;
+    const row = streakRows.find(r => r.day_count === Math.min(cur, maxDays));
+    return { streak_current: cur, streak_max: profile?.streak_max || 1, streak_multiplier: row?.xp_multiplier || 1, is_new_day: false };
+  }
+
+  // Calcul nouveau streak
+  let newStreak = 1;
+  if (lastDate === yesterday) {
+    newStreak = Math.min((profile?.streak_current || 0) + 1, maxDays);
+  }
+
+  const newMax = Math.max(profile?.streak_max || 0, newStreak);
+  const { error } = await db.from('profiles').update({
+    streak_current: newStreak,
+    streak_max:     newMax,
+    last_daily_date: today
+  }).eq('id', userId);
+  if (error) console.warn('updateDailyStreak:', error.message);
+
+  const row = streakRows.find(r => r.day_count === newStreak);
+  return { streak_current: newStreak, streak_max: newMax, streak_multiplier: row?.xp_multiplier || 1, is_new_day: true };
+}
+
+// ─── Récompenses daily ────────────────────────────────
+// Appelé lors de la 1ère complétion du daily du jour.
+// Retourne { xp_earned, coins_earned, bonus_xp, bonus_coins,
+//            streak_current, streak_max, streak_multiplier,
+//            new_level, old_level, leveled_up, xp_in_level, xp_to_next }
+
+async function saveDailyResult(userId, diff, timeSeconds) {
+  const empty = { xp_earned:0, coins_earned:0, bonus_xp:0, bonus_coins:0,
+                  streak_current:1, streak_max:1, streak_multiplier:1,
+                  new_level:1, old_level:1, leveled_up:false, xp_in_level:0, xp_to_next:100 };
+  if (!userId || timeSeconds <= 0) return empty;
+
+  const effectiveDiff = ['easy','medium','hard','extreme'].includes(diff) ? diff : 'medium';
+
+  const [xpParamsRes, bonusRes, streakResult, profileRes] = await Promise.all([
+    db.from('xp_params').select('*').eq('id', effectiveDiff).maybeSingle(),
+    db.from('daily_bonus_params').select('*').eq('id', 'default').maybeSingle(),
+    updateDailyStreak(userId),
+    db.from('profiles').select('xp, level, coins').eq('id', userId).maybeSingle()
+  ]);
+
+  // Streak déjà fait aujourd'hui → pas de récompense double
+  if (!streakResult.is_new_day) return { ...empty, ...streakResult };
+
+  const params     = xpParamsRes.data;
+  const bonusParam = bonusRes.data || { bonus_xp: 50, bonus_coins: 20 };
+
+  let base_xp = 10, multiplier = 1;
+  if (params) {
+    const tiers = (params.speed_tiers || []).slice().sort((a, b) => a.max_seconds - b.max_seconds);
+    for (const tier of tiers) {
+      if (timeSeconds <= tier.max_seconds) { multiplier = tier.multiplier; break; }
+    }
+    base_xp = Math.floor(params.base_xp * multiplier);
+  }
+
+  const game_xp      = Math.max(10, Math.floor(base_xp * (streakResult.streak_multiplier || 1)));
+  const bonus_xp     = bonusParam.bonus_xp;
+  const bonus_coins  = bonusParam.bonus_coins;
+  const xp_earned    = game_xp + bonus_xp;
+  const coins_earned = Math.floor(game_xp / 5) + bonus_coins;
+
+  // Mise à jour profil
+  const profile = profileRes.data;
+  let old_level = profile?.level || 1;
+  const total_xp = (profile?.xp || 0) + xp_earned;
+  const new_level = levelFromXp(total_xp);
+  const leveled_up = new_level > old_level;
+
+  const { error: upErr } = await db.from('profiles').update({
+    xp:    total_xp,
+    level: new_level,
+    coins: (profile?.coins || 0) + coins_earned
+  }).eq('id', userId);
+  if (upErr) console.warn('saveDailyResult profile update:', upErr.message);
+
+  if (leveled_up) await checkLevelUnlocks(userId, new_level);
+
+  const { current: xp_in_level, needed: xp_to_next } = xpProgressInLevel(total_xp);
+
+  return {
+    xp_earned, coins_earned, bonus_xp, bonus_coins,
+    streak_current: streakResult.streak_current,
+    streak_max:     streakResult.streak_max,
+    streak_multiplier: streakResult.streak_multiplier,
+    new_level, old_level, leveled_up, xp_in_level, xp_to_next
+  };
 }
 
 // ─── Export RGPD ─────────────────────────────────────
@@ -545,12 +700,13 @@ async function initNavAuth(opts = {}) {
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
+      <a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
-    if (el) el.innerHTML = `<a href="/stats.html" class="nav-auth-link">Statistiques</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (el) el.innerHTML = `<a href="/leaderboard.html" class="nav-auth-link">Classement</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   return user;

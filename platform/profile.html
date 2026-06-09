@@ -13,7 +13,7 @@
 <link rel="canonical" href="https://tangoleo.fr/profile.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=6">
+<link rel="stylesheet" href="css/common.css?v=7">
 <script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 <style>
   .profile-header { display:flex; align-items:center; gap:1.5rem; padding:2.5rem 0 2rem; border-bottom:1px solid var(--border); }
@@ -54,6 +54,21 @@
   }
   .skin-label { font-size:12px; color:var(--text); font-weight:500; }
   .skin-desc  { font-size:10px; color:var(--muted); }
+  /* Cosmétiques */
+  .cosmetics-grid { display:flex; flex-direction:column; gap:1.2rem; }
+  .cosm-slot { display:flex; flex-direction:column; gap:.5rem; }
+  .cosm-slot-label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .cosm-opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .cosm-opt {
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:.55rem .9rem; cursor:pointer;
+    font-size:12px; transition:border-color .15s, box-shadow .15s;
+  }
+  .cosm-opt:hover { border-color:var(--border2); }
+  .cosm-opt.active { border-color:var(--moon); box-shadow:0 0 0 1px var(--moon); }
+  .cosm-opt.locked { opacity:.4; cursor:default; }
+  .cosm-opt-none { color:var(--muted); font-style:italic; }
   /* Éditeur économie (vue admin) */
   .eco-editor { background:var(--surface); border:1px solid rgba(245,200,66,.2); border-radius:10px; padding:1rem; margin-top:1rem; display:flex; flex-direction:column; gap:10px; max-width:380px; }
   .eco-editor-title { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--sun); margin-bottom:2px; }
@@ -101,9 +116,10 @@
   <div id="profile-content" style="display:none">
 
     <div class="profile-header">
-      <div class="profile-avatar" id="profile-avatar">👤</div>
+      <div id="profile-avatar-wrap"></div>
       <div style="flex:1;min-width:0">
         <div class="profile-name" id="profile-name">—</div>
+        <div id="profile-active-title" class="profile-active-title" style="display:none"></div>
         <div class="profile-meta" id="profile-meta">—</div>
         <!-- Niveau + XP + Pièces (masqué en vue admin) -->
         <div class="level-block" id="level-block" style="display:none">
@@ -175,6 +191,12 @@
       <div class="skin-grid" id="skin-options"></div>
     </div>
 
+    <!-- Cosmétiques actifs (profil propre) -->
+    <div class="diff-section" id="cosmetics-section" style="display:none">
+      <p class="diff-title">Cosmétiques actifs</p>
+      <div class="cosmetics-grid" id="cosmetics-grid"></div>
+    </div>
+
     <!-- Confidentialité (profil propre) -->
     <div class="diff-section" id="privacy-section" style="display:none">
       <p class="diff-title">Confidentialité</p>
@@ -219,7 +241,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=6"></script>
+<script src="js/auth.js?v=7"></script>
 <script src="js/skins.js?v=4"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
@@ -302,6 +324,25 @@ function chooseSkin(k) {
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
 function renderProfileData(profile, stats, badges, earnedMap, adminView) {
+  // Avatar avec cadre + effet
+  const avatarWrap = document.getElementById('profile-avatar-wrap');
+  if (avatarWrap) avatarWrap.innerHTML = renderAvatarHtml(profile, 64);
+
+  // Titre actif
+  const titleEl = document.getElementById('profile-active-title');
+  if (titleEl) {
+    if (profile.active_title) {
+      titleEl.textContent = profile.active_title;
+      titleEl.style.display = '';
+    } else {
+      titleEl.style.display = 'none';
+    }
+  }
+
+  // Fond de page
+  document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+  if (profile.active_background) document.body.classList.add(profile.active_background);
+
   const vipBadge   = profile.role === 'vip'   ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--moon);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">✦ VIP</span>' : '';
   const adminBadge = profile.role === 'admin' ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--sun);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">Admin</span>' : '';
   document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
@@ -371,6 +412,7 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
 
   if (adminView) {
     document.getElementById('skin-section').style.display         = 'none';
+    document.getElementById('cosmetics-section').style.display    = 'none';
     document.getElementById('danger-zone').style.display          = 'none';
     document.getElementById('privacy-section').style.display      = 'none';
     document.getElementById('admin-banner').style.display         = 'block';
@@ -383,13 +425,14 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
     document.title = 'Profil de ' + profile.username + ' — Tangoléo';
     loadGameHistory(profile.id, 0);
   } else {
-    // Profil propre : confidentialité + skins
+    // Profil propre : confidentialité + skins + cosmétiques
     document.getElementById('privacy-section').style.display = '';
     const isPublic = profile.is_public !== false;
     const cb = document.getElementById('pref-public');
     if (cb) cb.checked = isPublic;
     _updatePrivacyText(isPublic);
     renderSkinOptions();
+    renderCosmeticsSection(profile);
   }
 
   document.getElementById('loading').style.display   = 'none';
@@ -477,6 +520,78 @@ async function handleDeleteAccount() {
   if (!confirm('Dernière confirmation : tout sera effacé.')) return;
   await deleteAccount(user.id);
   window.location.href = 'index.html';
+}
+
+async function renderCosmeticsSection(profile) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const [allItemsRes, inventoryRes] = await Promise.all([
+    db.from('shop_items').select('*').in('type', ['frame','effect','background','title']).eq('is_active', true).order('sort_order'),
+    db.from('player_inventory').select('item_id').eq('user_id', user.id)
+  ]);
+
+  const allItems = allItemsRes.data || [];
+  const ownedIds = new Set((inventoryRes.data || []).map(r => r.item_id));
+
+  if (!allItems.length) return;
+
+  const slotDefs = [
+    { key: 'frame',      label: 'Cadre',       col: 'active_frame',      active: profile.active_frame },
+    { key: 'effect',     label: 'Effet',        col: 'active_effect',     active: profile.active_effect },
+    { key: 'background', label: 'Fond de page', col: 'active_background', active: profile.active_background },
+    { key: 'title',      label: 'Titre',        col: 'active_title',      active: profile.active_title },
+  ];
+
+  const html = slotDefs.map(slot => {
+    const items = allItems.filter(it => it.type === slot.key);
+    if (!items.length) return '';
+
+    const opts = [
+      `<div class="cosm-opt cosm-opt-none ${!slot.active ? 'active' : ''}" onclick="setCosmetic('${slot.col}',null,this,'${slot.key}')">Aucun</div>`
+    ].concat(items.map(it => {
+      const owned   = ownedIds.has(it.id) || (it.unlock_level !== null && (profile.level||1) >= it.unlock_level);
+      const isActive = slot.key === 'title' ? slot.active === it.item_key : slot.active === it.item_key;
+      const cls = `cosm-opt ${isActive ? 'active' : ''} ${!owned ? 'locked' : ''}`;
+      const lockIcon = !owned ? ' 🔒' : '';
+      return `<div class="${cls}" onclick="${owned ? `setCosmetic('${slot.col}','${it.item_key}',this,'${slot.key}')` : ''}" title="${it.description}${!owned ? ' — Non débloqué' : ''}">
+        ${it.icon} ${it.name}${lockIcon}
+      </div>`;
+    })).join('');
+
+    return `<div class="cosm-slot"><div class="cosm-slot-label">${slot.label}</div><div class="cosm-opts">${opts}</div></div>`;
+  }).join('');
+
+  const section = document.getElementById('cosmetics-section');
+  document.getElementById('cosmetics-grid').innerHTML = html;
+  section.style.display = '';
+}
+
+async function setCosmetic(col, itemKey, el, slotType) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  // Mise à jour optimiste UI
+  const wrap = el.closest('.cosm-opts');
+  if (wrap) wrap.querySelectorAll('.cosm-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+
+  // Valeur à stocker : pour title on stocke item_key (le texte du titre), sinon la classe CSS
+  await setActiveCosmetic(user.id, col, itemKey);
+
+  // Appliquer immédiatement sur la page
+  if (slotType === 'background') {
+    document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+    if (itemKey) document.body.classList.add(itemKey);
+  } else if (slotType === 'frame' || slotType === 'effect') {
+    // Recharger le mini-avatar dans le header
+    const { data: p } = await db.from('profiles').select('active_frame,active_effect,active_background,active_title').eq('id', user.id).maybeSingle();
+    const wrap2 = document.getElementById('profile-avatar-wrap');
+    if (wrap2 && p) wrap2.innerHTML = renderAvatarHtml(p, 64);
+  } else if (slotType === 'title') {
+    const titleEl = document.getElementById('profile-active-title');
+    if (titleEl) { titleEl.textContent = itemKey || ''; titleEl.style.display = itemKey ? '' : 'none'; }
+  }
 }
 
 async function toggleAdminBadge(badgeId, hasIt) {

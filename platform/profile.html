@@ -583,6 +583,7 @@ async function setCosmetic(col, itemKey, el, slotType) {
   if (slotType === 'background') {
     document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
     if (itemKey) document.body.classList.add(itemKey);
+    try { localStorage.setItem('tango_bg', itemKey || ''); } catch(e) {}
   } else if (slotType === 'frame' || slotType === 'effect') {
     // Recharger le mini-avatar dans le header
     const { data: p } = await db.from('profiles').select('active_frame,active_effect,active_background,active_title').eq('id', user.id).maybeSingle();

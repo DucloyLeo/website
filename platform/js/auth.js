@@ -597,6 +597,14 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// ─── Application immédiate du fond de page depuis localStorage ───
+(function() {
+  try {
+    const bg = localStorage.getItem('tango_bg');
+    if (bg) document.body.classList.add(bg);
+  } catch(e) {}
+})();
+
 // ─── Préférences utilisateur (DB) ────────────────────
 
 let _currentUserId = null;
@@ -684,6 +692,15 @@ async function initNavAuth(opts = {}) {
     }
 
     _initRealtime(user.id);
+
+    // Sync fond de page depuis DB → localStorage + application
+    const dbBg = profile?.active_background || '';
+    const localBg = (() => { try { return localStorage.getItem('tango_bg') || ''; } catch(e) { return ''; } })();
+    if (dbBg !== localBg) {
+      document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+      if (dbBg) document.body.classList.add(dbBg);
+      try { localStorage.setItem('tango_bg', dbBg); } catch(e) {}
+    }
 
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';

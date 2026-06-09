@@ -96,14 +96,20 @@ async function init() {
 async function loadLeaderboard() {
   const { data, error } = await db
     .from('profiles')
-    .select('id, username, xp, level, coins, is_public, active_frame, active_effect, active_title, lb_excluded')
+    .select('id, username, xp, level, is_public')
     .order('xp', { ascending: false })
     .limit(50);
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
 
-  if (error || !data?.length) {
+  if (error) {
+    document.getElementById('lb-body').innerHTML =
+      `<tr><td colspan="5"><div class="lb-empty">Erreur de chargement : ${error.message}</div></td></tr>`;
+    return;
+  }
+
+  if (!data?.length) {
     document.getElementById('lb-body').innerHTML =
       `<tr><td colspan="5"><div class="lb-empty">Aucun joueur pour l'instant.</div></td></tr>`;
     return;
@@ -114,15 +120,13 @@ async function loadLeaderboard() {
   let displayRank = 0;
 
   const rows = data.map((p, i) => {
-    if (!_isAdmin && p.lb_excluded) return '';
-
     displayRank++;
     const rankLabel = displayRank <= 3
       ? `<span class="lb-rank ${rankClasses[displayRank-1]}">${rankLabels[displayRank-1]}</span>`
       : `<span class="lb-rank">${displayRank}</span>`;
 
     const isMe = p.id === _currentUserId;
-    const avatar = renderAvatarHtml(p, 32);
+    const avatar = `<div class="avatar-wrap" style="width:32px;height:32px"><div class="avatar-inner" style="width:32px;height:32px;font-size:14px">👤</div></div>`;
 
     let nameHtml;
     if (p.is_public !== false) {
@@ -130,14 +134,11 @@ async function loadLeaderboard() {
     } else {
       nameHtml = `<span class="lb-private lb-private-tooltip" data-tip="Profil privé">🔒 ${escHtml(p.username)}</span>`;
     }
-    const titleHtml = p.active_title ? `<div class="lb-title">${escHtml(p.active_title)}</div>` : '';
 
     const prog = typeof xpProgressInLevel === 'function' ? xpProgressInLevel(p.xp || 0) : { current: 0, needed: 100 };
     const pct  = Math.round(prog.current / prog.needed * 100);
 
-    const adminBtn = _isAdmin
-      ? `<button class="lb-admin-exclude ${p.lb_excluded ? 'excluded' : ''}" onclick="toggleExclude('${p.id}',${!!p.lb_excluded})" title="${p.lb_excluded ? 'Réintégrer' : 'Exclure'}">${p.lb_excluded ? '+ Réintégrer' : '✕ Exclure'}</button>`
-      : '';
+    const adminBtn = '';
 
     return `<tr style="${isMe ? 'background:rgba(143,168,212,.05)' : ''}">
       <td>${rankLabel}</td>

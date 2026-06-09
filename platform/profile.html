@@ -348,6 +348,18 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
 
   document.getElementById('badges-grid').innerHTML = badges.map(badge => {
     const earned = earnedMap[badge.id];
+    if (adminView) {
+      return `<div class="badge-item ${earned ? 'earned' : 'locked'}" style="cursor:pointer;transition:opacity .15s" title="${earned ? 'Retirer ce badge' : 'Attribuer ce badge'}"
+        onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'"
+        onclick="toggleAdminBadge('${badge.id}',${!!earned})">
+        <span class="badge-ico">${badge.icon}</span>
+        <div>
+          <div class="badge-name">${badge.name}</div>
+          <div class="badge-desc">${badge.description}${earned ? ' · ' + fmtDate(earned) : ''}</div>
+        </div>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0">${earned ? '✕' : '＋'}</span>
+      </div>`;
+    }
     return `<div class="badge-item ${earned ? 'earned' : 'locked'}">
       <span class="badge-ico">${badge.icon}</span>
       <div>
@@ -465,6 +477,20 @@ async function handleDeleteAccount() {
   if (!confirm('Dernière confirmation : tout sera effacé.')) return;
   await deleteAccount(user.id);
   window.location.href = 'index.html';
+}
+
+async function toggleAdminBadge(badgeId, hasIt) {
+  if (!_viewedUserId) return;
+  if (hasIt) {
+    if (!confirm('Retirer ce badge ?')) return;
+    const { error } = await db.from('player_badges').delete().eq('user_id', _viewedUserId).eq('badge_id', badgeId);
+    if (error) { alert('Erreur : ' + error.message); return; }
+  } else {
+    const { error } = await db.from('player_badges').insert({ user_id: _viewedUserId, badge_id: badgeId, earned_at: new Date().toISOString() });
+    if (error) { alert('Erreur : ' + error.message); return; }
+  }
+  // Recharger le profil pour refléter les changements
+  loadProfile();
 }
 
 function _updatePrivacyText(isPublic) {

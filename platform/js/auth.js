@@ -533,9 +533,6 @@ async function initNavAuth(opts = {}) {
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';
     const coins   = profile?.coins || 0;
-    const isVip   = profile?.role === 'vip';
-    const isAdmin = profile?.role === 'admin';
-    const coins   = profile?.coins || 0;
     const roleChip = isAdmin
       ? '<a href="/admin/" style="color:var(--sun);font-size:10px;border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;margin-right:4px;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'rgba(245,200,66,.1)\'" onmouseout="this.style.background=\'\'">Admin</a>'
       : isVip
@@ -549,7 +546,6 @@ async function initNavAuth(opts = {}) {
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
-      ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;

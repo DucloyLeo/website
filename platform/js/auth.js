@@ -533,15 +533,17 @@ async function initNavAuth(opts = {}) {
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';
     const coins   = profile?.coins || 0;
+    const isVip   = profile?.role === 'vip';
+    const isAdmin = profile?.role === 'admin';
+    const coins   = profile?.coins || 0;
     const roleChip = isAdmin
-      ? '<span style="color:var(--sun);font-size:10px;border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:1px 8px;margin-right:4px">Admin</span>'
+      ? '<a href="/admin/" style="color:var(--sun);font-size:10px;border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;margin-right:4px;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'rgba(245,200,66,.1)\'" onmouseout="this.style.background=\'\'">Admin</a>'
       : isVip
-        ? '<span style="color:var(--moon);font-size:10px;border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:1px 8px;margin-right:4px">✦ VIP</span>'
+        ? '<span style="color:var(--moon);font-size:10px;border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;margin-right:4px">✦ VIP</span>'
         : '';
     if (el) el.innerHTML = `
       ${roleChip}<a href="/profile.html" class="nav-auth-link" id="nav-username">${profile?.username || 'Profil'}</a>
       <span class="nav-coins" id="nav-coins-badge" title="Pièces">🪙 ${coins}</span>
-      ${isAdmin ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>

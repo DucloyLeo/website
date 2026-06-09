@@ -37,20 +37,35 @@
   .danger-zone { margin-top:3rem; border-top:1px solid rgba(220,80,60,.2); padding-top:2rem; }
   .danger-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(220,80,60,.6); margin-bottom:1rem; }
   .danger-actions { display:flex; gap:8px; flex-wrap:wrap; }
-  /* ── Skins — style radio-toggle ── */
-  .skin-list { display:flex; flex-direction:column; gap:8px; max-width:400px; }
-  .skin-row {
-    display:flex; align-items:center; justify-content:space-between;
+  .skin-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .skin-opt {
+    display:flex; flex-direction:column; align-items:center; gap:8px;
     background:var(--surface); border:1px solid var(--border);
-    border-radius:10px; padding:.65rem 1rem;
-    transition:border-color .15s;
+    border-radius:12px; padding:.9rem 1.1rem; cursor:pointer;
+    transition:border-color .15s, box-shadow .15s; min-width:118px;
   }
-  .skin-row.active { border-color:var(--moon); }
-  .skin-row.skin-locked { opacity:.45; }
-  .skin-row-info { display:flex; flex-direction:column; gap:2px; }
-  .skin-row-label { font-size:13px; color:var(--text); font-weight:500; }
-  .skin-row-desc  { font-size:10px; color:var(--muted); }
-  .skin-toggle-wrap { flex-shrink:0; }
+  .skin-opt:hover { border-color:var(--border2); }
+  .skin-opt.active { border-color:var(--moon); box-shadow:0 0 0 1px var(--moon); }
+  .skin-preview { display:flex; gap:4px; }
+  .skin-preview .ci {
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px; font-size:1.05rem;
+    border-radius:7px; border:1px solid var(--border2); background:var(--surface2);
+  }
+  .skin-label { font-size:12px; color:var(--text); font-weight:500; }
+  .skin-desc  { font-size:10px; color:var(--muted); }
+  /* Éditeur économie (vue admin) */
+  .eco-editor { background:var(--surface); border:1px solid rgba(245,200,66,.2); border-radius:10px; padding:1rem; margin-top:1rem; display:flex; flex-direction:column; gap:10px; max-width:380px; }
+  .eco-editor-title { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--sun); margin-bottom:2px; }
+  .eco-editor-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .eco-editor-field { display:flex; flex-direction:column; gap:3px; flex:1; min-width:80px; }
+  .eco-editor-label { font-size:10px; color:var(--muted); }
+  .eco-editor-input { background:var(--surface2); border:1px solid var(--border2); border-radius:7px; padding:5px 10px; font-size:13px; font-family:'DM Mono',monospace; color:var(--text); width:100%; }
+  .eco-editor-input:focus { outline:none; border-color:var(--moon); }
+  /* Confidentialité */
+  .privacy-section { margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .privacy-info { font-size:12px; color:var(--muted); line-height:1.6; }
+  .privacy-info strong { color:var(--text); font-weight:500; }
   .gh-row { display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border); }
   .gh-row:last-child { border-bottom:none; }
   .gh-date { flex:1; font-size:12px; color:var(--muted); }
@@ -128,10 +143,51 @@
       <div id="game-history-wrap"></div>
     </div>
 
+    <!-- Éditeur économie (vue admin uniquement) -->
+    <div class="diff-section" id="eco-editor-section" style="display:none">
+      <p class="diff-title">Économie du joueur</p>
+      <div class="eco-editor">
+        <p class="eco-editor-title">Modifier les valeurs</p>
+        <div class="eco-editor-row">
+          <div class="eco-editor-field">
+            <label class="eco-editor-label">Niveau</label>
+            <input class="eco-editor-input" type="number" min="1" id="eco-level" value="1">
+          </div>
+          <div class="eco-editor-field">
+            <label class="eco-editor-label">XP total</label>
+            <input class="eco-editor-input" type="number" min="0" id="eco-xp" value="0">
+          </div>
+          <div class="eco-editor-field">
+            <label class="eco-editor-label">Pièces</label>
+            <input class="eco-editor-input" type="number" min="0" id="eco-coins" value="0">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn sun" onclick="saveEconomy()" style="font-size:12px">Enregistrer</button>
+          <span id="eco-status" style="font-size:12px"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Apparence -->
     <div class="diff-section" id="skin-section">
       <p class="diff-title">Apparence des symboles</p>
-      <div class="skin-list" id="skin-options"></div>
+      <div class="skin-grid" id="skin-options"></div>
+    </div>
+
+    <!-- Confidentialité (profil propre) -->
+    <div class="diff-section" id="privacy-section" style="display:none">
+      <p class="diff-title">Confidentialité</p>
+      <div class="privacy-section">
+        <div class="privacy-info">
+          <strong id="privacy-status-text">Profil public</strong><br>
+          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-public" onchange="onPrivacyChange()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
     </div>
 
     <!-- Zone RGPD -->
@@ -168,6 +224,7 @@
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
 let _ghUserId = null, _ghPage = 0, _ghTotal = 0;
+let _viewedUserId = null;
 const GH_PER_PAGE = 10;
 
 const GH_DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
@@ -225,20 +282,16 @@ async function renderSkinOptions() {
     const s = SKINS[k];
     const unlocked = results[i];
     const locked = !unlocked;
-    const desc = locked && unlockInfo[k] ? '🔒 Débloqué au niveau ' + unlockInfo[k] : s.desc;
-    const active = k === cur && !locked;
-    return `<div class="skin-row ${active ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
-      ${!locked ? 'onclick="chooseSkin(\'' + k + '\')" style="cursor:pointer"' : ''}>
-      <div class="skin-row-info">
-        <span class="skin-row-label">${s.label}</span>
-        <span class="skin-row-desc">${desc}</span>
-      </div>
-      <div class="skin-toggle-wrap">
-        <span class="theme-toggle-track" style="pointer-events:none;width:44px;height:24px">
-          <span class="theme-toggle-thumb" style="transform:translateX(${active ? '20px' : '0'});width:16px;height:16px;top:3px;left:3px"></span>
-        </span>
-      </div>
-    </div>`;
+    const desc = locked && unlockInfo[k] ? '🔒 Niveau ' + unlockInfo[k] : s.desc;
+    return `<button class="skin-opt ${k === cur ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
+      onclick="${locked ? '' : 'chooseSkin(\'' + k + '\')'}"
+      ${locked ? 'title="Débloqué au niveau ' + (unlockInfo[k] || '') + '" tabindex="-1"' : ''}>
+      <span class="skin-preview">
+        <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
+      </span>
+      <span class="skin-label">${s.label}</span>
+      <span class="skin-desc">${desc}</span>
+    </button>`;
   }).join('');
 }
 
@@ -254,8 +307,8 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
   document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
 
-  // Bloc niveau / XP / pièces (profil propre uniquement)
-  if (!adminView && typeof levelFromXp === 'function') {
+  // Bloc niveau / XP / pièces (toujours affiché sauf vue publique)
+  if (typeof levelFromXp === 'function') {
     const totalXp = profile.xp || 0;
     const level   = profile.level || 1;
     const coins   = profile.coins || 0;
@@ -305,14 +358,25 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   }).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
 
   if (adminView) {
-    document.getElementById('skin-section').style.display       = 'none';
-    document.getElementById('danger-zone').style.display        = 'none';
-    document.getElementById('admin-banner').style.display       = 'block';
-    document.getElementById('admin-banner-name').textContent    = profile.username;
+    document.getElementById('skin-section').style.display         = 'none';
+    document.getElementById('danger-zone').style.display          = 'none';
+    document.getElementById('privacy-section').style.display      = 'none';
+    document.getElementById('admin-banner').style.display         = 'block';
+    document.getElementById('admin-banner-name').textContent      = profile.username;
     document.getElementById('game-history-section').style.display = '';
+    document.getElementById('eco-editor-section').style.display   = '';
+    document.getElementById('eco-level').value  = profile.level  || 1;
+    document.getElementById('eco-xp').value     = profile.xp     || 0;
+    document.getElementById('eco-coins').value  = profile.coins  || 0;
     document.title = 'Profil de ' + profile.username + ' — Tangoléo';
     loadGameHistory(profile.id, 0);
   } else {
+    // Profil propre : confidentialité + skins
+    document.getElementById('privacy-section').style.display = '';
+    const isPublic = profile.is_public !== false;
+    const cb = document.getElementById('pref-public');
+    if (cb) cb.checked = isPublic;
+    _updatePrivacyText(isPublic);
     renderSkinOptions();
   }
 
@@ -325,14 +389,26 @@ async function loadProfile() {
   const targetUsername = new URLSearchParams(location.search).get('user');
 
   if (targetUsername) {
-    const ok = await requireAdmin('/index.html');
-    if (!ok) return;
+    // Visite d'un profil tiers
+    const currentUser = await getCurrentUser();
+    const adminOk = currentUser ? await isAdmin() : false;
 
     const { data: profileData } = await db.from('profiles').select('*').eq('username', targetUsername).maybeSingle();
     if (!profileData) {
       document.getElementById('loading').textContent = 'Utilisateur introuvable.';
       return;
     }
+
+    // Profil privé et visiteur non admin → page privée
+    if (!adminOk && profileData.is_public === false) {
+      document.getElementById('loading').innerHTML =
+        '<div style="text-align:center;padding:3rem 0">' +
+        '<div style="font-size:2rem;margin-bottom:.75rem">🔒</div>' +
+        '<div style="font-size:14px;color:var(--muted)">Ce profil est privé.</div></div>';
+      return;
+    }
+
+    _viewedUserId = profileData.id;
     const [statsRes, badgesRes, earnedRes] = await Promise.all([
       db.from('player_stats').select('*').eq('user_id', profileData.id),
       db.from('badges').select('*').order('sort_order'),
@@ -343,7 +419,7 @@ async function loadProfile() {
       statsRes.data || [],
       badgesRes.data || [],
       Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
-      true
+      adminOk
     );
   } else {
     const user = await requireAuth();
@@ -389,6 +465,36 @@ async function handleDeleteAccount() {
   if (!confirm('Dernière confirmation : tout sera effacé.')) return;
   await deleteAccount(user.id);
   window.location.href = 'index.html';
+}
+
+function _updatePrivacyText(isPublic) {
+  const lbl = document.getElementById('privacy-label');
+  if (lbl) lbl.textContent = isPublic ? 'Profil public' : 'Profil privé';
+}
+
+async function onPrivacyChange(cb) {
+  const user = await getCurrentUser();
+  if (!user) return;
+  const isPublic = cb.checked;
+  _updatePrivacyText(isPublic);
+  const { error } = await db.from('profiles').update({ is_public: isPublic }).eq('id', user.id);
+  if (error) console.error('Privacy update error:', error);
+}
+
+async function saveEconomy() {
+  if (!_viewedUserId) return;
+  const level  = parseInt(document.getElementById('eco-level').value)  || 1;
+  const xp     = parseInt(document.getElementById('eco-xp').value)     || 0;
+  const coins  = parseInt(document.getElementById('eco-coins').value)  || 0;
+  const btn = document.getElementById('eco-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  const { error } = await db.from('profiles').update({ level, xp, coins }).eq('id', _viewedUserId);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = error ? 'Erreur ✗' : 'Enregistré ✓';
+    setTimeout(() => { btn.textContent = 'Enregistrer'; }, 2000);
+  }
+  if (error) console.error('Economy update error:', error);
 }
 
 loadProfile();

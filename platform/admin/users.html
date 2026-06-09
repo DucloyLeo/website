@@ -31,6 +31,12 @@
   .diff-block { margin-bottom:.9rem; }
   .diff-block-title { font-size:11px; letter-spacing:.06em; margin-bottom:.4rem; }
   .diff-block:last-child { margin-bottom:0; }
+  .eco-editor { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+  .eco-field { display:flex; flex-direction:column; gap:4px; flex:1; min-width:80px; }
+  .eco-field label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .eco-field input { width:100%; padding:5px 8px; font-size:13px; background:var(--surface2); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; }
+  .eco-save-btn { padding:6px 16px; font-size:12px; border-radius:6px; border:1px solid rgba(143,168,212,.4); background:none; color:var(--moon); cursor:pointer; white-space:nowrap; transition:background .15s; }
+  .eco-save-btn:hover { background:rgba(143,168,212,.1); }
 </style>
 </head>
 <body>
@@ -264,6 +270,15 @@ async function openUserModal(userId) {
       <div id="modal-game-history"><p style="font-size:12px;color:var(--muted)">Chargement…</p></div>
     </div>
     <div>
+      <p class="detail-section-title" style="margin-top:.75rem">Économie</p>
+      <div class="eco-editor">
+        <div class="eco-field"><label>Niveau</label><input type="number" id="modal-eco-level" min="1" value="${u.level||1}"></div>
+        <div class="eco-field"><label>XP total</label><input type="number" id="modal-eco-xp" min="0" value="${u.xp||0}"></div>
+        <div class="eco-field"><label>Pièces</label><input type="number" id="modal-eco-coins" min="0" value="${u.coins||0}"></div>
+        <button class="eco-save-btn" id="modal-eco-save-btn" onclick="saveModalEconomy()">Enregistrer</button>
+      </div>
+    </div>
+    <div>
       <p class="detail-section-title" style="margin-top:.75rem">Badges — cliquer pour attribuer / retirer</p>
       <div class="badge-list">${badgesHtml || '<span style="font-size:12px;color:var(--muted)">Aucun badge défini.</span>'}</div>
     </div>
@@ -320,6 +335,25 @@ async function loadModalGameHistory(userId, page) {
 async function modalGhPage(d) {
   if (!currentModalUserId) return;
   await loadModalGameHistory(currentModalUserId, gameHistoryPage + d);
+}
+
+async function saveModalEconomy() {
+  if (!currentModalUserId) return;
+  const level  = parseInt(document.getElementById('modal-eco-level').value)  || 1;
+  const xp     = parseInt(document.getElementById('modal-eco-xp').value)     || 0;
+  const coins  = parseInt(document.getElementById('modal-eco-coins').value)  || 0;
+  const btn = document.getElementById('modal-eco-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  const { error } = await db.from('profiles').update({ level, xp, coins }).eq('id', currentModalUserId);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = error ? 'Erreur ✗' : 'Enregistré ✓';
+    setTimeout(() => { btn.textContent = 'Enregistrer'; }, 2000);
+  }
+  if (!error) {
+    const u = allUsers.find(u => u.id === currentModalUserId);
+    if (u) { u.level = level; u.xp = xp; u.coins = coins; }
+  }
 }
 
 function closeModal() {

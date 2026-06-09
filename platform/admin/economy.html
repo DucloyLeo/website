@@ -316,8 +316,8 @@ async function loadShopItems() {
       <td><code style="font-size:11px">${it.item_key}</code></td>
       <td style="color:var(--sun)">${it.cost} 🪙</td>
       <td>${it.unlock_level !== null ? 'Niv. ' + it.unlock_level : '—'}</td>
-      <td>
-        <label class="toggle item-active-toggle" title="Activer/désactiver">
+      <td style="text-align:center">
+        <label class="toggle item-active-toggle" title="${it.is_active ? 'Actif — cliquer pour désactiver' : 'Inactif — cliquer pour activer'}" style="display:inline-flex">
           <input type="checkbox" ${it.is_active ? 'checked' : ''} onchange="toggleItem('${it.id}',this.checked)">
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>

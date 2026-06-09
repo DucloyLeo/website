@@ -83,14 +83,19 @@ let _isAdmin = false;
 let _currentUserId = null;
 
 async function init() {
-  const user = await initNavAuth();
-  _currentUserId = user?.id || null;
-  if (_currentUserId) {
-    const profile = await getCurrentProfile();
-    _isAdmin = profile?.role === 'admin';
+  try {
+    const user = await initNavAuth();
+    _currentUserId = user?.id || null;
+    if (_currentUserId) {
+      const profile = await getCurrentProfile();
+      _isAdmin = profile?.role === 'admin';
+    }
+    if (_isAdmin) document.getElementById('admin-bar').style.display = '';
+    await loadLeaderboard();
+  } catch(e) {
+    document.getElementById('loading').textContent = 'Erreur : ' + e.message;
+    console.error('[leaderboard init error]', e);
   }
-  if (_isAdmin) document.getElementById('admin-bar').style.display = '';
-  await loadLeaderboard();
 }
 
 async function loadLeaderboard() {

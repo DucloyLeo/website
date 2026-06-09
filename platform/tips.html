@@ -168,7 +168,7 @@
         <span class="rule-ico">🔗</span>
         <div class="rule-text">
           <strong>Contraintes = et ×</strong><br>
-          Un signe entre deux cases indique leur relation : <strong>=</strong> signifie qu'elles doivent être identiques, <strong>×</strong> qu'elles doivent être différentes.
+          Une contrainte indique une relation entre deux case : <strong>=</strong> signifie qu'elles doivent être identiques, <strong>×</strong> qu'elles doivent être différentes.
         </div>
       </div>
     </div>
@@ -198,15 +198,15 @@
     <!-- Anti-triplet -->
     <div class="tip-card">
       <div class="tip-title">Anti-triplet <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">Deux symboles identiques côte à côte forcent les cases adjacentes à l'opposé. De même, si deux cases identiques encadrent une case vide (sandwich), cette case est forcée à l'opposé.</div>
+      <div class="tip-body">Deux symboles identiques côte à côte forcent les cases voisines à prendre le symbole opposé. De même, si deux cases identiques encadrent une case vide (sandwich), cette case est forcée à l'opposé.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">🌙</div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>

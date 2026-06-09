@@ -533,16 +533,20 @@ async function initNavAuth(opts = {}) {
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';
     const coins   = profile?.coins || 0;
+    const roleChip = isAdmin
+      ? '<span style="color:var(--sun);font-size:10px;border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:1px 8px;margin-right:4px">Admin</span>'
+      : isVip
+        ? '<span style="color:var(--moon);font-size:10px;border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:1px 8px;margin-right:4px">✦ VIP</span>'
+        : '';
     if (el) el.innerHTML = `
-      <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}${isVip ? ' <span style="color:var(--moon);font-size:10px">✦ VIP</span>' : ''}</a>
-      <span class="nav-coins" title="Pièces">🪙 ${coins}</span>
+      ${roleChip}<a href="/profile.html" class="nav-auth-link" id="nav-username">${profile?.username || 'Profil'}</a>
+      <span class="nav-coins" id="nav-coins-badge" title="Pièces">🪙 ${coins}</span>
       ${isAdmin ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
-      <span class="nav-menu-item" style="pointer-events:none;color:var(--sun)">🪙 ${coins} pièces · Niv. ${profile?.level || 1}</span>
       ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
@@ -552,6 +556,12 @@ async function initNavAuth(opts = {}) {
   }
 
   return user;
+}
+
+// Met à jour la pastille de pièces dans la nav sans recharger toute la nav
+function updateNavCoins(newTotal) {
+  const badge = document.getElementById('nav-coins-badge');
+  if (badge) badge.textContent = '🪙 ' + newTotal;
 }
 
 // ─── Hamburger ───────────────────────────────────────

@@ -535,6 +535,31 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .win-login-prompt a { color: var(--moon); text-decoration: none; }
 .win-login-prompt a:hover { text-decoration: underline; }
 
+/* Effet pop sur les chips de récompense */
+@keyframes rewardPop {
+  0%   { transform: scale(.7);  opacity: 0; }
+  55%  { transform: scale(1.18); opacity: 1; }
+  75%  { transform: scale(.95); }
+  100% { transform: scale(1); }
+}
+.win-reward-chip.pop {
+  animation: rewardPop .45s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+/* Particules texte flottantes */
+@keyframes floatUp {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-36px) scale(.7); opacity: 0; }
+}
+.reward-float {
+  position: absolute;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: floatUp .9s ease forwards;
+}
+
 /* ═══ Profil — niveau & XP ══════════════════════════ */
 .level-block {
   display: flex;

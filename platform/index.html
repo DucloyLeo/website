@@ -671,15 +671,38 @@ async function checkWin(){
     try{
       const result=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,hintCount,ctrlHUsed);
       _showWinRewards(result);
+      // Mettre à jour la pastille de pièces dans la nav
+      if(typeof updateNavCoins==='function'){
+        const navCoins=document.getElementById('nav-coins-badge');
+        if(navCoins){
+          const cur=parseInt(navCoins.textContent.replace(/\D/g,''))||0;
+          updateNavCoins(cur+result.coins_earned);
+        }
+      }
     }catch(e){console.error('saveGameResult:',e);}
   }
+}
+
+function _popChip(el,text){
+  el.textContent=text;
+  el.classList.remove('pop');
+  void el.offsetWidth; // force reflow
+  el.classList.add('pop');
+  // Particule flottante
+  const rect=el.getBoundingClientRect();
+  const p=document.createElement('span');
+  p.className='reward-float';
+  p.textContent=text;
+  p.style.cssText='left:'+(rect.left+rect.width/2)+'px;top:'+rect.top+'px;color:'+getComputedStyle(el).color+';position:fixed;z-index:9999';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),950);
 }
 
 function _showWinRewards({xp_earned,coins_earned,new_level,old_level,leveled_up,xp_in_level,xp_to_next}){
   const sec=document.getElementById('win-rewards-section');
   sec.style.display='';
-  document.getElementById('win-xp-chip').textContent='+'+xp_earned+' XP';
-  document.getElementById('win-coins-chip').textContent='+'+coins_earned+' 🪙';
+  _popChip(document.getElementById('win-xp-chip'),'+'+xp_earned+' XP');
+  _popChip(document.getElementById('win-coins-chip'),'+'+coins_earned+' 🪙');
   document.getElementById('win-level-num').textContent=new_level;
   document.getElementById('win-level-xp-text').textContent=xp_in_level+' / '+xp_to_next+' XP';
 

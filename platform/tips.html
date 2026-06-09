@@ -308,7 +308,7 @@
     <div class="tip-card">
       <div class="tip-title">Balance + contrainte × <span class="tip-tag hard">Difficile</span></div>
       <div class="tip-body">
-        Si une ligne (ou colonne) a exactement 3 cases vides, et que deux d'entre elles sont adjacentes et liées par <strong>×</strong>, ces deux cases apportent forcément <strong>1 ☀ et 1 🌙</strong>. La troisième case vide est alors déterminée par l'équilibre.
+        Si une ligne (ou colonne) a exactement <strong>3 cases vides</strong> dont deux adjacentes liées par <strong>×</strong>, ces deux cases apportent forcément <strong>1 ☀ et 1 🌙</strong>. La troisième case vide est alors déterminée par l'équilibre.
       </div>
       <div class="mini-demo">
         <div class="mini-row">
@@ -321,8 +321,38 @@
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-body" style="margin-top:.6rem;font-size:11px">
+      <div class="tip-body" style="margin-top:.4rem;font-size:11px">
         2 ☀ et 1 🌙 connus → il manque 1 ☀ et 2 🌙. La paire × apporte 1 ☀ + 1 🌙, donc la case libre = 🌙.
+      </div>
+      <div class="tip-body" style="margin-top:.9rem">
+        Variante à <strong>4 cases vides</strong> : si déjà 2 symboles identiques sont posés et qu'une contrainte <strong>×</strong> lie deux cases vides adjacentes, les 2 autres cases vides sont toutes deux forcées vers le symbole opposé.
+      </div>
+      <div class="mini-spacer"></div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr x">×</div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="☀">?</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
+      </div>
+      <div class="mini-spacer"></div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr x">×</div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
+          <div class="mc">🌙</div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
+      </div>
+      <div class="tip-body" style="margin-top:.4rem;font-size:11px">
+        2 🌙 connus → il manque 3 ☀ et 1 🌙. La paire × en apporte 1+1, donc les 2 cases libres = ☀.
       </div>
     </div>
 

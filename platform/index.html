@@ -648,8 +648,23 @@ async function checkWin(){
 
   document.getElementById('modal-time').textContent=fmt(timerSec);
   document.getElementById('win-sub').textContent='Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
-  document.getElementById('win-rewards-section').style.display='none';
-  document.getElementById('win-login-prompt').style.display='none';
+
+  // Afficher immédiatement la section XP avec état squelette
+  const rewardsSec=document.getElementById('win-rewards-section');
+  const loginPrompt=document.getElementById('win-login-prompt');
+  rewardsSec.style.display='none';
+  loginPrompt.style.display='none';
+  if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
+    document.getElementById('win-xp-chip').textContent='…';
+    document.getElementById('win-coins-chip').textContent='…';
+    document.getElementById('win-level-xp-text').textContent='…';
+    document.getElementById('win-xp-fill').style.cssText='width:0%;transition:none';
+    document.getElementById('win-levelup-banner').style.display='none';
+    rewardsSec.style.display='';
+  } else if(!currentUserId){
+    loginPrompt.style.display='';
+  }
+
   document.getElementById('win-modal').classList.add('show');
 
   if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
@@ -657,8 +672,6 @@ async function checkWin(){
       const result=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,hintCount,ctrlHUsed);
       _showWinRewards(result);
     }catch(e){console.error('saveGameResult:',e);}
-  } else if(!currentUserId){
-    document.getElementById('win-login-prompt').style.display='';
   }
 }
 

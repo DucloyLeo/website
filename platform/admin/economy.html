@@ -104,6 +104,48 @@
 
       <hr class="sep">
 
+      <!-- ── Courbe XP ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Courbe de progression XP</p>
+
+        <!-- Paramètres -->
+        <div class="xp-form" style="max-width:480px;margin-bottom:1.4rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="form-row">
+              <label class="form-label">Base</label>
+              <input class="form-input" id="curve-base" type="number" min="1" value="300" oninput="updateCurve()">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Multiplicateur</label>
+              <input class="form-input" id="curve-mult" type="number" step="0.01" min="1" value="1.13" oninput="updateCurve()">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Plafond</label>
+              <input class="form-input" id="curve-cap" type="number" min="1" value="3000" oninput="updateCurve()">
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:.6rem;line-height:1.7">
+            Formule appliquée : <code style="color:var(--moon)">min(cap, floor(base × mult^(n−1)))</code><br>
+            Modifiez <code>auth.js → xpToNextLevel()</code> pour appliquer ces valeurs.
+          </p>
+        </div>
+
+        <!-- Simulateur -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.4rem;flex-wrap:wrap">
+          <span class="form-label" style="white-space:nowrap">Simuler le niveau</span>
+          <input class="form-input" id="sim-level" type="number" min="1" max="999" value="10" style="max-width:80px" oninput="updateSimulator()">
+          <div id="sim-result" style="font-size:12px;font-family:'DM Mono',monospace;line-height:1.7"></div>
+        </div>
+
+        <!-- Graphique + tableau côte à côte -->
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+          <div id="curve-chart" style="flex:1;min-width:260px"></div>
+          <div id="curve-table" style="flex:0 0 220px;overflow-y:auto;max-height:340px;border:1px solid var(--border);border-radius:10px"></div>
+        </div>
+      </div>
+
+      <hr class="sep">
+
       <!-- ── Streak ── -->
       <div class="eco-section">
         <p class="eco-section-title">Streak journalier</p>
@@ -232,6 +274,7 @@ async function init() {
   if (!ok) return;
   await initNavAuth();
   await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions()]);
+  updateCurve();
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
 }
@@ -382,6 +425,87 @@ function clearTxFilters() {
 }
 
 function txPage(d) { _txPage += d; renderTransactions(); }
+
+// ── Courbe XP ──
+
+function curveXpToNext(n, base, mult, cap) {
+  return Math.min(cap, Math.floor(base * Math.pow(mult, n - 1)));
+}
+
+function updateCurve() {
+  const base = parseFloat(document.getElementById('curve-base').value) || 300;
+  const mult = parseFloat(document.getElementById('curve-mult').value) || 1.13;
+  const cap  = parseInt(document.getElementById('curve-cap').value)   || 3000;
+  const LEVELS = 20;
+
+  const perLevel = Array.from({length: LEVELS}, (_, i) => curveXpToNext(i + 1, base, mult, cap));
+  const cumul    = [0];
+  for (let i = 0; i < LEVELS; i++) cumul.push(cumul[i] + perLevel[i]);
+
+  // Chart SVG
+  const W = 460, H = 220, PL = 48, PR = 12, PT = 12, PB = 32;
+  const iW = W - PL - PR, iH = H - PT - PB;
+  const maxVal = Math.max(...perLevel);
+  const barW = iW / LEVELS - 3;
+  const bars = perLevel.map((v, i) => {
+    const bH = Math.round(v / maxVal * iH);
+    const x = PL + i * (iW / LEVELS) + 1;
+    const y = PT + iH - bH;
+    const atCap = v >= cap;
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${bH}"
+      fill="${atCap ? 'rgba(143,168,212,.55)' : 'rgba(143,168,212,.35)'}"
+      rx="3" stroke="${atCap ? 'rgba(143,168,212,.8)' : 'rgba(143,168,212,.5)'}" stroke-width="1"/>
+      <text x="${x + barW/2}" y="${H - PB + 14}" text-anchor="middle"
+        font-size="9" fill="rgba(240,237,230,.4)">${i+1}</text>`;
+  }).join('');
+
+  // Y axis ticks
+  const ticks = [0, Math.round(maxVal/2), maxVal].map(v => {
+    const y = PT + iH - Math.round(v / maxVal * iH);
+    return `<line x1="${PL-4}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,.06)"/>
+      <text x="${PL-6}" y="${y+4}" text-anchor="end" font-size="9" fill="rgba(240,237,230,.4)">${v}</text>`;
+  }).join('');
+
+  document.getElementById('curve-chart').innerHTML = `
+    <p style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">XP requis par niveau (1→20)</p>
+    <svg width="100%" viewBox="0 0 ${W} ${H}" style="max-width:${W}px;display:block">${ticks}${bars}</svg>`;
+
+  // Table
+  const rows = perLevel.map((v, i) =>
+    `<tr style="background:${v>=cap?'rgba(143,168,212,.04)':''}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="color:${v>=cap?'var(--moon)':'var(--text)'}">${v.toLocaleString('fr-FR')}${v>=cap?' ⌀':''}</td>
+      <td style="color:var(--muted)">${cumul[i+1].toLocaleString('fr-FR')}</td>
+    </tr>`).join('');
+
+  document.getElementById('curve-table').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace">
+      <thead><tr>
+        <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">Niv.</th>
+        <th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">XP / niv.</th>
+        <th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">XP total</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  updateSimulator();
+}
+
+function updateSimulator() {
+  const base  = parseFloat(document.getElementById('curve-base').value)  || 300;
+  const mult  = parseFloat(document.getElementById('curve-mult').value)  || 1.13;
+  const cap   = parseInt(document.getElementById('curve-cap').value)     || 3000;
+  const level = parseInt(document.getElementById('sim-level').value)     || 1;
+
+  const perLev = curveXpToNext(level, base, mult, cap);
+  let cumul = 0;
+  for (let i = 1; i < level; i++) cumul += curveXpToNext(i, base, mult, cap);
+
+  document.getElementById('sim-result').innerHTML =
+    `<span style="color:var(--text)">Niveau ${level}</span> &nbsp;·&nbsp; ` +
+    `<span style="color:var(--moon)">${perLev.toLocaleString('fr-FR')} XP</span> pour passer au suivant &nbsp;·&nbsp; ` +
+    `<span style="color:var(--muted)">${cumul.toLocaleString('fr-FR')} XP cumulés pour atteindre ce niveau</span>`;
+}
 
 // ── XP Params ──
 

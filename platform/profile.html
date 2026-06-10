@@ -143,26 +143,8 @@
       </div>
     </div>
 
-    <!-- Confidentialité (profil propre, toujours visible comme la barre XP) -->
-    <div id="privacy-section" style="display:none">
-      <div class="privacy-section">
-        <div class="privacy-info">
-          <strong id="privacy-status-text">Profil public</strong><br>
-          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
-        </div>
-        <label class="toggle" onclick="event.stopPropagation()">
-          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Navigation par onglets (profil propre uniquement) -->
-    <div class="profile-tabs" id="profile-tabs" style="display:none">
-      <button class="profile-tab active" onclick="showProfileTab('stats')" id="tab-stats">Statistiques</button>
-      <button class="profile-tab" onclick="showProfileTab('badges')" id="tab-badges">Badges</button>
-      <button class="profile-tab" onclick="showProfileTab('cosmetiques')" id="tab-cosmetiques">Cosmétiques</button>
-    </div>
+    <!-- Navigation par onglets (remplie dynamiquement) -->
+    <div class="profile-tabs" id="profile-tabs" style="display:none"></div>
 
     <!-- Panel : Statistiques -->
     <div id="panel-stats">
@@ -174,13 +156,39 @@
         <p class="diff-title">Par difficulté</p>
         <div id="diff-stats"></div>
       </div>
-      <!-- Dernières parties (vue admin) -->
-      <div class="diff-section" id="game-history-section" style="display:none">
+    </div>
+
+    <!-- Panel : Badges -->
+    <div id="panel-badges" style="display:none">
+      <div class="diff-section">
+        <p class="diff-title">Badges</p>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
+    </div>
+
+    <!-- Panel : Cosmétiques (profil propre) -->
+    <div id="panel-cosmetiques" style="display:none">
+      <div class="diff-section" id="skin-section">
+        <p class="diff-title">Apparence des symboles</p>
+        <div class="skin-grid" id="skin-options"></div>
+      </div>
+      <div class="diff-section" id="cosmetics-section" style="display:none">
+        <p class="diff-title">Cosmétiques actifs</p>
+        <div class="cosmetics-grid" id="cosmetics-grid"></div>
+      </div>
+    </div>
+
+    <!-- Panel : Historique (admin) -->
+    <div id="panel-historique" style="display:none">
+      <div class="diff-section">
         <p class="diff-title">Dernières parties</p>
         <div id="game-history-wrap"></div>
       </div>
-      <!-- Éditeur économie (vue admin) -->
-      <div class="diff-section" id="eco-editor-section" style="display:none">
+    </div>
+
+    <!-- Panel : Économie (admin) -->
+    <div id="panel-economie" style="display:none">
+      <div class="diff-section">
         <p class="diff-title">Économie du joueur</p>
         <div class="eco-editor">
           <p class="eco-editor-title">Modifier les valeurs</p>
@@ -206,23 +214,17 @@
       </div>
     </div>
 
-    <!-- Panel : Badges -->
-    <div id="panel-badges" style="display:none">
-      <div class="diff-section">
-        <p class="diff-title">Badges</p>
-        <div class="badges-grid" id="badges-grid"></div>
-      </div>
-    </div>
-
-    <!-- Panel : Cosmétiques -->
-    <div id="panel-cosmetiques" style="display:none">
-      <div class="diff-section" id="skin-section">
-        <p class="diff-title">Apparence des symboles</p>
-        <div class="skin-grid" id="skin-options"></div>
-      </div>
-      <div class="diff-section" id="cosmetics-section" style="display:none">
-        <p class="diff-title">Cosmétiques actifs</p>
-        <div class="cosmetics-grid" id="cosmetics-grid"></div>
+    <!-- Confidentialité (profil propre, juste au-dessus de "Mes données") -->
+    <div id="privacy-section" style="display:none">
+      <div class="privacy-section">
+        <div class="privacy-info">
+          <strong id="privacy-status-text">Profil public</strong><br>
+          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
       </div>
     </div>
 
@@ -309,11 +311,24 @@ async function loadGameHistory(userId, page) {
 }
 async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }
 
+let _profilePanels = [];
 function showProfileTab(name) {
-  ['stats','badges','cosmetiques'].forEach(t => {
+  _profilePanels.forEach(t => {
     document.getElementById('panel-' + t).style.display = t === name ? '' : 'none';
     const btn = document.getElementById('tab-' + t);
-    btn.classList.toggle('active', t === name);
+    if (btn) btn.classList.toggle('active', t === name);
+  });
+}
+
+function _buildTabs(tabs) {
+  _profilePanels = tabs.map(t => t.id);
+  document.getElementById('profile-tabs').innerHTML = tabs.map((t, i) =>
+    `<button class="profile-tab${i === 0 ? ' active' : ''}" onclick="showProfileTab('${t.id}')" id="tab-${t.id}">${t.label}</button>`
+  ).join('');
+  document.getElementById('profile-tabs').style.display = '';
+  // Show first panel, hide others
+  _profilePanels.forEach((id, i) => {
+    document.getElementById('panel-' + id).style.display = i === 0 ? '' : 'none';
   });
 }
 
@@ -432,36 +447,41 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView, isOwnPr
   }).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
 
   if (adminView) {
-    // Vue admin : tout linéaire, pas de tabs
-    document.getElementById('panel-badges').style.display         = '';
-    document.getElementById('panel-cosmetiques').style.display    = 'none';
-    document.getElementById('danger-zone').style.display          = 'none';
-    document.getElementById('admin-banner').style.display         = 'block';
-    document.getElementById('admin-banner-name').textContent      = profile.username;
-    document.getElementById('game-history-section').style.display = '';
-    document.getElementById('eco-editor-section').style.display   = '';
-    document.getElementById('eco-level').value  = profile.level  || 1;
-    document.getElementById('eco-xp').value     = profile.xp     || 0;
-    document.getElementById('eco-coins').value  = profile.coins  || 0;
+    document.getElementById('danger-zone').style.display    = 'none';
+    document.getElementById('privacy-section').style.display = 'none';
+    document.getElementById('admin-banner').style.display   = 'block';
+    document.getElementById('admin-banner-name').textContent = profile.username;
+    document.getElementById('eco-level').value = profile.level  || 1;
+    document.getElementById('eco-xp').value    = profile.xp     || 0;
+    document.getElementById('eco-coins').value = profile.coins  || 0;
     document.title = 'Profil de ' + profile.username + ' — Tangoléo';
+    _buildTabs([
+      { id: 'stats',      label: 'Statistiques' },
+      { id: 'badges',     label: 'Badges' },
+      { id: 'historique', label: 'Historique' },
+      { id: 'economie',   label: 'Économie' },
+    ]);
     loadGameHistory(profile.id, 0);
   } else if (isOwnProfile) {
-    // Profil propre : tabs + cosmétiques + confidentialité
-    document.getElementById('profile-tabs').style.display = '';
-    document.getElementById('panel-badges').style.display = 'none';
-    document.getElementById('panel-cosmetiques').style.display = 'none';
     document.getElementById('privacy-section').style.display = '';
     const isPublic = profile.is_public !== false;
     const cb = document.getElementById('pref-public');
     if (cb) cb.checked = isPublic;
     _updatePrivacyText(isPublic);
+    _buildTabs([
+      { id: 'stats',       label: 'Statistiques' },
+      { id: 'badges',      label: 'Badges' },
+      { id: 'cosmetiques', label: 'Cosmétiques' },
+    ]);
     renderSkinOptions();
     renderCosmeticsSection(profile);
   } else {
-    // Profil public (visiteur) : stats + badges, pas de cosmétiques
-    document.getElementById('panel-badges').style.display = '';
-    document.getElementById('panel-cosmetiques').style.display = 'none';
-    document.getElementById('danger-zone').style.display = 'none';
+    document.getElementById('privacy-section').style.display = 'none';
+    document.getElementById('danger-zone').style.display     = 'none';
+    _buildTabs([
+      { id: 'stats',  label: 'Statistiques' },
+      { id: 'badges', label: 'Badges' },
+    ]);
   }
 
   document.getElementById('loading').style.display   = 'none';

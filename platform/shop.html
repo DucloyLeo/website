@@ -23,6 +23,7 @@
     color: var(--sun); padding: 4px 14px;
     border: 1px solid rgba(245,200,66,.3); border-radius: 99px;
   }
+  .shop-section { margin-bottom: 2.5rem; }
   .shop-section-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
   .btn-buy {
     font-size: 12px; font-family: 'DM Mono', monospace;
@@ -77,8 +78,7 @@
   <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
 
   <div id="shop-content" style="display:none">
-    <p class="shop-section-title">Articles disponibles</p>
-    <div class="shop-grid" id="shop-grid"></div>
+    <div id="shop-sections"></div>
   </div>
 </div>
 
@@ -131,43 +131,59 @@ async function loadUserData() {
   badge.style.display = '';
 }
 
+const SHOP_SECTIONS = [
+  { key: 'frame',      label: 'Cadres d\'avatar' },
+  { key: 'effect',     label: 'Effets d\'avatar' },
+  { key: 'background', label: 'Fonds de page' },
+  { key: 'title',      label: 'Titres' },
+];
+
+function renderShopItem(item) {
+  const ownedIds = new Set(_inventory.map(i => i.item_id));
+  const owned = ownedIds.has(item.id);
+  const levelLocked = item.unlock_level !== null && _userLevel < item.unlock_level;
+  const canAfford = _userId && !owned && !levelLocked && _userCoins >= item.cost;
+  const isFree = item.cost === 0 && item.unlock_level !== null;
+
+  let footerHtml;
+  if (owned) {
+    footerHtml = `<span class="btn-owned">✓ Obtenu</span>`;
+  } else if (!_userId) {
+    footerHtml = `<span class="shop-item-cost">${isFree ? 'Gratuit' : '🪙 ' + item.cost}</span>
+                  <a href="/login.html" style="font-size:12px;color:var(--moon)">Se connecter</a>`;
+  } else if (levelLocked) {
+    footerHtml = `<span class="btn-locked">🔒 Niveau ${item.unlock_level}</span>
+                  <span style="font-size:11px;color:var(--muted)">Niv. actuel : ${_userLevel}</span>`;
+  } else if (isFree) {
+    footerHtml = `<span class="btn-locked">Obtenu au niveau ${item.unlock_level}</span>`;
+  } else {
+    footerHtml = `<span class="shop-item-cost">🪙 ${item.cost}</span>
+                  <button class="btn-buy" onclick="buy('${item.id}')" ${canAfford ? '' : 'disabled'}>
+                    ${_userCoins < item.cost ? 'Pièces insuffisantes' : 'Acheter'}
+                  </button>`;
+  }
+
+  return `<div class="shop-item${owned ? ' owned' : ''}" id="shopitem-${item.id}">
+    <span class="shop-item-icon">${item.icon}</span>
+    <div class="shop-item-name">${item.name}</div>
+    <div class="shop-item-desc">${item.description}</div>
+    <div class="shop-item-footer">${footerHtml}</div>
+  </div>`;
+}
+
 function renderShop(items) {
+  const container = document.getElementById('shop-sections');
   if (!items.length) {
-    document.getElementById('shop-grid').innerHTML = '<p style="font-size:13px;color:var(--muted)">Aucun article disponible pour l\'instant.</p>';
+    container.innerHTML = '<p style="font-size:13px;color:var(--muted)">Aucun article disponible pour l\'instant.</p>';
     return;
   }
 
-  const ownedIds = new Set(_inventory.map(i => i.item_id));
-
-  document.getElementById('shop-grid').innerHTML = items.map(item => {
-    const owned = ownedIds.has(item.id);
-    const levelLocked = item.unlock_level !== null && _userLevel < item.unlock_level;
-    const canAfford = _userId && !owned && !levelLocked && _userCoins >= item.cost;
-    const isFree = item.cost === 0 && item.unlock_level !== null;
-
-    let footerHtml;
-    if (owned) {
-      footerHtml = `<span class="btn-owned">✓ Obtenu</span>`;
-    } else if (!_userId) {
-      footerHtml = `<span class="shop-item-cost">${isFree ? 'Gratuit' : '🪙 ' + item.cost}</span>
-                    <a href="/login.html" style="font-size:12px;color:var(--moon)">Se connecter</a>`;
-    } else if (levelLocked) {
-      footerHtml = `<span class="btn-locked">🔒 Niveau ${item.unlock_level}</span>
-                    <span style="font-size:11px;color:var(--muted)">Niv. actuel : ${_userLevel}</span>`;
-    } else if (isFree) {
-      footerHtml = `<span class="btn-locked">Obtenu au niveau ${item.unlock_level}</span>`;
-    } else {
-      footerHtml = `<span class="shop-item-cost">🪙 ${item.cost}</span>
-                    <button class="btn-buy" onclick="buy('${item.id}')" ${canAfford ? '' : 'disabled'}>
-                      ${_userCoins < item.cost ? 'Pièces insuffisantes' : 'Acheter'}
-                    </button>`;
-    }
-
-    return `<div class="shop-item${owned ? ' owned' : ''}" id="shopitem-${item.id}">
-      <span class="shop-item-icon">${item.icon}</span>
-      <div class="shop-item-name">${item.name}</div>
-      <div class="shop-item-desc">${item.description}</div>
-      <div class="shop-item-footer">${footerHtml}</div>
+  container.innerHTML = SHOP_SECTIONS.map(sec => {
+    const secItems = items.filter(it => it.type === sec.key);
+    if (!secItems.length) return '';
+    return `<div class="shop-section" id="shopsec-${sec.key}">
+      <p class="shop-section-title">${sec.label}</p>
+      <div class="shop-grid">${secItems.map(renderShopItem).join('')}</div>
     </div>`;
   }).join('');
 }

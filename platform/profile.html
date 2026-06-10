@@ -52,8 +52,16 @@
     width:34px; height:34px; font-size:1.05rem;
     border-radius:7px; border:1px solid var(--border2); background:var(--surface2);
   }
-  .skin-label { font-size:12px; color:var(--text); font-weight:500; }
-  .skin-desc  { font-size:10px; color:var(--muted); }
+  .skin-label { font-size:14px; color:var(--text); font-weight:500; text-align:center; }
+  /* Tabs profil */
+  .profile-tabs { display:flex; gap:6px; margin-top:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .profile-tab {
+    font-size:12px; font-family:'DM Mono',monospace; font-weight:500; letter-spacing:.04em;
+    color:var(--muted); background:none; border:none; border-bottom:2px solid transparent;
+    padding:.5rem 1rem; margin-bottom:-1px; cursor:pointer; transition:color .15s, border-color .15s;
+  }
+  .profile-tab:hover { color:var(--text); }
+  .profile-tab.active { color:var(--moon); border-bottom-color:var(--moon); }
   /* Cosmétiques */
   .cosmetics-grid { display:flex; flex-direction:column; gap:1.2rem; }
   .cosm-slot { display:flex; flex-direction:column; gap:.5rem; }
@@ -135,80 +143,85 @@
       </div>
     </div>
 
-    <!-- Stats globales -->
-    <div class="diff-section">
-      <p class="diff-title">Statistiques globales</p>
-      <div class="stats-grid" id="global-stats"></div>
+    <!-- Navigation par onglets (profil propre uniquement) -->
+    <div class="profile-tabs" id="profile-tabs" style="display:none">
+      <button class="profile-tab active" onclick="showProfileTab('stats')" id="tab-stats">Statistiques</button>
+      <button class="profile-tab" onclick="showProfileTab('badges')" id="tab-badges">Badges</button>
+      <button class="profile-tab" onclick="showProfileTab('cosmetiques')" id="tab-cosmetiques">Cosmétiques</button>
     </div>
 
-    <!-- Stats par difficulté -->
-    <div class="diff-section" id="diff-stats-section">
-      <p class="diff-title">Par difficulté</p>
-      <div id="diff-stats"></div>
-    </div>
-
-    <!-- Badges -->
-    <div class="diff-section">
-      <p class="diff-title">Badges</p>
-      <div class="badges-grid" id="badges-grid"></div>
-    </div>
-
-    <!-- Dernières parties (admin view) -->
-    <div class="diff-section" id="game-history-section" style="display:none">
-      <p class="diff-title">Dernières parties</p>
-      <div id="game-history-wrap"></div>
-    </div>
-
-    <!-- Éditeur économie (vue admin uniquement) -->
-    <div class="diff-section" id="eco-editor-section" style="display:none">
-      <p class="diff-title">Économie du joueur</p>
-      <div class="eco-editor">
-        <p class="eco-editor-title">Modifier les valeurs</p>
-        <div class="eco-editor-row">
-          <div class="eco-editor-field">
-            <label class="eco-editor-label">Niveau</label>
-            <input class="eco-editor-input" type="number" min="1" id="eco-level" value="1">
+    <!-- Panel : Statistiques -->
+    <div id="panel-stats">
+      <div class="diff-section">
+        <p class="diff-title">Statistiques globales</p>
+        <div class="stats-grid" id="global-stats"></div>
+      </div>
+      <div class="diff-section" id="diff-stats-section">
+        <p class="diff-title">Par difficulté</p>
+        <div id="diff-stats"></div>
+      </div>
+      <!-- Dernières parties (vue admin) -->
+      <div class="diff-section" id="game-history-section" style="display:none">
+        <p class="diff-title">Dernières parties</p>
+        <div id="game-history-wrap"></div>
+      </div>
+      <!-- Éditeur économie (vue admin) -->
+      <div class="diff-section" id="eco-editor-section" style="display:none">
+        <p class="diff-title">Économie du joueur</p>
+        <div class="eco-editor">
+          <p class="eco-editor-title">Modifier les valeurs</p>
+          <div class="eco-editor-row">
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">Niveau</label>
+              <input class="eco-editor-input" type="number" min="1" id="eco-level" value="1">
+            </div>
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">XP total</label>
+              <input class="eco-editor-input" type="number" min="0" id="eco-xp" value="0">
+            </div>
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">Pièces</label>
+              <input class="eco-editor-input" type="number" min="0" id="eco-coins" value="0">
+            </div>
           </div>
-          <div class="eco-editor-field">
-            <label class="eco-editor-label">XP total</label>
-            <input class="eco-editor-input" type="number" min="0" id="eco-xp" value="0">
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn sun" onclick="saveEconomy()" style="font-size:12px">Enregistrer</button>
+            <span id="eco-status" style="font-size:12px"></span>
           </div>
-          <div class="eco-editor-field">
-            <label class="eco-editor-label">Pièces</label>
-            <input class="eco-editor-input" type="number" min="0" id="eco-coins" value="0">
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn sun" onclick="saveEconomy()" style="font-size:12px">Enregistrer</button>
-          <span id="eco-status" style="font-size:12px"></span>
         </div>
       </div>
     </div>
 
-    <!-- Apparence -->
-    <div class="diff-section" id="skin-section">
-      <p class="diff-title">Apparence des symboles</p>
-      <div class="skin-grid" id="skin-options"></div>
+    <!-- Panel : Badges -->
+    <div id="panel-badges" style="display:none">
+      <div class="diff-section">
+        <p class="diff-title">Badges</p>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
     </div>
 
-    <!-- Cosmétiques actifs (profil propre) -->
-    <div class="diff-section" id="cosmetics-section" style="display:none">
-      <p class="diff-title">Cosmétiques actifs</p>
-      <div class="cosmetics-grid" id="cosmetics-grid"></div>
-    </div>
-
-    <!-- Confidentialité (profil propre) -->
-    <div class="diff-section" id="privacy-section" style="display:none">
-      <p class="diff-title">Confidentialité</p>
-      <div class="privacy-section">
-        <div class="privacy-info">
-          <strong id="privacy-status-text">Profil public</strong><br>
-          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+    <!-- Panel : Cosmétiques -->
+    <div id="panel-cosmetiques" style="display:none">
+      <div class="diff-section" id="skin-section">
+        <p class="diff-title">Apparence des symboles</p>
+        <div class="skin-grid" id="skin-options"></div>
+      </div>
+      <div class="diff-section" id="cosmetics-section" style="display:none">
+        <p class="diff-title">Cosmétiques actifs</p>
+        <div class="cosmetics-grid" id="cosmetics-grid"></div>
+      </div>
+      <div class="diff-section" id="privacy-section" style="display:none">
+        <p class="diff-title">Confidentialité</p>
+        <div class="privacy-section">
+          <div class="privacy-info">
+            <strong id="privacy-status-text">Profil public</strong><br>
+            <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+          </div>
+          <label class="toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
         </div>
-        <label class="toggle" onclick="event.stopPropagation()">
-          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        </label>
       </div>
     </div>
 
@@ -295,6 +308,14 @@ async function loadGameHistory(userId, page) {
 }
 async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }
 
+function showProfileTab(name) {
+  ['stats','badges','cosmetiques'].forEach(t => {
+    document.getElementById('panel-' + t).style.display = t === name ? '' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    btn.classList.toggle('active', t === name);
+  });
+}
+
 async function renderSkinOptions() {
   const cur = getSkin();
   const order = ['emoji', 'circles', 'bw'];
@@ -304,15 +325,14 @@ async function renderSkinOptions() {
     const s = SKINS[k];
     const unlocked = results[i];
     const locked = !unlocked;
-    const desc = locked && unlockInfo[k] ? '🔒 Niveau ' + unlockInfo[k] : s.desc;
+    const lockLabel = locked && unlockInfo[k] ? '<span style="font-size:10px;color:var(--muted);display:block;margin-top:2px">🔒 Niveau ' + unlockInfo[k] + '</span>' : '';
     return `<button class="skin-opt ${k === cur ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
       onclick="${locked ? '' : 'chooseSkin(\'' + k + '\')'}"
       ${locked ? 'title="Débloqué au niveau ' + (unlockInfo[k] || '') + '" tabindex="-1"' : ''}>
       <span class="skin-preview">
         <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
       </span>
-      <span class="skin-label">${s.label}</span>
-      <span class="skin-desc">${desc}</span>
+      <span class="skin-label">${s.label}${lockLabel}</span>
     </button>`;
   }).join('');
 }
@@ -323,7 +343,7 @@ function chooseSkin(k) {
 }
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
-function renderProfileData(profile, stats, badges, earnedMap, adminView) {
+function renderProfileData(profile, stats, badges, earnedMap, adminView, isOwnProfile = false) {
   // Avatar avec cadre + effet
   const avatarWrap = document.getElementById('profile-avatar-wrap');
   if (avatarWrap) avatarWrap.innerHTML = renderAvatarHtml(profile, 64);
@@ -411,10 +431,10 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   }).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
 
   if (adminView) {
-    document.getElementById('skin-section').style.display         = 'none';
-    document.getElementById('cosmetics-section').style.display    = 'none';
+    // Vue admin : tout linéaire, pas de tabs
+    document.getElementById('panel-badges').style.display         = '';
+    document.getElementById('panel-cosmetiques').style.display    = 'none';
     document.getElementById('danger-zone').style.display          = 'none';
-    document.getElementById('privacy-section').style.display      = 'none';
     document.getElementById('admin-banner').style.display         = 'block';
     document.getElementById('admin-banner-name').textContent      = profile.username;
     document.getElementById('game-history-section').style.display = '';
@@ -424,8 +444,11 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
     document.getElementById('eco-coins').value  = profile.coins  || 0;
     document.title = 'Profil de ' + profile.username + ' — Tangoléo';
     loadGameHistory(profile.id, 0);
-  } else {
-    // Profil propre : confidentialité + skins + cosmétiques
+  } else if (isOwnProfile) {
+    // Profil propre : tabs + cosmétiques + confidentialité
+    document.getElementById('profile-tabs').style.display = '';
+    document.getElementById('panel-badges').style.display = 'none';
+    document.getElementById('panel-cosmetiques').style.display = 'none';
     document.getElementById('privacy-section').style.display = '';
     const isPublic = profile.is_public !== false;
     const cb = document.getElementById('pref-public');
@@ -433,6 +456,11 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
     _updatePrivacyText(isPublic);
     renderSkinOptions();
     renderCosmeticsSection(profile);
+  } else {
+    // Profil public (visiteur) : stats + badges, pas de cosmétiques
+    document.getElementById('panel-badges').style.display = '';
+    document.getElementById('panel-cosmetiques').style.display = 'none';
+    document.getElementById('danger-zone').style.display = 'none';
   }
 
   document.getElementById('loading').style.display   = 'none';
@@ -490,7 +518,8 @@ async function loadProfile() {
       statsRes.data || [],
       badgesRes.data || [],
       Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
-      false
+      false,
+      true
     );
   }
 }

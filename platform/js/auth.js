@@ -673,6 +673,43 @@ function toggleExtremeMode(e)  { e.stopPropagation(); const cb = document.getEle
 function onSoundPrefChange()   { const on = document.getElementById('pref-sound').checked; try { localStorage.setItem('tango_sound', on ? '1' : '0'); } catch (e) {} if (typeof SOUND !== 'undefined') SOUND.setMuted(!on); }
 function toggleSoundPref(e)    { e.stopPropagation(); const cb = document.getElementById('pref-sound'); cb.checked = !cb.checked; onSoundPrefChange(); }
 
+// ─── Discovery / Onboarding ───────────────────────────
+const _DISC_FEATURES = {
+  daily:       '/daily.html',
+  leaderboard: '/leaderboard.html',
+  shop:        '/shop.html',
+};
+function _getSeenFeatures() {
+  try { return new Set(JSON.parse(localStorage.getItem('tango_seen') || '[]')); } catch(e) { return new Set(); }
+}
+function markFeatureSeen(key) {
+  const s = _getSeenFeatures(); s.add(key);
+  try { localStorage.setItem('tango_seen', JSON.stringify([...s])); } catch(e) {}
+  document.getElementById('discovery-dot-' + key)?.remove();
+}
+function _initDiscovery() {
+  // Marquer la page courante comme vue
+  const p = window.location.pathname;
+  for (const [key, path] of Object.entries(_DISC_FEATURES)) {
+    if (p === path || p.endsWith(path)) markFeatureSeen(key);
+  }
+  // Ajouter les dots sur les liens non encore visités
+  const seen = _getSeenFeatures();
+  document.querySelectorAll('a.nav-menu-item').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    for (const [key, path] of Object.entries(_DISC_FEATURES)) {
+      if (!seen.has(key) && href === path) {
+        const dot = document.createElement('span');
+        dot.id = 'discovery-dot-' + key;
+        dot.className = 'discovery-dot';
+        a.appendChild(dot);
+        a.addEventListener('click', () => markFeatureSeen(key), { once: true });
+        break;
+      }
+    }
+  });
+}
+
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
   renderGameMenu();
@@ -716,14 +753,16 @@ async function initNavAuth(opts = {}) {
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a>
+      <a href="/shop.html" class="nav-menu-item">🛍 Boutique</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
     if (el) el.innerHTML = `<a href="/leaderboard.html" class="nav-auth-link">Classement</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/shop.html" class="nav-menu-item">🛍 Boutique</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
+  _initDiscovery();
   return user;
 }
 

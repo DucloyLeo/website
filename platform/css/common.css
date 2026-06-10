@@ -737,6 +737,26 @@ body.bg-aurora::before {
 /* ── Leaderboard ── */
 .lb-table { width:100%; border-collapse:collapse; }
 .lb-table th { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); }
+/* ─── Discovery dots ──────────────────────────────────── */
+.nav-menu-item { position: relative; }
+.discovery-dot {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--moon); pointer-events: none;
+  animation: disc-pulse 2.4s ease-in-out infinite;
+}
+@keyframes disc-pulse {
+  0%, 100% { opacity: .9; box-shadow: 0 0 0 0 rgba(143,168,212,.5); }
+  50%       { opacity: .6; box-shadow: 0 0 0 5px rgba(143,168,212,0); }
+}
+/* ─── Win modal: discovery pills ─────────────────────── */
+.disc-features { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:.9rem; }
+.disc-pill {
+  font-size:11px; background:var(--surface2); border:1px solid var(--border2);
+  border-radius:99px; padding:4px 11px; color:var(--text);
+}
+.win-login-prompt { text-align:center; padding:.1rem 0; }
+.win-login-prompt .disc-tagline { font-size:12px; color:var(--muted); margin-bottom:.75rem; }
 .lb-table td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
 .lb-table tr:last-child td { border-bottom:none; }
 .lb-table tr:hover td { background:var(--surface2); }

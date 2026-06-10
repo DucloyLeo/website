@@ -91,7 +91,7 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .diff-badge-btn.custom{border-color:rgba(143,168,212,.4);color:var(--moon)}
 .diff-badge-btn.extreme{border-color:rgba(180,30,30,.5);color:#c0392b}
 
-.grid-outer{position:relative}
+.grid-outer{position:relative;isolation:isolate}.grid-outer::after{content:'';position:absolute;inset:-40px;background:var(--bg);border-radius:20px;z-index:-1;pointer-events:none}
 .grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
 table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}

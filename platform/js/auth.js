@@ -703,9 +703,9 @@ async function initNavAuth(opts = {}) {
     const isAdmin = profile?.role === 'admin';
     const coins   = profile?.coins || 0;
     const roleChip = isAdmin
-      ? '<a href="/admin/" style="color:var(--sun);font-size:10px;border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;margin-right:4px;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'rgba(245,200,66,.1)\'" onmouseout="this.style.background=\'\'">Admin</a>'
+      ? '<a href="/admin/" style="color:var(--sun);font-size:10px;background:var(--surface);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;margin-right:4px;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'rgba(245,200,66,.12)\'" onmouseout="this.style.background=\'var(--surface)\'">Admin</a>'
       : isVip
-        ? '<span style="color:var(--moon);font-size:10px;border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;margin-right:4px">✦ VIP</span>'
+        ? '<span style="color:var(--moon);font-size:10px;background:var(--surface);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;margin-right:4px">✦ VIP</span>'
         : '';
     if (el) el.innerHTML = `
       ${roleChip}<a href="/profile.html" class="nav-auth-link" id="nav-username">${profile?.username || 'Profil'}</a>

@@ -47,7 +47,9 @@
 
     <div class="diff-section">
       <p class="diff-title">Statistiques globales</p>
-      <div class="stats-grid" id="global-stats"></div>
+      <div class="card" style="padding:1rem">
+        <div class="stats-grid" id="global-stats"></div>
+      </div>
     </div>
 
     <div class="diff-section">
@@ -108,8 +110,8 @@ function render() {
     const d = stats[diff] || { count:0, best:0, totalTime:0 };
     const avg = d.count > 0 ? Math.round(d.totalTime / d.count) : 0;
     return `
-      <div style="margin-bottom:1.2rem">
-        <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
+      <div class="card" style="padding:1rem;margin-bottom:.75rem">
+        <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.6rem;letter-spacing:.06em;font-weight:500">${DIFF_LABELS[diff]}</p>
         <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
           <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${d.count}</span></div>
           <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmt(d.best)}</span></div>

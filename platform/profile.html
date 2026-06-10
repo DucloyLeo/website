@@ -206,7 +206,7 @@
           <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
         </div>
         <label class="toggle" onclick="event.stopPropagation()">
-          <input type="checkbox" id="pref-public" onchange="onPrivacyChange()">
+          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
       </div>
@@ -610,7 +610,7 @@ async function toggleAdminBadge(badgeId, hasIt) {
 }
 
 function _updatePrivacyText(isPublic) {
-  const lbl = document.getElementById('privacy-label');
+  const lbl = document.getElementById('privacy-status-text');
   if (lbl) lbl.textContent = isPublic ? 'Profil public' : 'Profil privé';
 }
 

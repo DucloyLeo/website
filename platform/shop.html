@@ -23,8 +23,17 @@
     color: var(--sun); padding: 4px 14px;
     border: 1px solid rgba(245,200,66,.3); border-radius: 99px;
   }
-  .shop-section { margin-bottom: 2.5rem; }
+  .shop-section { display: none; }
+  .shop-section.active { display: block; }
   .shop-section-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+  .shop-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); padding-bottom: 0; margin-bottom: 1.5rem; }
+  .shop-tab {
+    font-size: 12px; font-family: 'DM Mono', monospace; font-weight: 500; letter-spacing: .04em;
+    color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent;
+    padding: .5rem 1rem; margin-bottom: -1px; cursor: pointer; transition: color .15s, border-color .15s;
+  }
+  .shop-tab:hover { color: var(--text); }
+  .shop-tab.active { color: var(--moon); border-bottom-color: var(--moon); }
   .btn-buy {
     font-size: 12px; font-family: 'DM Mono', monospace;
     background: rgba(245,200,66,.1); border: 1px solid rgba(245,200,66,.35);
@@ -78,6 +87,7 @@
   <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
 
   <div id="shop-content" style="display:none">
+    <div class="shop-tabs" id="shop-tabs"></div>
     <div id="shop-sections"></div>
   </div>
 </div>
@@ -171,21 +181,32 @@ function renderShopItem(item) {
   </div>`;
 }
 
+function showShopTab(key) {
+  document.querySelectorAll('.shop-section').forEach(el => el.classList.toggle('active', el.id === 'shopsec-' + key));
+  document.querySelectorAll('.shop-tab').forEach(el => el.classList.toggle('active', el.dataset.key === key));
+}
+
 function renderShop(items) {
   const container = document.getElementById('shop-sections');
+  const tabsEl = document.getElementById('shop-tabs');
   if (!items.length) {
     container.innerHTML = '<p style="font-size:13px;color:var(--muted)">Aucun article disponible pour l\'instant.</p>';
     return;
   }
 
-  container.innerHTML = SHOP_SECTIONS.map(sec => {
+  const activeSecs = SHOP_SECTIONS.filter(sec => items.some(it => it.type === sec.key));
+  tabsEl.innerHTML = activeSecs.map(sec =>
+    `<button class="shop-tab" data-key="${sec.key}" onclick="showShopTab('${sec.key}')">${sec.label}</button>`
+  ).join('');
+
+  container.innerHTML = activeSecs.map(sec => {
     const secItems = items.filter(it => it.type === sec.key);
-    if (!secItems.length) return '';
     return `<div class="shop-section" id="shopsec-${sec.key}">
-      <p class="shop-section-title">${sec.label}</p>
       <div class="shop-grid">${secItems.map(renderShopItem).join('')}</div>
     </div>`;
   }).join('');
+
+  if (activeSecs.length) showShopTab(activeSecs[0].key);
 }
 
 async function buy(itemId) {

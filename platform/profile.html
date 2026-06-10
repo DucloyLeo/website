@@ -143,6 +143,20 @@
       </div>
     </div>
 
+    <!-- Confidentialité (profil propre, toujours visible comme la barre XP) -->
+    <div id="privacy-section" style="display:none">
+      <div class="privacy-section">
+        <div class="privacy-info">
+          <strong id="privacy-status-text">Profil public</strong><br>
+          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+    </div>
+
     <!-- Navigation par onglets (profil propre uniquement) -->
     <div class="profile-tabs" id="profile-tabs" style="display:none">
       <button class="profile-tab active" onclick="showProfileTab('stats')" id="tab-stats">Statistiques</button>
@@ -209,19 +223,6 @@
       <div class="diff-section" id="cosmetics-section" style="display:none">
         <p class="diff-title">Cosmétiques actifs</p>
         <div class="cosmetics-grid" id="cosmetics-grid"></div>
-      </div>
-      <div class="diff-section" id="privacy-section" style="display:none">
-        <p class="diff-title">Confidentialité</p>
-        <div class="privacy-section">
-          <div class="privacy-info">
-            <strong id="privacy-status-text">Profil public</strong><br>
-            <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
-          </div>
-          <label class="toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
       </div>
     </div>
 

@@ -776,6 +776,8 @@ function renderLeaderboard(rows,currentUid,userTime,containerId){
 
 async function showResultLeaderboard(levelId,myTime){
   if(!levelId)return;
+  document.getElementById('result-lb').innerHTML='';
+  document.getElementById('result-rank').textContent='';
   const rows=await fetchLeaderboard(levelId);
   const myRankRow=rows.findIndex(r=>r.time_seconds===myTime&&
     currentUserId&&r.profiles);

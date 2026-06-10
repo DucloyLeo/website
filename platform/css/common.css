@@ -123,6 +123,8 @@ body {
   max-width: 680px;
   margin: 0 auto;
   padding: 3rem 0 6rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Titres ── */
@@ -374,6 +376,8 @@ h3 { font-size: 1.1rem; margin-bottom: .5rem; }
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 0 6rem;
+  position: relative;
+  z-index: 1;
 }
 .admin-sidebar { display: flex; flex-direction: column; gap: 2px; }
 .admin-nav-item {

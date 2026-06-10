@@ -516,6 +516,7 @@ async function checkWin(){
 
       // Récompenses daily (XP, streak, bonus)
       const rewards=await saveDailyResult(currentUserId,diff,elapsed);
+      if(window._cachedProfile)window._cachedProfile.xp=xpForLevel(rewards.new_level)+rewards.xp_in_level;
       if(rewards.is_new_day!==false){
         _showDailyRewards(rewards,elapsed);
         if(rewards.coins_earned>0)updateNavCoins((await db.from('profiles').select('coins').eq('id',currentUserId).maybeSingle()).data?.coins||0);

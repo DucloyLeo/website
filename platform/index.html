@@ -671,6 +671,7 @@ async function checkWin(){
   if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
     try{
       const result=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,hintCount,ctrlHUsed);
+      if(window._cachedProfile)window._cachedProfile.xp=xpForLevel(result.new_level)+result.xp_in_level;
       _showWinRewards(result);
       // Mettre à jour la pastille de pièces dans la nav
       if(typeof updateNavCoins==='function'){

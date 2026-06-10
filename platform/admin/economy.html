@@ -429,7 +429,7 @@ function txPage(d) { _txPage += d; renderTransactions(); }
 // ── Courbe XP ──
 
 function curveXpToNext(n, base, mult, cap) {
-  return Math.min(cap, Math.floor(base * Math.pow(mult, n - 1)));
+  return Math.min(cap, Math.round(base * Math.pow(mult, n - 1) / 50) * 50);
 }
 
 function updateCurve() {

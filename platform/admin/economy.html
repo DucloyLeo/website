@@ -125,16 +125,15 @@
             </div>
           </div>
           <p style="font-size:11px;color:var(--muted);margin-top:.6rem;line-height:1.7">
-            Formule appliquée : <code style="color:var(--moon)">min(cap, floor(base × mult^(n−1)))</code><br>
+            Formule appliquée : <code style="color:var(--moon)">min(cap, round(base × mult^(n−1) / 50) × 50</code><br>
             Modifiez <code>auth.js → xpToNextLevel()</code> pour appliquer ces valeurs.
           </p>
         </div>
 
-        <!-- Simulateur -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.4rem;flex-wrap:wrap">
-          <span class="form-label" style="white-space:nowrap">Simuler le niveau</span>
-          <input class="form-input" id="sim-level" type="number" min="1" max="999" value="10" style="max-width:80px" oninput="updateSimulator()">
-          <div id="sim-result" style="font-size:12px;font-family:'DM Mono',monospace;line-height:1.7"></div>
+        <!-- Contrôle de fin de courbe -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem">
+          <span class="form-label" style="white-space:nowrap">Afficher jusqu'au niveau</span>
+          <input class="form-input" id="curve-end" type="number" min="2" max="200" value="20" style="max-width:80px" oninput="updateCurve()">
         </div>
 
         <!-- Graphique + tableau côte à côte -->
@@ -433,10 +432,10 @@ function curveXpToNext(n, base, mult, cap) {
 }
 
 function updateCurve() {
-  const base = parseFloat(document.getElementById('curve-base').value) || 300;
-  const mult = parseFloat(document.getElementById('curve-mult').value) || 1.13;
-  const cap  = parseInt(document.getElementById('curve-cap').value)   || 3000;
-  const LEVELS = 20;
+  const base   = parseFloat(document.getElementById('curve-base').value) || 300;
+  const mult   = parseFloat(document.getElementById('curve-mult').value) || 1.13;
+  const cap    = parseInt(document.getElementById('curve-cap').value)    || 3000;
+  const LEVELS = Math.min(200, Math.max(2, parseInt(document.getElementById('curve-end').value) || 20));
 
   const perLevel = Array.from({length: LEVELS}, (_, i) => curveXpToNext(i + 1, base, mult, cap));
   const cumul    = [0];
@@ -488,23 +487,6 @@ function updateCurve() {
       <tbody>${rows}</tbody>
     </table>`;
 
-  updateSimulator();
-}
-
-function updateSimulator() {
-  const base  = parseFloat(document.getElementById('curve-base').value)  || 300;
-  const mult  = parseFloat(document.getElementById('curve-mult').value)  || 1.13;
-  const cap   = parseInt(document.getElementById('curve-cap').value)     || 3000;
-  const level = parseInt(document.getElementById('sim-level').value)     || 1;
-
-  const perLev = curveXpToNext(level, base, mult, cap);
-  let cumul = 0;
-  for (let i = 1; i < level; i++) cumul += curveXpToNext(i, base, mult, cap);
-
-  document.getElementById('sim-result').innerHTML =
-    `<span style="color:var(--text)">Niveau ${level}</span> &nbsp;·&nbsp; ` +
-    `<span style="color:var(--moon)">${perLev.toLocaleString('fr-FR')} XP</span> pour passer au suivant &nbsp;·&nbsp; ` +
-    `<span style="color:var(--muted)">${cumul.toLocaleString('fr-FR')} XP cumulés pour atteindre ce niveau</span>`;
 }
 
 // ── XP Params ──

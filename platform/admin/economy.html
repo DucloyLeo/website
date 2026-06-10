@@ -650,20 +650,32 @@ async function loadShopItems() {
   wrap.innerHTML = `<div style="overflow-x:auto"><table class="shop-table">
     <thead><tr>
       <th>Icône</th><th>Nom</th><th>Type</th><th>Clé</th>
-      <th>Prix</th><th>Niv. débloquant</th><th>Actif</th>
+      <th>Prix 🪙</th><th>Niv. débloquant</th><th>Actif</th><th></th>
     </tr></thead>
-    <tbody>${items.map(it => `<tr>
+    <tbody>${items.map(it => `<tr id="shoprow-${it.id}">
       <td>${it.icon}</td>
       <td>${it.name}</td>
       <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${it.type}</span></td>
       <td><code style="font-size:11px">${it.item_key}</code></td>
-      <td style="color:var(--sun)">${it.cost} 🪙</td>
-      <td>${it.unlock_level !== null ? 'Niv. ' + it.unlock_level : '—'}</td>
+      <td>
+        <input type="number" min="0" value="${it.cost}"
+          style="width:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 7px;font-size:12px;font-family:'DM Mono',monospace;color:var(--sun)"
+          id="item-cost-${it.id}">
+      </td>
+      <td>
+        <input type="number" min="1" placeholder="—" value="${it.unlock_level ?? ''}"
+          style="width:60px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 7px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)"
+          id="item-level-${it.id}">
+      </td>
       <td style="text-align:center">
-        <label class="toggle item-active-toggle" title="${it.is_active ? 'Actif — cliquer pour désactiver' : 'Inactif — cliquer pour activer'}" style="display:inline-flex">
+        <label class="toggle item-active-toggle" title="${it.is_active ? 'Actif' : 'Inactif'}" style="display:inline-flex">
           <input type="checkbox" ${it.is_active ? 'checked' : ''} onchange="toggleItem('${it.id}',this.checked)">
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
+      </td>
+      <td>
+        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="saveItemUnlock('${it.id}')">✓</button>
+        <span id="item-status-${it.id}" style="font-size:11px;margin-left:4px"></span>
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -672,6 +684,24 @@ async function loadShopItems() {
 async function toggleItem(id, active) {
   const { error } = await db.from('shop_items').update({ is_active: active }).eq('id', id);
   if (error) alert('Erreur : ' + error.message);
+}
+
+async function saveItemUnlock(id) {
+  const costVal  = parseInt(document.getElementById('item-cost-' + id).value);
+  const levelRaw = document.getElementById('item-level-' + id).value.trim();
+  const levelVal = levelRaw === '' ? null : parseInt(levelRaw);
+  const statusEl = document.getElementById('item-status-' + id);
+  statusEl.textContent = '…';
+  statusEl.style.color = 'var(--muted)';
+  const { error } = await db.from('shop_items').update({ cost: costVal, unlock_level: levelVal }).eq('id', id);
+  if (error) {
+    statusEl.textContent = '✗';
+    statusEl.style.color = 'var(--danger, #f55)';
+  } else {
+    statusEl.textContent = '✓';
+    statusEl.style.color = 'var(--success, #4c8)';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  }
 }
 
 async function addShopItem() {

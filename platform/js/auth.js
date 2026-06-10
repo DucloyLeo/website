@@ -70,9 +70,25 @@ async function signOut() {
 
 // ─── Formules XP / Niveaux ───────────────────────────
 
+// Paramètres de courbe (écrasés par loadXpCurve si connecté à la DB)
+window._xpCurve = window._xpCurve || { base: 300, mult: 1.13, cap: 3000 };
+
+async function loadXpCurve() {
+  const { data } = await db.from('app_config').select('value').eq('key', 'xp_curve').maybeSingle();
+  if (data?.value) {
+    const { base, mult, cap } = data.value;
+    window._xpCurve = {
+      base: Number(base) || 300,
+      mult: Number(mult) || 1.13,
+      cap:  Number(cap)  || 3000,
+    };
+  }
+}
+
 // XP nécessaire pour passer du niveau n au niveau n+1
 function xpToNextLevel(n) {
-  return Math.min(3000, Math.round(300 * Math.pow(1.13, n - 1) / 50) * 50);
+  const { base, mult, cap } = window._xpCurve;
+  return Math.min(cap, Math.round(base * Math.pow(mult, n - 1) / 50) * 50);
 }
 
 // Niveau correspondant à un total d'XP
@@ -713,7 +729,7 @@ function _initDiscovery() {
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
   renderGameMenu();
-  const user = await getCurrentUser();
+  const [user] = await Promise.all([getCurrentUser(), loadXpCurve()]);
   _currentUserId = user?.id || null;
   const el   = document.getElementById('nav-auth');
   const mel  = document.getElementById('menu-auth-item');

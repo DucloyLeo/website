@@ -130,6 +130,11 @@
           </p>
         </div>
 
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1.4rem">
+          <button class="btn sun" onclick="saveCurveParams()">Enregistrer</button>
+          <span id="curve-status"></span>
+        </div>
+
         <!-- Contrôle de fin de courbe -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem">
           <span class="form-label" style="white-space:nowrap">Afficher jusqu'au niveau</span>
@@ -272,7 +277,7 @@ async function init() {
   const ok = await requireAdmin('/index.html');
   if (!ok) return;
   await initNavAuth();
-  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions()]);
+  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions(), loadCurveParams()]);
   updateCurve();
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
@@ -426,6 +431,34 @@ function clearTxFilters() {
 function txPage(d) { _txPage += d; renderTransactions(); }
 
 // ── Courbe XP ──
+
+async function loadCurveParams() {
+  const { data } = await db.from('app_config').select('value').eq('key', 'xp_curve').maybeSingle();
+  if (data?.value) {
+    document.getElementById('curve-base').value = data.value.base ?? 300;
+    document.getElementById('curve-mult').value = data.value.mult ?? 1.13;
+    document.getElementById('curve-cap').value  = data.value.cap  ?? 3000;
+  }
+}
+
+async function saveCurveParams() {
+  const statusEl = document.getElementById('curve-status');
+  statusEl.textContent = 'Enregistrement…';
+  const base = parseFloat(document.getElementById('curve-base').value) || 300;
+  const mult = parseFloat(document.getElementById('curve-mult').value) || 1.13;
+  const cap  = parseInt(document.getElementById('curve-cap').value)    || 3000;
+  const { error } = await db.from('app_config').upsert({
+    key: 'xp_curve', value: { base, mult, cap }, updated_at: new Date().toISOString()
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+}
 
 function curveXpToNext(n, base, mult, cap) {
   return Math.min(cap, Math.round(base * Math.pow(mult, n - 1) / 50) * 50);

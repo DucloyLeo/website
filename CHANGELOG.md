@@ -5,6 +5,43 @@
 
 ---
 
+## [v0.9] — Économie, onboarding & UX progression
+
+### 🪙 Système d'économie (XP, niveaux, boutique)
+
+- **Courbe d'XP configurable** : formule `min(cap, round(base × mult^(n−1) / 50) × 50)` (plateau vers le niveau 20), paramètres stockés dans la table Supabase `app_config` et chargés au démarrage via `loadXpCurve()`.
+- **Panel admin — Économie** (`/admin/economy.html`) : section courbe XP avec 3 paramètres éditables (Base, Mult, Cap), contrôle du niveau de fin, graphique SVG en temps réel, tableau niveau/XP défilable, et sauvegarde en base de données.
+- **Articles de la boutique** : les admins peuvent modifier inline le prix (🪙) et le niveau de débloquage de chaque article directement dans le tableau d'administration, avec confirmation par ligne (✓/✗).
+- **Boutique** (`/shop.html`) : navigation par onglets (Cadres · Effets · Fonds · Titres) avec le même style graphique que les onglets du profil.
+- Migrations SQL : `migration_economy.sql` (tables XP/niveaux/boutique), `migration_app_config.sql` (table clé-valeur `app_config`), `migration_cosmetics_streak.sql` (streak et cosmétiques).
+
+### 🎯 UX — Modale de fin de partie
+
+- **Barre XP pré-remplie** : le niveau et la progression XP sont affichés immédiatement à l'ouverture de la modale (depuis le cache profil `_cachedProfile`), sans flash à zéro.
+- **Chips masquées** jusqu'à l'animation de récompenses (plus d'apparition vide puis remplie).
+- **Cache XP mis à jour localement** après chaque partie pour que la barre soit correcte lors d'un relancement immédiat.
+- **Non-connectés** : prompt enrichi avec présentation des fonctionnalités (classement, défis quotidiens, boutique) et CTA inscription.
+
+### 🗂 Profil — Système d'onglets
+
+- Profil propre : onglets **Stats · Badges · Cosmétiques** ; section Confidentialité toujours en bas au-dessus de la zone danger.
+- Vue admin sur un profil : onglets **Stats · Badges · Historique · Économie**.
+- Vue publique : onglets **Stats · Badges**.
+- Skin preview : label centré agrandi (14 px), sous-description supprimée.
+
+### 🔔 Onboarding & découverte
+
+- **Pastilles de découverte** (`.discovery-dot`) sur les liens nav vers les nouvelles fonctionnalités (Classement, Daily, Boutique) — disparaissent une fois la page visitée (localStorage `tango_seen`).
+- **Boutique ajoutée** à la barre de navigation (emoji 🛒) pour les utilisateurs connectés et non-connectés.
+- **Difficulté par défaut** : clic en dehors de la modale de choix de difficulté sans partie active → lance automatiquement une partie Facile.
+
+### 🐛 Corrections
+
+- **Flash classement quotidien** : vidage du contenu avant rechargement pour éviter l'affichage des résultats de la partie précédente.
+- **Boutique dupliquée** dans le menu hamburger : suppression du doublon, conservé uniquement dans la nav principale.
+
+---
+
 ## [v0.8] — Profils admin, historique des parties & corrections extrême
 
 ### 👤 Profil joueur (vue admin)

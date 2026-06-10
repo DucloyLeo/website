@@ -62,9 +62,9 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=6">
+<link rel="stylesheet" href="css/common.css?v=7">
 <link rel="stylesheet" href="css/animations.css">
-<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
 nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
 .nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;text-align:center;text-decoration:none;color:var(--text)}
@@ -91,7 +91,8 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .diff-badge-btn.custom{border-color:rgba(143,168,212,.4);color:var(--moon)}
 .diff-badge-btn.extreme{border-color:rgba(180,30,30,.5);color:#c0392b}
 
-.grid-outer{position:relative}
+.grid-outer{position:relative;isolation:isolate}.grid-outer::after{content:'';position:absolute;inset:-4px;background:var(--bg);border-radius:14px;z-index:-1;pointer-events:none}
+.timer-bar{position:relative;z-index:1}
 .grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
 table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}
@@ -154,7 +155,7 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
 #win-modal{background:transparent}
 #win-modal .modal{background:var(--surface);box-shadow:0 10px 40px rgba(0,0,0,.45)}
 
-main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem}
+main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem;position:relative;z-index:1}
 @media(max-width:700px){.ci{width:52px!important;height:52px!important;font-size:1.5rem!important}.cn{font-size:9px;width:13px;height:13px}.cn.h{right:-7px}.cn.v{bottom:-7px}}
 </style>
 </head>
@@ -265,6 +266,39 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
     <div class="modal-title">Puzzle résolu !</div>
     <div class="modal-time" id="modal-time">—</div>
     <div class="modal-sub" id="win-sub">Bravo !</div>
+
+    <!-- Récompenses (connecté) -->
+    <div id="win-rewards-section" style="display:none;width:100%">
+      <div class="win-rewards-row">
+        <span class="win-reward-chip xp" id="win-xp-chip">+0 XP</span>
+        <span class="win-reward-chip coins" id="win-coins-chip">+0 🪙</span>
+      </div>
+      <div class="win-level-block">
+        <div class="win-level-header">
+          <span class="win-level-label">Niveau <strong id="win-level-num">1</strong></span>
+          <span class="win-level-xp-text" id="win-level-xp-text">0 / 100 XP</span>
+        </div>
+        <div class="win-xp-track">
+          <div class="win-xp-fill" id="win-xp-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="win-levelup-banner" id="win-levelup-banner" style="display:none">⬆ Niveau supérieur !</div>
+    </div>
+
+    <!-- Invitation connexion (non connecté) -->
+    <div id="win-login-prompt" style="display:none" class="win-login-prompt">
+      <p class="disc-tagline">Crée un compte pour débloquer tout ça :</p>
+      <div class="disc-features">
+        <span class="disc-pill">📅 Niveaux du jour</span>
+        <span class="disc-pill">🏆 Classement</span>
+        <span class="disc-pill">🛍 Boutique</span>
+        <span class="disc-pill">⭐ XP & Niveaux</span>
+        <span class="disc-pill">🎨 Cosmétiques</span>
+      </div>
+      <a href="/login.html" class="btn sun btn-full" style="margin-bottom:.5rem">Créer un compte — c'est gratuit</a>
+      <p style="font-size:11px;color:var(--muted)">Déjà inscrit ? <a href="/login.html" style="color:var(--moon)">Se connecter</a></p>
+    </div>
+
     <div class="modal-btns">
       <button class="btn sun btn-full" onclick="onWinNext()">✦ Nouveau puzzle</button>
     </div>
@@ -305,7 +339,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=6"></script>
+<script src="js/auth.js?v=7"></script>
 <script src="js/skins.js?v=4"></script>
 <script src="js/animations.js"></script>
 <script src="js/sounds.js"></script>
@@ -322,7 +356,10 @@ let generating=false,currentDiff=null,rememberDiff=false,extremeMode=false;
 let errRowTimers={},errColTimers={},activeErrRows=new Set(),activeErrCols=new Set(),hintCell=null,gameWon=false;
 let currentSeedStr=null;
 let currentUserId=null;
-let isAssisted=false;
+let hintCount=0;
+let ctrlHUsed=false;
+// alias pour les appels qui vérifient si la partie a été assistée
+Object.defineProperty(window,'isAssisted',{get:()=>hintCount>0||ctrlHUsed});
 
 /* ── Seed encoding (23 chars, base64url) ── */
 const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -369,7 +406,7 @@ function copySeed(){
 }
 
 /* ── Overlay ── */
-function onOverlayClick(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('show');}
+function onOverlayClick(e,id){if(e.target===document.getElementById(id)){document.getElementById(id).classList.remove('show');if(id==='diff-modal'&&!puzzle.length)startGeneration('easy');}}
 
 /* ── Prefs ── */
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}extremeMode=localStorage.getItem('tango_extreme')==='1';document.getElementById('pref-extreme').checked=extremeMode;const sc=document.getElementById('pref-sound');if(sc)sc.checked=(typeof SOUND==='undefined'||!SOUND.muted);}catch(e){}}
@@ -555,6 +592,7 @@ function confirmHint(){
   const{r,c,val}=hintCell;const el=cellEl(r,c);
   hintCell=null;document.getElementById('hint-bubble').classList.remove('show');
   const prev=board[r][c];hist.push({r,c,prev});board[r][c]=val;
+  hintCount++;
   if(el){el.classList.remove('hint-preview');setCellSymbol(el,val);}
   updateErrorTimers();
   if(el&&typeof ANIM!=='undefined'){ANIM.place(el);ANIM.hint(el);}
@@ -611,7 +649,6 @@ async function checkWin(){
   for(let r=0;r<N;r++)if(board[r].filter(v=>v===SUN).length!==N/2)return;
   for(let c=0;c<N;c++)if(board.map(row=>row[c]).filter(v=>v===SUN).length!==N/2)return;
   clearAllErrors();clearHintPreview();stopTimer();timerDone=true;gameWon=true;
-  // Cascade dorée sur les cellules avant le flou
   if(typeof ANIM!=='undefined'){
     const cells=[...document.getElementById('grid').querySelectorAll('.ci')];
     ANIM.winCascade(cells);
@@ -619,25 +656,112 @@ async function checkWin(){
   if(typeof SOUND!=='undefined')SOUND.win();
   saveStatsLocal(currentDiff,timerSec);
 
-  // La modale (fond semi-transparent + flou local) laisse voir la cascade.
   document.getElementById('modal-time').textContent=fmt(timerSec);
   document.getElementById('win-sub').textContent='Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
+
+  // Afficher immédiatement la section XP avec état squelette
+  const rewardsSec=document.getElementById('win-rewards-section');
+  const loginPrompt=document.getElementById('win-login-prompt');
+  rewardsSec.style.display='none';
+  loginPrompt.style.display='none';
+  if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
+    document.getElementById('win-xp-chip').style.visibility='hidden';
+    document.getElementById('win-coins-chip').style.visibility='hidden';
+    const _pre=window._cachedProfile?xpProgressInLevel(window._cachedProfile.xp||0):null;
+    document.getElementById('win-level-num').textContent=window._cachedProfile?levelFromXp(window._cachedProfile.xp||0):'…';
+    document.getElementById('win-level-xp-text').textContent=_pre?(_pre.current+' / '+_pre.needed+' XP'):'…';
+    {const _f=document.getElementById('win-xp-fill');_f.style.transition='none';_f.style.width=(_pre?Math.round(_pre.current/_pre.needed*100):0)+'%';}
+    document.getElementById('win-levelup-banner').style.display='none';
+    rewardsSec.style.display='';
+  } else if(!currentUserId){
+    loginPrompt.style.display='';
+  }
+
   document.getElementById('win-modal').classList.add('show');
 
-  // Sauvegarde en arrière-plan — le toast badge arrive via Realtime
   if(currentUserId&&['easy','medium','hard','extreme'].includes(currentDiff)){
-    saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,isAssisted)
-      .catch(e=>console.error('saveGameResult:',e));
+    try{
+      const result=await saveGameResult(currentUserId,currentDiff,timerSec,currentSeedStr,hintCount,ctrlHUsed);
+      if(window._cachedProfile)window._cachedProfile.xp=xpForLevel(result.new_level)+result.xp_in_level;
+      _showWinRewards(result);
+      // Mettre à jour la pastille de pièces dans la nav
+      if(typeof updateNavCoins==='function'){
+        const navCoins=document.getElementById('nav-coins-badge');
+        if(navCoins){
+          const cur=parseInt(navCoins.textContent.replace(/\D/g,''))||0;
+          updateNavCoins(cur+result.coins_earned);
+        }
+      }
+    }catch(e){console.error('saveGameResult:',e);}
   }
 }
 
-function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}
+function _popChip(el,text){
+  el.textContent=text;
+  el.classList.remove('pop');
+  void el.offsetWidth; // force reflow
+  el.classList.add('pop');
+  // Particule flottante
+  const rect=el.getBoundingClientRect();
+  const p=document.createElement('span');
+  p.className='reward-float';
+  p.textContent=text;
+  p.style.cssText='left:'+(rect.left+rect.width/2)+'px;top:'+rect.top+'px;color:'+getComputedStyle(el).color+';position:fixed;z-index:9999';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),950);
+}
+
+function _showWinRewards({xp_earned,coins_earned,new_level,old_level,leveled_up,xp_in_level,xp_to_next}){
+  const sec=document.getElementById('win-rewards-section');
+  sec.style.display='';
+  document.getElementById('win-xp-chip').style.visibility='';
+  document.getElementById('win-coins-chip').style.visibility='';
+  _popChip(document.getElementById('win-xp-chip'),'+'+xp_earned+' XP');
+  _popChip(document.getElementById('win-coins-chip'),'+'+coins_earned+' 🪙');
+  document.getElementById('win-level-num').textContent=new_level;
+  document.getElementById('win-level-xp-text').textContent=xp_in_level+' / '+xp_to_next+' XP';
+
+  const banner=document.getElementById('win-levelup-banner');
+  banner.style.display=leveled_up?'':'none';
+
+  // Animation de la barre XP
+  const fill=document.getElementById('win-xp-fill');
+  fill.style.transition='none';
+  if(leveled_up){
+    // Remplir jusqu'à 100% puis redémarrer au nouveau niveau
+    const oldPct=Math.round((xp_in_level+xp_earned<=xp_to_next?xp_in_level:0)/xp_to_next*100);
+    fill.style.width=oldPct+'%';
+    requestAnimationFrame(()=>{
+      fill.style.transition='width .6s ease';
+      fill.style.width='100%';
+      setTimeout(()=>{
+        fill.style.transition='none';
+        fill.style.width='0%';
+        requestAnimationFrame(()=>{
+          fill.style.transition='width .8s ease';
+          fill.style.width=Math.round(xp_in_level/xp_to_next*100)+'%';
+        });
+      },700);
+    });
+    if(typeof showLevelUpToast==='function')showLevelUpToast(new_level);
+  } else {
+    const targetPct=Math.round(xp_in_level/xp_to_next*100);
+    const startPct=Math.max(0,targetPct-Math.round(xp_earned/xp_to_next*100));
+    fill.style.width=startPct+'%';
+    requestAnimationFrame(()=>{
+      fill.style.transition='width .8s ease';
+      fill.style.width=targetPct+'%';
+    });
+  }
+}
+
+function resetPuzzle(){clearAllErrors();clearHintPreview();board=puzzle.map(r=>[...r]);hist=[];gameWon=false;hintCount=0;ctrlHUsed=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}
 function onWinOverlayClick(e){if(e.target===document.getElementById('win-modal')){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');}}
 function onWinNext(){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');askNewPuzzle();}
 
 function applyHintDirect(){
   if(gameWon)return;
-  isAssisted=true;
+  ctrlHUsed=true;
   if(!timerOn&&!timerDone)startTimer();
   if(!hintCell){
     const b=board.map(r=>[...r]);
@@ -737,7 +861,7 @@ async function startGeneration(diff){
   if(generating)return;
   // Mode extrême : toujours extrême quelle que soit la diff sélectionnée. Sinon, 10% de chance sur hard.
   const effectiveDiff=extremeMode?'extreme':(diff==='hard'&&Math.random()<0.10?'extreme':diff);
-  generating=true;isAssisted=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
+  generating=true;hintCount=0;ctrlHUsed=false;setButtons(true);clearAllErrors();clearHintPreview();gameWon=false;
   document.getElementById('grid-wrap').classList.remove('blurred');
   document.getElementById('win-modal').classList.remove('show');
   document.getElementById('gen-label').textContent='Génération'+(effectiveDiff==='extreme'?' ☠ Extrême':' niveau '+DIFF_LABELS[diff])+'…';

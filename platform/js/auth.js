@@ -68,16 +68,102 @@ async function signOut() {
   window.location.href = '/index.html';
 }
 
+// ─── Formules XP / Niveaux ───────────────────────────
+
+// Paramètres de courbe (écrasés par loadXpCurve si connecté à la DB)
+window._xpCurve = window._xpCurve || { base: 300, mult: 1.13, cap: 3000 };
+
+async function loadXpCurve() {
+  const { data } = await db.from('app_config').select('value').eq('key', 'xp_curve').maybeSingle();
+  if (data?.value) {
+    const { base, mult, cap } = data.value;
+    window._xpCurve = {
+      base: Number(base) || 300,
+      mult: Number(mult) || 1.13,
+      cap:  Number(cap)  || 3000,
+    };
+  }
+}
+
+// XP nécessaire pour passer du niveau n au niveau n+1
+function xpToNextLevel(n) {
+  const { base, mult, cap } = window._xpCurve;
+  return Math.min(cap, Math.round(base * Math.pow(mult, n - 1) / 50) * 50);
+}
+
+// Niveau correspondant à un total d'XP
+// XP total cumulé au début du niveau donné (niveau 1 = 0 XP)
+function xpForLevel(targetLevel) {
+  let cum = 0;
+  for (let l = 1; l < targetLevel; l++) cum += xpToNextLevel(l);
+  return cum;
+}
+
+function levelFromXp(totalXp) {
+  let level = 1, cumXp = 0;
+  while (true) {
+    const needed = xpToNextLevel(level);
+    if (cumXp + needed > totalXp) break;
+    cumXp += needed;
+    level++;
+  }
+  return level;
+}
+
+// XP dans le niveau actuel + XP requis pour passer au suivant
+function xpProgressInLevel(totalXp) {
+  let level = 1, cumXp = 0;
+  while (true) {
+    const needed = xpToNextLevel(level);
+    if (cumXp + needed > totalXp) return { current: totalXp - cumXp, needed };
+    cumXp += needed;
+    level++;
+  }
+}
+
+// ─── Déblocage des items par niveau ──────────────────
+
+async function checkLevelUnlocks(userId, newLevel) {
+  try {
+    const { data: items } = await db.from('shop_items')
+      .select('id')
+      .eq('is_active', true)
+      .lte('unlock_level', newLevel)
+      .not('unlock_level', 'is', null);
+    if (!items?.length) return;
+
+    for (const item of items) {
+      const { data: existing } = await db.from('player_inventory')
+        .select('id').eq('user_id', userId).eq('item_id', item.id).maybeSingle();
+      if (!existing) {
+        const { error } = await db.from('player_inventory').insert({
+          user_id: userId, item_id: item.id, acquired_via: 'level_unlock'
+        });
+        if (error) console.warn('level_unlock insert:', error.message);
+      }
+    }
+  } catch(e) { console.warn('checkLevelUnlocks:', e); }
+}
+
 // ─── Sauvegarde d'une partie ─────────────────────────
+// Retourne { xp_earned, coins_earned, new_level, old_level, leveled_up,
+//            xp_in_level, xp_to_next, new_badges }
 
-async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false) {
-  if (!userId || !['easy', 'medium', 'hard', 'extreme'].includes(diff) || timeSeconds <= 0) return [];
+async function saveGameResult(userId, diff, timeSeconds, seed, hintCount = 0, ctrlHUsed = false) {
+  const emptyResult = { xp_earned: 0, coins_earned: 0, new_level: 1, old_level: 1,
+                        leveled_up: false, xp_in_level: 0, xp_to_next: 100, new_badges: [] };
+  if (!userId || !['easy', 'medium', 'hard', 'extreme'].includes(diff) || timeSeconds <= 0) return emptyResult;
 
+  const assisted = hintCount > 0 || ctrlHUsed;
+
+  // ── Enregistrement de la partie ──
   const { error: levErr } = await db.from('completed_levels').insert({
-    user_id: userId, seed: seed || null, difficulty: diff, time_seconds: timeSeconds
+    user_id: userId, seed: seed || null, difficulty: diff,
+    time_seconds: timeSeconds, hints_used: hintCount, ctrl_h_used: ctrlHUsed
   });
   if (levErr) console.warn('completed_levels insert:', levErr.message);
 
+  // ── Statistiques par difficulté ──
   const { data: existing, error: selErr } = await db
     .from('player_stats').select('*').eq('user_id', userId).eq('difficulty', diff).maybeSingle();
   if (selErr) console.warn('player_stats select:', selErr.message);
@@ -101,15 +187,60 @@ async function saveGameResult(userId, diff, timeSeconds, seed, assisted = false)
     if (insErr) console.warn('player_stats insert:', insErr.message);
   }
 
-  let newBadges = [];
-  try { newBadges = await checkAndAwardBadges(userId, diff, timeSeconds, assisted) || []; }
+  // ── Calcul XP & Pièces ──
+  let xp_earned = 0, coins_earned = 0;
+  if (!ctrlHUsed) {
+    const { data: params } = await db.from('xp_params').select('*').eq('id', diff).maybeSingle();
+    if (params) {
+      const tiers = (params.speed_tiers || []).slice().sort((a, b) => a.max_seconds - b.max_seconds);
+      let multiplier = 1.0;
+      for (const tier of tiers) {
+        if (timeSeconds <= tier.max_seconds) { multiplier = tier.multiplier; break; }
+      }
+      const baseWithSpeed = Math.floor(params.base_xp * multiplier);
+      const penalty = hintCount * params.hint_penalty;
+      xp_earned    = Math.max(10, baseWithSpeed - penalty);
+      coins_earned = Math.floor(xp_earned / 5);
+    }
+  }
+
+  // ── Mise à jour profil XP / Niveau / Pièces ──
+  let old_level = 1, new_level = 1, leveled_up = false, total_xp = 0;
+
+  const { data: profile } = await db.from('profiles')
+    .select('xp, level, coins').eq('id', userId).maybeSingle();
+
+  if (profile) {
+    old_level = profile.level || 1;
+    total_xp  = (profile.xp || 0) + xp_earned;
+    new_level = levelFromXp(total_xp);
+    leveled_up = new_level > old_level;
+
+    if (xp_earned > 0 || coins_earned > 0) {
+      const { error: upErr } = await db.from('profiles').update({
+        xp:     total_xp,
+        level:  new_level,
+        coins:  (profile.coins || 0) + coins_earned
+      }).eq('id', userId);
+      if (upErr) console.warn('profiles xp update:', upErr.message);
+    }
+
+    if (leveled_up) await checkLevelUnlocks(userId, new_level);
+  }
+
+  const { current: xp_in_level, needed: xp_to_next } = xpProgressInLevel(total_xp);
+
+  // ── Badges ──
+  let new_badges = [];
+  try { new_badges = await checkAndAwardBadges(userId, diff, timeSeconds, assisted, new_level) || []; }
   catch(e) { console.warn('badges:', e); }
-  return newBadges || [];
+
+  return { xp_earned, coins_earned, new_level, old_level, leveled_up, xp_in_level, xp_to_next, new_badges };
 }
 
 // ─── Badges ──────────────────────────────────────────
 
-async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) {
+async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false, level = 1) {
   const [statsRes, badgesRes, earnedRes, compRes, profRes] = await Promise.all([
     db.from('player_stats').select('*').eq('user_id', userId),
     db.from('badges').select('*').order('sort_order'),
@@ -126,7 +257,6 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
   const totalTime  = stats.reduce((s, r) => s + (r.total_time || 0), 0);
   const newlyEarned = [];
 
-  // ── Données dérivées des parties (jours, séries) ──
   const dayKey = ts => { const x = new Date(ts); x.setHours(0, 0, 0, 0); return x.getTime(); };
   const perDay = {};
   completions.forEach(c => { const k = dayKey(c.completed_at); perDay[k] = (perDay[k] || 0) + 1; });
@@ -140,7 +270,6 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
     prev = k;
   }
 
-  // ── Contexte de la partie en cours ──
   const nowHour    = new Date().getHours();
   const accountAge = profRes.data?.created_at
     ? Math.floor((Date.now() - new Date(profRes.data.created_at).getTime()) / 86400000)
@@ -208,6 +337,10 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
       case 'all_difficulties':
         earned = ['easy', 'medium', 'hard'].every(d => playedDiffs.has(d));
         break;
+
+      case 'level':
+        earned = (level || 1) >= val;
+        break;
     }
 
     if (earned) {
@@ -226,21 +359,216 @@ async function checkAndAwardBadges(userId, diff, timeSeconds, assisted = false) 
   return newlyEarned;
 }
 
+// ─── Boutique ─────────────────────────────────────────
+
+async function getShopItems() {
+  const { data } = await db.from('shop_items').select('*').eq('is_active', true).order('sort_order');
+  return data || [];
+}
+
+async function getPlayerInventory(userId) {
+  const { data } = await db.from('player_inventory').select('item_id, acquired_via, acquired_at').eq('user_id', userId);
+  return data || [];
+}
+
+async function purchaseItem(userId, itemId) {
+  const { data: item } = await db.from('shop_items').select('*').eq('id', itemId).eq('is_active', true).maybeSingle();
+  if (!item) throw new Error('Article introuvable');
+  if (item.unlock_level !== null) throw new Error('Cet article se débloque par le niveau');
+
+  const { data: profile } = await db.from('profiles').select('coins, level').eq('id', userId).maybeSingle();
+  if (!profile) throw new Error('Profil introuvable');
+  if ((profile.coins || 0) < item.cost) throw new Error('Pièces insuffisantes');
+
+  const { data: existing } = await db.from('player_inventory')
+    .select('id').eq('user_id', userId).eq('item_id', itemId).maybeSingle();
+  if (existing) throw new Error('Article déjà possédé');
+
+  const { error: invErr } = await db.from('player_inventory').insert({
+    user_id: userId, item_id: itemId, acquired_via: 'shop'
+  });
+  if (invErr) throw new Error('Erreur lors de l\'achat');
+
+  const { error: coinsErr } = await db.from('profiles').update({
+    coins: (profile.coins || 0) - item.cost
+  }).eq('id', userId);
+  if (coinsErr) console.warn('coins deduct:', coinsErr.message);
+
+  // Log de transaction
+  await db.from('shop_transactions').insert({ user_id: userId, item_id: itemId, cost: item.cost });
+
+  return item;
+}
+
+// ─── Cosmétiques actifs ───────────────────────────────
+
+async function setActiveCosmetic(userId, slot, itemId) {
+  // slot = 'active_frame' | 'active_effect' | 'active_title'
+  const allowed = ['active_frame', 'active_effect', 'active_title', 'active_background'];
+  if (!allowed.includes(slot)) return;
+  const { error } = await db.from('profiles').update({ [slot]: itemId || null }).eq('id', userId);
+  if (error) console.warn('setActiveCosmetic:', error.message);
+}
+
+// Retourne { frame, effect, title } pour un profil donné
+function getCosmeticsFromProfile(profile) {
+  return {
+    frame:  profile?.active_frame  || null,
+    effect: profile?.active_effect || null,
+    title:  profile?.active_title  || null,
+  };
+}
+
+// Génère le HTML d'un avatar avec cadre + effet appliqués
+function renderAvatarHtml(profile, size = 48) {
+  const frame  = profile?.active_frame  || '';
+  const effect = profile?.active_effect || '';
+  const inner = `<div class="avatar-inner" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px">👤</div>`;
+  const fx = effect ? `<div class="avatar-effect ${effect}"></div>` : '';
+  return `<div class="avatar-wrap ${frame}" style="width:${size}px;height:${size}px">${inner}${fx}</div>`;
+}
+
+// ─── Streak journalier ────────────────────────────────
+
+function getParisTodayStr() {
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+}
+
+function getParisYesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(d);
+}
+
+// Mise à jour du streak après completion du daily.
+// Retourne { streak_current, streak_max, streak_multiplier, is_new_day }
+async function updateDailyStreak(userId) {
+  const today     = getParisTodayStr();
+  const yesterday = getParisYesterdayStr();
+
+  const [profileRes, paramsRes, streakParamsRes] = await Promise.all([
+    db.from('profiles').select('streak_current, streak_max, last_daily_date').eq('id', userId).maybeSingle(),
+    db.from('daily_bonus_params').select('max_streak_days').eq('id', 'default').maybeSingle(),
+    db.from('streak_params').select('*').order('day_count')
+  ]);
+
+  const profile    = profileRes.data;
+  const maxDays    = paramsRes.data?.max_streak_days || 7;
+  const streakRows = streakParamsRes.data || [];
+
+  const lastDate = profile?.last_daily_date || null;
+
+  // Déjà fait aujourd'hui
+  if (lastDate === today) {
+    const cur = profile?.streak_current || 1;
+    const row = streakRows.find(r => r.day_count === Math.min(cur, maxDays));
+    return { streak_current: cur, streak_max: profile?.streak_max || 1, streak_multiplier: row?.xp_multiplier || 1, is_new_day: false };
+  }
+
+  // Calcul nouveau streak
+  let newStreak = 1;
+  if (lastDate === yesterday) {
+    newStreak = Math.min((profile?.streak_current || 0) + 1, maxDays);
+  }
+
+  const newMax = Math.max(profile?.streak_max || 0, newStreak);
+  const { error } = await db.from('profiles').update({
+    streak_current: newStreak,
+    streak_max:     newMax,
+    last_daily_date: today
+  }).eq('id', userId);
+  if (error) console.warn('updateDailyStreak:', error.message);
+
+  const row = streakRows.find(r => r.day_count === newStreak);
+  return { streak_current: newStreak, streak_max: newMax, streak_multiplier: row?.xp_multiplier || 1, is_new_day: true };
+}
+
+// ─── Récompenses daily ────────────────────────────────
+// Appelé lors de la 1ère complétion du daily du jour.
+// Retourne { xp_earned, coins_earned, bonus_xp, bonus_coins,
+//            streak_current, streak_max, streak_multiplier,
+//            new_level, old_level, leveled_up, xp_in_level, xp_to_next }
+
+async function saveDailyResult(userId, diff, timeSeconds) {
+  const empty = { xp_earned:0, coins_earned:0, bonus_xp:0, bonus_coins:0,
+                  streak_current:1, streak_max:1, streak_multiplier:1,
+                  new_level:1, old_level:1, leveled_up:false, xp_in_level:0, xp_to_next:100 };
+  if (!userId || timeSeconds <= 0) return empty;
+
+  const effectiveDiff = ['easy','medium','hard','extreme'].includes(diff) ? diff : 'medium';
+
+  const [xpParamsRes, bonusRes, streakResult, profileRes] = await Promise.all([
+    db.from('xp_params').select('*').eq('id', effectiveDiff).maybeSingle(),
+    db.from('daily_bonus_params').select('*').eq('id', 'default').maybeSingle(),
+    updateDailyStreak(userId),
+    db.from('profiles').select('xp, level, coins').eq('id', userId).maybeSingle()
+  ]);
+
+  // Streak déjà fait aujourd'hui → pas de récompense double
+  if (!streakResult.is_new_day) return { ...empty, ...streakResult };
+
+  const params     = xpParamsRes.data;
+  const bonusParam = bonusRes.data || { bonus_xp: 50, bonus_coins: 20 };
+
+  let base_xp = 10, multiplier = 1;
+  if (params) {
+    const tiers = (params.speed_tiers || []).slice().sort((a, b) => a.max_seconds - b.max_seconds);
+    for (const tier of tiers) {
+      if (timeSeconds <= tier.max_seconds) { multiplier = tier.multiplier; break; }
+    }
+    base_xp = Math.floor(params.base_xp * multiplier);
+  }
+
+  const game_xp      = Math.max(10, Math.floor(base_xp * (streakResult.streak_multiplier || 1)));
+  const bonus_xp     = bonusParam.bonus_xp;
+  const bonus_coins  = bonusParam.bonus_coins;
+  const xp_earned    = game_xp + bonus_xp;
+  const coins_earned = Math.floor(game_xp / 5) + bonus_coins;
+
+  // Mise à jour profil
+  const profile = profileRes.data;
+  let old_level = profile?.level || 1;
+  const total_xp = (profile?.xp || 0) + xp_earned;
+  const new_level = levelFromXp(total_xp);
+  const leveled_up = new_level > old_level;
+
+  const { error: upErr } = await db.from('profiles').update({
+    xp:    total_xp,
+    level: new_level,
+    coins: (profile?.coins || 0) + coins_earned
+  }).eq('id', userId);
+  if (upErr) console.warn('saveDailyResult profile update:', upErr.message);
+
+  if (leveled_up) await checkLevelUnlocks(userId, new_level);
+
+  const { current: xp_in_level, needed: xp_to_next } = xpProgressInLevel(total_xp);
+
+  return {
+    xp_earned, coins_earned, bonus_xp, bonus_coins,
+    streak_current: streakResult.streak_current,
+    streak_max:     streakResult.streak_max,
+    streak_multiplier: streakResult.streak_multiplier,
+    new_level, old_level, leveled_up, xp_in_level, xp_to_next
+  };
+}
+
 // ─── Export RGPD ─────────────────────────────────────
 
 async function exportUserData(userId) {
-  const [profile, stats, levels, badges] = await Promise.all([
-    db.from('profiles').select('username, role, created_at').eq('id', userId).single(),
+  const [profile, stats, levels, badges, inventory] = await Promise.all([
+    db.from('profiles').select('username, role, xp, level, coins, created_at').eq('id', userId).single(),
     db.from('player_stats').select('difficulty, games_played, best_time, total_time').eq('user_id', userId),
-    db.from('completed_levels').select('difficulty, time_seconds, completed_at').eq('user_id', userId).order('completed_at', { ascending: false }).limit(500),
-    db.from('player_badges').select('badge_id, earned_at, badges(name, icon)').eq('user_id', userId)
+    db.from('completed_levels').select('difficulty, time_seconds, hints_used, ctrl_h_used, completed_at').eq('user_id', userId).order('completed_at', { ascending: false }).limit(500),
+    db.from('player_badges').select('badge_id, earned_at, badges(name, icon)').eq('user_id', userId),
+    db.from('player_inventory').select('item_id, acquired_via, acquired_at').eq('user_id', userId)
   ]);
 
   const data = {
-    profil:   profile.data,
-    stats:    stats.data,
-    parties:  levels.data,
-    badges:   badges.data
+    profil:    profile.data,
+    stats:     stats.data,
+    parties:   levels.data,
+    badges:    badges.data,
+    inventaire: inventory.data
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -253,6 +581,7 @@ async function exportUserData(userId) {
 // ─── Suppression de compte ───────────────────────────
 
 async function deleteAccount(userId) {
+  await db.from('player_inventory').delete().eq('user_id', userId);
   await db.from('completed_levels').delete().eq('user_id', userId);
   await db.from('player_stats').delete().eq('user_id', userId);
   await db.from('player_badges').delete().eq('user_id', userId);
@@ -291,6 +620,7 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+
 // ─── Préférences utilisateur (DB) ────────────────────
 
 let _currentUserId = null;
@@ -317,10 +647,6 @@ function saveUserPref(userId, patch) {
 }
 
 // ── Menu hamburger commun (pages hors admin) ──────────
-// Source unique du menu de jeu, injecté sur chaque page non-admin.
-// Les actions de jeu (Nouvelle partie, Difficulté, Commandes) et les
-// toggles sont surchargés par le moteur de jeu sur la page de jeu ;
-// ailleurs, les fonctions de repli ci-dessous prennent le relais.
 function renderGameMenu() {
   if (location.pathname.includes('/admin/')) return;
   const menu = document.getElementById('nav-menu');
@@ -362,10 +688,47 @@ function toggleExtremeMode(e)  { e.stopPropagation(); const cb = document.getEle
 function onSoundPrefChange()   { const on = document.getElementById('pref-sound').checked; try { localStorage.setItem('tango_sound', on ? '1' : '0'); } catch (e) {} if (typeof SOUND !== 'undefined') SOUND.setMuted(!on); }
 function toggleSoundPref(e)    { e.stopPropagation(); const cb = document.getElementById('pref-sound'); cb.checked = !cb.checked; onSoundPrefChange(); }
 
+// ─── Discovery / Onboarding ───────────────────────────
+const _DISC_FEATURES = {
+  daily:       '/daily.html',
+  leaderboard: '/leaderboard.html',
+  shop:        '/shop.html',
+};
+function _getSeenFeatures() {
+  try { return new Set(JSON.parse(localStorage.getItem('tango_seen') || '[]')); } catch(e) { return new Set(); }
+}
+function markFeatureSeen(key) {
+  const s = _getSeenFeatures(); s.add(key);
+  try { localStorage.setItem('tango_seen', JSON.stringify([...s])); } catch(e) {}
+  document.getElementById('discovery-dot-' + key)?.remove();
+}
+function _initDiscovery() {
+  // Marquer la page courante comme vue
+  const p = window.location.pathname;
+  for (const [key, path] of Object.entries(_DISC_FEATURES)) {
+    if (p === path || p.endsWith(path)) markFeatureSeen(key);
+  }
+  // Ajouter les dots sur les liens non encore visités
+  const seen = _getSeenFeatures();
+  document.querySelectorAll('a.nav-menu-item').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    for (const [key, path] of Object.entries(_DISC_FEATURES)) {
+      if (!seen.has(key) && href === path) {
+        const dot = document.createElement('span');
+        dot.id = 'discovery-dot-' + key;
+        dot.className = 'discovery-dot';
+        a.appendChild(dot);
+        a.addEventListener('click', () => markFeatureSeen(key), { once: true });
+        break;
+      }
+    }
+  });
+}
+
 // Injecte l'état auth dans la nav (à appeler sur chaque page)
 async function initNavAuth(opts = {}) {
   renderGameMenu();
-  const user = await getCurrentUser();
+  const [user] = await Promise.all([getCurrentUser(), loadXpCurve()]);
   _currentUserId = user?.id || null;
   const el   = document.getElementById('nav-auth');
   const mel  = document.getElementById('menu-auth-item');
@@ -373,9 +736,9 @@ async function initNavAuth(opts = {}) {
 
   if (user) {
     const [profile, prefs] = await Promise.all([getCurrentProfile(), getUserPrefs(user.id).catch(() => ({}))]);
+    window._cachedProfile = profile;
     window._userPrefs = prefs;
 
-    // Appliquer le thème sauvegardé en DB si différent de l'état actuel
     if (prefs.theme && prefs.theme !== document.documentElement.getAttribute('data-theme')) {
       document.documentElement.setAttribute('data-theme', prefs.theme);
       try { localStorage.setItem('tango_theme', prefs.theme); } catch(e) {}
@@ -383,25 +746,45 @@ async function initNavAuth(opts = {}) {
 
     _initRealtime(user.id);
 
+    // Sync fond de page depuis DB → localStorage + application immédiate
+    const dbBg = profile?.active_background || '';
+    document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+    if (dbBg) document.body.classList.add(dbBg);
+    try { localStorage.setItem('tango_bg', dbBg); } catch(e) {}
+
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';
+    const coins   = profile?.coins || 0;
+    const roleChip = isAdmin
+      ? '<a href="/admin/" style="color:var(--sun);font-size:10px;background:var(--surface);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;margin-right:4px;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'rgba(245,200,66,.12)\'" onmouseout="this.style.background=\'var(--surface)\'">Admin</a>'
+      : isVip
+        ? '<span style="color:var(--moon);font-size:10px;background:var(--surface);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;margin-right:4px">✦ VIP</span>'
+        : '';
     if (el) el.innerHTML = `
-      <a href="/profile.html" class="nav-auth-link">${profile?.username || 'Profil'}${isVip ? ' <span style="color:var(--moon);font-size:10px">✦ VIP</span>' : ''}</a>
-      ${isAdmin ? '<a href="/admin/" class="nav-auth-link nav-admin">Admin</a>' : ''}
+      ${roleChip}<a href="/profile.html" class="nav-auth-link" id="nav-username">${profile?.username || 'Profil'}</a>
+      <span class="nav-coins" id="nav-coins-badge" title="Pièces">🪙 ${coins}</span>
       <button onclick="signOut()" class="nav-auth-btn">Déconnexion</button>`;
     if (mel) mel.innerHTML = `
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
+      <a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a>
+      <a href="/shop.html" class="nav-menu-item">🛒 Boutique</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
-      ${isAdmin ? '<a href="/admin/" class="nav-menu-item">⚙️ Admin</a>' : ''}
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
-    if (el) el.innerHTML = `<a href="/stats.html" class="nav-auth-link">Statistiques</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/stats.html" class="nav-menu-item">📊 Statistiques</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (el) el.innerHTML = `<a href="/leaderboard.html" class="nav-auth-link">Classement</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/shop.html" class="nav-menu-item">🛒 Boutique</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
+  _initDiscovery();
   return user;
+}
+
+// Met à jour la pastille de pièces dans la nav sans recharger toute la nav
+function updateNavCoins(newTotal) {
+  const badge = document.getElementById('nav-coins-badge');
+  if (badge) badge.textContent = '🪙 ' + newTotal;
 }
 
 // ─── Hamburger ───────────────────────────────────────
@@ -421,7 +804,6 @@ document.addEventListener('click', closeMenu);
 const _notifHandlers = {};
 let _notifChannel = null;
 
-// Enregistrer un handler pour un type d'événement
 function onNotification(type, handler) {
   if (!_notifHandlers[type]) _notifHandlers[type] = [];
   _notifHandlers[type].push(handler);
@@ -441,7 +823,6 @@ function _initRealtime(userId) {
     .subscribe();
 }
 
-// Envoyer une notification globale (admin uniquement)
 async function sendAdminNotification(type, payload) {
   return db.from('notifications').insert({ user_id: null, type, payload });
 }
@@ -494,6 +875,15 @@ function showBadgeToast(badges) {
   _createToast(`<span class="badge-toast-label">🏅 Badge${badges.length > 1 ? 's' : ''} débloqué${badges.length > 1 ? 's' : ''}</span>${rows}`);
 }
 
+function showLevelUpToast(newLevel) {
+  _createToast(`
+    <span class="badge-toast-label" style="color:var(--sun)">⬆ Niveau supérieur !</span>
+    <div class="badge-toast-row">
+      <span class="badge-toast-ico">🏆</span>
+      <div><div class="badge-toast-name">Niveau ${newLevel} atteint</div><div class="badge-toast-desc">Continuez à jouer pour débloquer de nouvelles récompenses</div></div>
+    </div>`, 'rgba(245,200,66,.4)', 5000);
+}
+
 function showAdminToast(message) {
   _createToast(`
     <span class="badge-toast-label" style="color:var(--moon)">📢 Message de l'équipe</span>
@@ -514,7 +904,7 @@ function showRoleToast(role, message) {
     </div>`, borderColors[role] || 'var(--border2)', 6000);
 }
 
-onNotification('badge',       ({ badges })  => { if (badges?.length) showBadgeToast(badges); });
+onNotification('badge',        ({ badges })  => { if (badges?.length) showBadgeToast(badges); });
 onNotification('admin_message',({ message }) => { if (message) showAdminToast(message); });
 onNotification('role_change',  ({ role, message }) => { if (message) showRoleToast(role, message); });
 

@@ -13,8 +13,8 @@
 <link rel="canonical" href="https://tangoleo.fr/profile.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=6">
-<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<link rel="stylesheet" href="css/common.css?v=7">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
   .profile-header { display:flex; align-items:center; gap:1.5rem; padding:2.5rem 0 2rem; border-bottom:1px solid var(--border); }
   .profile-avatar { width:64px; height:64px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0; }
@@ -52,8 +52,43 @@
     width:34px; height:34px; font-size:1.05rem;
     border-radius:7px; border:1px solid var(--border2); background:var(--surface2);
   }
-  .skin-label { font-size:12px; color:var(--text); font-weight:500; }
-  .skin-desc { font-size:10px; color:var(--muted); }
+  .skin-label { font-size:14px; color:var(--text); font-weight:500; text-align:center; }
+  /* Tabs profil */
+  .profile-tabs { display:flex; gap:6px; margin-top:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .profile-tab {
+    font-size:12px; font-family:'DM Mono',monospace; font-weight:500; letter-spacing:.04em;
+    color:var(--muted); background:none; border:none; border-bottom:2px solid transparent;
+    padding:.5rem 1rem; margin-bottom:-1px; cursor:pointer; transition:color .15s, border-color .15s;
+  }
+  .profile-tab:hover { color:var(--text); }
+  .profile-tab.active { color:var(--moon); border-bottom-color:var(--moon); }
+  /* Cosmétiques */
+  .cosmetics-grid { display:flex; flex-direction:column; gap:1.2rem; }
+  .cosm-slot { display:flex; flex-direction:column; gap:.5rem; }
+  .cosm-slot-label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .cosm-opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .cosm-opt {
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:.55rem .9rem; cursor:pointer;
+    font-size:12px; transition:border-color .15s, box-shadow .15s;
+  }
+  .cosm-opt:hover { border-color:var(--border2); }
+  .cosm-opt.active { border-color:var(--moon); box-shadow:0 0 0 1px var(--moon); }
+  .cosm-opt.locked { opacity:.4; cursor:default; }
+  .cosm-opt-none { color:var(--muted); font-style:italic; }
+  /* Éditeur économie (vue admin) */
+  .eco-editor { background:var(--surface); border:1px solid rgba(245,200,66,.2); border-radius:10px; padding:1rem; margin-top:1rem; display:flex; flex-direction:column; gap:10px; max-width:380px; }
+  .eco-editor-title { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--sun); margin-bottom:2px; }
+  .eco-editor-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .eco-editor-field { display:flex; flex-direction:column; gap:3px; flex:1; min-width:80px; }
+  .eco-editor-label { font-size:10px; color:var(--muted); }
+  .eco-editor-input { background:var(--surface2); border:1px solid var(--border2); border-radius:7px; padding:5px 10px; font-size:13px; font-family:'DM Mono',monospace; color:var(--text); width:100%; }
+  .eco-editor-input:focus { outline:none; border-color:var(--moon); }
+  /* Confidentialité */
+  .privacy-section { margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .privacy-info { font-size:12px; color:var(--muted); line-height:1.6; }
+  .privacy-info strong { color:var(--text); font-weight:500; }
   .gh-row { display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border); }
   .gh-row:last-child { border-bottom:none; }
   .gh-date { flex:1; font-size:12px; color:var(--muted); }
@@ -89,41 +124,108 @@
   <div id="profile-content" style="display:none">
 
     <div class="profile-header">
-      <div class="profile-avatar" id="profile-avatar">👤</div>
-      <div>
+      <div id="profile-avatar-wrap"></div>
+      <div style="flex:1;min-width:0">
         <div class="profile-name" id="profile-name">—</div>
+        <div id="profile-active-title" class="profile-active-title" style="display:none"></div>
         <div class="profile-meta" id="profile-meta">—</div>
+        <!-- Niveau + XP + Pièces (masqué en vue admin) -->
+        <div class="level-block" id="level-block" style="display:none">
+          <div class="level-header">
+            <span class="level-badge" id="level-badge">Niv. 1</span>
+            <span class="level-coins" id="level-coins">🪙 0</span>
+          </div>
+          <div class="xp-track">
+            <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+          </div>
+          <span class="xp-label" id="xp-label">0 / 100 XP</span>
+        </div>
       </div>
     </div>
 
-    <!-- Stats globales -->
-    <div class="diff-section">
-      <p class="diff-title">Statistiques globales</p>
-      <div class="stats-grid" id="global-stats"></div>
+    <!-- Navigation par onglets (remplie dynamiquement) -->
+    <div class="profile-tabs" id="profile-tabs" style="display:none"></div>
+
+    <!-- Panel : Statistiques -->
+    <div id="panel-stats">
+      <div class="diff-section">
+        <p class="diff-title">Statistiques globales</p>
+        <div class="stats-grid" id="global-stats"></div>
+      </div>
+      <div class="diff-section" id="diff-stats-section">
+        <p class="diff-title">Par difficulté</p>
+        <div id="diff-stats"></div>
+      </div>
     </div>
 
-    <!-- Stats par difficulté -->
-    <div class="diff-section" id="diff-stats-section">
-      <p class="diff-title">Par difficulté</p>
-      <div id="diff-stats"></div>
+    <!-- Panel : Badges -->
+    <div id="panel-badges" style="display:none">
+      <div class="diff-section">
+        <p class="diff-title">Badges</p>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
     </div>
 
-    <!-- Badges -->
-    <div class="diff-section">
-      <p class="diff-title">Badges</p>
-      <div class="badges-grid" id="badges-grid"></div>
+    <!-- Panel : Cosmétiques (profil propre) -->
+    <div id="panel-cosmetiques" style="display:none">
+      <div class="diff-section" id="skin-section">
+        <p class="diff-title">Apparence des symboles</p>
+        <div class="skin-grid" id="skin-options"></div>
+      </div>
+      <div class="diff-section" id="cosmetics-section" style="display:none">
+        <p class="diff-title">Cosmétiques actifs</p>
+        <div class="cosmetics-grid" id="cosmetics-grid"></div>
+      </div>
     </div>
 
-    <!-- Dernières parties (admin view) -->
-    <div class="diff-section" id="game-history-section" style="display:none">
-      <p class="diff-title">Dernières parties</p>
-      <div id="game-history-wrap"></div>
+    <!-- Panel : Historique (admin) -->
+    <div id="panel-historique" style="display:none">
+      <div class="diff-section">
+        <p class="diff-title">Dernières parties</p>
+        <div id="game-history-wrap"></div>
+      </div>
     </div>
 
-    <!-- Apparence -->
-    <div class="diff-section" id="skin-section">
-      <p class="diff-title">Apparence des symboles</p>
-      <div class="skin-grid" id="skin-options"></div>
+    <!-- Panel : Économie (admin) -->
+    <div id="panel-economie" style="display:none">
+      <div class="diff-section">
+        <p class="diff-title">Économie du joueur</p>
+        <div class="eco-editor">
+          <p class="eco-editor-title">Modifier les valeurs</p>
+          <div class="eco-editor-row">
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">Niveau</label>
+              <input class="eco-editor-input" type="number" min="1" id="eco-level" value="1">
+            </div>
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">XP total</label>
+              <input class="eco-editor-input" type="number" min="0" id="eco-xp" value="0">
+            </div>
+            <div class="eco-editor-field">
+              <label class="eco-editor-label">Pièces</label>
+              <input class="eco-editor-input" type="number" min="0" id="eco-coins" value="0">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn sun" onclick="saveEconomy()" style="font-size:12px">Enregistrer</button>
+            <span id="eco-status" style="font-size:12px"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confidentialité (profil propre, juste au-dessus de "Mes données") -->
+    <div id="privacy-section" style="display:none">
+      <div class="privacy-section">
+        <div class="privacy-info">
+          <strong id="privacy-status-text">Profil public</strong><br>
+          <span id="privacy-desc">Les autres joueurs peuvent consulter vos statistiques et badges.</span>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" id="pref-public" onchange="onPrivacyChange(this)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
     </div>
 
     <!-- Zone RGPD -->
@@ -155,11 +257,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=6"></script>
+<script src="js/auth.js?v=7"></script>
 <script src="js/skins.js?v=4"></script>
 <script>
 const DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile' };
 let _ghUserId = null, _ghPage = 0, _ghTotal = 0;
+let _viewedUserId = null;
 const GH_PER_PAGE = 10;
 
 const GH_DIFF_LABELS = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême', custom:'Personnalisé' };
@@ -208,31 +311,92 @@ async function loadGameHistory(userId, page) {
 }
 async function ghPage(d) { if (_ghUserId) await loadGameHistory(_ghUserId, _ghPage + d); }
 
-function renderSkinOptions() {
+let _profilePanels = [];
+function showProfileTab(name) {
+  _profilePanels.forEach(t => {
+    document.getElementById('panel-' + t).style.display = t === name ? '' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    if (btn) btn.classList.toggle('active', t === name);
+  });
+}
+
+function _buildTabs(tabs) {
+  _profilePanels = tabs.map(t => t.id);
+  document.getElementById('profile-tabs').innerHTML = tabs.map((t, i) =>
+    `<button class="profile-tab${i === 0 ? ' active' : ''}" onclick="showProfileTab('${t.id}')" id="tab-${t.id}">${t.label}</button>`
+  ).join('');
+  document.getElementById('profile-tabs').style.display = '';
+  // Show first panel, hide others
+  _profilePanels.forEach((id, i) => {
+    document.getElementById('panel-' + id).style.display = i === 0 ? '' : 'none';
+  });
+}
+
+async function renderSkinOptions() {
   const cur = getSkin();
   const order = ['emoji', 'circles', 'bw'];
-  document.getElementById('skin-options').innerHTML = order.map(k => {
+  const unlockInfo = { bw: 5 };
+  const results = await Promise.all(order.map(k => isSkinUnlocked(k)));
+  document.getElementById('skin-options').innerHTML = order.map((k, i) => {
     const s = SKINS[k];
-    return `<button class="skin-opt ${k === cur ? 'active' : ''}" onclick="chooseSkin('${k}')">
+    const unlocked = results[i];
+    const locked = !unlocked;
+    const lockLabel = locked && unlockInfo[k] ? '<span style="font-size:10px;color:var(--muted);display:block;margin-top:2px">🔒 Niveau ' + unlockInfo[k] + '</span>' : '';
+    return `<button class="skin-opt ${k === cur ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
+      onclick="${locked ? '' : 'chooseSkin(\'' + k + '\')'}"
+      ${locked ? 'title="Débloqué au niveau ' + (unlockInfo[k] || '') + '" tabindex="-1"' : ''}>
       <span class="skin-preview">
         <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
       </span>
-      <span class="skin-label">${s.label}</span>
-      <span class="skin-desc">${s.desc}</span>
+      <span class="skin-label">${s.label}${lockLabel}</span>
     </button>`;
   }).join('');
 }
 
 function chooseSkin(k) {
-  setSkin(k);  // applique en local + rafraîchit + sauvegarde dans le compte
+  setSkin(k);
+  renderSkinOptions();
 }
 const DIFF_COLORS = { easy:'var(--green)', medium:'var(--sun)', hard:'#d87a50' };
 
-function renderProfileData(profile, stats, badges, earnedMap, adminView) {
+function renderProfileData(profile, stats, badges, earnedMap, adminView, isOwnProfile = false) {
+  // Avatar avec cadre + effet
+  const avatarWrap = document.getElementById('profile-avatar-wrap');
+  if (avatarWrap) avatarWrap.innerHTML = renderAvatarHtml(profile, 64);
+
+  // Titre actif
+  const titleEl = document.getElementById('profile-active-title');
+  if (titleEl) {
+    if (profile.active_title) {
+      titleEl.textContent = profile.active_title;
+      titleEl.style.display = '';
+    } else {
+      titleEl.style.display = 'none';
+    }
+  }
+
+  // Fond de page
+  document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+  if (profile.active_background) document.body.classList.add(profile.active_background);
+
   const vipBadge   = profile.role === 'vip'   ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--moon);border:1px solid rgba(143,168,212,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">✦ VIP</span>' : '';
   const adminBadge = profile.role === 'admin' ? ' <span style="font-family:\'DM Mono\',monospace;font-size:.85rem;font-weight:400;color:var(--sun);border:1px solid rgba(245,200,66,.4);border-radius:99px;padding:2px 10px;vertical-align:middle">Admin</span>' : '';
   document.getElementById('profile-name').innerHTML = profile.username + vipBadge + adminBadge;
   document.getElementById('profile-meta').textContent = 'Membre depuis ' + fmtDate(profile.created_at);
+
+  // Bloc niveau / XP / pièces (toujours affiché sauf vue publique)
+  if (typeof levelFromXp === 'function') {
+    const totalXp = profile.xp || 0;
+    const level   = profile.level || 1;
+    const coins   = profile.coins || 0;
+    const { current, needed } = xpProgressInLevel(totalXp);
+    const pct = needed > 0 ? Math.round(current / needed * 100) : 0;
+    document.getElementById('level-badge').textContent = 'Niv. ' + level;
+    document.getElementById('level-coins').textContent = '🪙 ' + coins;
+    document.getElementById('xp-label').textContent   = current + ' / ' + needed + ' XP';
+    document.getElementById('xp-fill').style.width    = pct + '%';
+    document.getElementById('level-block').style.display = '';
+  }
 
   const totalGames = stats.reduce((s, r) => s + r.games_played, 0);
   const totalTime  = stats.reduce((s, r) => s + r.total_time, 0);
@@ -250,7 +414,7 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
     const s = stats.find(r => r.difficulty === diff) || { games_played: 0, best_time: 0, total_time: 0 };
     const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
     return `<div style="margin-bottom:1.2rem">
-      <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.5rem;letter-spacing:.06em">${DIFF_LABELS[diff]}</p>
+      <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.6rem;letter-spacing:.06em;font-weight:500">${DIFF_LABELS[diff]}</p>
       <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>
         <div class="stat-card"><span class="stat-label">Meilleur</span><span class="stat-val best">${fmtTime(s.best_time)}</span></div>
@@ -261,6 +425,18 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
 
   document.getElementById('badges-grid').innerHTML = badges.map(badge => {
     const earned = earnedMap[badge.id];
+    if (adminView) {
+      return `<div class="badge-item ${earned ? 'earned' : 'locked'}" style="cursor:pointer;transition:opacity .15s" title="${earned ? 'Retirer ce badge' : 'Attribuer ce badge'}"
+        onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'"
+        onclick="toggleAdminBadge('${badge.id}',${!!earned})">
+        <span class="badge-ico">${badge.icon}</span>
+        <div>
+          <div class="badge-name">${badge.name}</div>
+          <div class="badge-desc">${badge.description}${earned ? ' · ' + fmtDate(earned) : ''}</div>
+        </div>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0">${earned ? '✕' : '＋'}</span>
+      </div>`;
+    }
     return `<div class="badge-item ${earned ? 'earned' : 'locked'}">
       <span class="badge-ico">${badge.icon}</span>
       <div>
@@ -271,15 +447,41 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   }).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun badge défini.</p>';
 
   if (adminView) {
-    document.getElementById('skin-section').style.display       = 'none';
-    document.getElementById('danger-zone').style.display        = 'none';
-    document.getElementById('admin-banner').style.display       = 'block';
-    document.getElementById('admin-banner-name').textContent    = profile.username;
-    document.getElementById('game-history-section').style.display = '';
+    document.getElementById('danger-zone').style.display    = 'none';
+    document.getElementById('privacy-section').style.display = 'none';
+    document.getElementById('admin-banner').style.display   = 'block';
+    document.getElementById('admin-banner-name').textContent = profile.username;
+    document.getElementById('eco-level').value = profile.level  || 1;
+    document.getElementById('eco-xp').value    = profile.xp     || 0;
+    document.getElementById('eco-coins').value = profile.coins  || 0;
     document.title = 'Profil de ' + profile.username + ' — Tangoléo';
+    _buildTabs([
+      { id: 'stats',      label: 'Statistiques' },
+      { id: 'badges',     label: 'Badges' },
+      { id: 'historique', label: 'Historique' },
+      { id: 'economie',   label: 'Économie' },
+    ]);
     loadGameHistory(profile.id, 0);
-  } else {
+  } else if (isOwnProfile) {
+    document.getElementById('privacy-section').style.display = '';
+    const isPublic = profile.is_public !== false;
+    const cb = document.getElementById('pref-public');
+    if (cb) cb.checked = isPublic;
+    _updatePrivacyText(isPublic);
+    _buildTabs([
+      { id: 'stats',       label: 'Statistiques' },
+      { id: 'badges',      label: 'Badges' },
+      { id: 'cosmetiques', label: 'Cosmétiques' },
+    ]);
     renderSkinOptions();
+    renderCosmeticsSection(profile);
+  } else {
+    document.getElementById('privacy-section').style.display = 'none';
+    document.getElementById('danger-zone').style.display     = 'none';
+    _buildTabs([
+      { id: 'stats',  label: 'Statistiques' },
+      { id: 'badges', label: 'Badges' },
+    ]);
   }
 
   document.getElementById('loading').style.display   = 'none';
@@ -291,14 +493,26 @@ async function loadProfile() {
   const targetUsername = new URLSearchParams(location.search).get('user');
 
   if (targetUsername) {
-    const ok = await requireAdmin('/index.html');
-    if (!ok) return;
+    // Visite d'un profil tiers
+    const currentUser = await getCurrentUser();
+    const adminOk = currentUser ? await isAdmin() : false;
 
     const { data: profileData } = await db.from('profiles').select('*').eq('username', targetUsername).maybeSingle();
     if (!profileData) {
       document.getElementById('loading').textContent = 'Utilisateur introuvable.';
       return;
     }
+
+    // Profil privé et visiteur non admin → page privée
+    if (!adminOk && profileData.is_public === false) {
+      document.getElementById('loading').innerHTML =
+        '<div style="text-align:center;padding:3rem 0">' +
+        '<div style="font-size:2rem;margin-bottom:.75rem">🔒</div>' +
+        '<div style="font-size:14px;color:var(--muted)">Ce profil est privé.</div></div>';
+      return;
+    }
+
+    _viewedUserId = profileData.id;
     const [statsRes, badgesRes, earnedRes] = await Promise.all([
       db.from('player_stats').select('*').eq('user_id', profileData.id),
       db.from('badges').select('*').order('sort_order'),
@@ -309,7 +523,7 @@ async function loadProfile() {
       statsRes.data || [],
       badgesRes.data || [],
       Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
-      true
+      adminOk
     );
   } else {
     const user = await requireAuth();
@@ -325,7 +539,8 @@ async function loadProfile() {
       statsRes.data || [],
       badgesRes.data || [],
       Object.fromEntries((earnedRes.data || []).map(b => [b.badge_id, b.earned_at])),
-      false
+      false,
+      true
     );
   }
 }
@@ -355,6 +570,123 @@ async function handleDeleteAccount() {
   if (!confirm('Dernière confirmation : tout sera effacé.')) return;
   await deleteAccount(user.id);
   window.location.href = 'index.html';
+}
+
+async function renderCosmeticsSection(profile) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const [allItemsRes, inventoryRes] = await Promise.all([
+    db.from('shop_items').select('*').in('type', ['frame','effect','background','title']).eq('is_active', true).order('sort_order'),
+    db.from('player_inventory').select('item_id').eq('user_id', user.id)
+  ]);
+
+  const allItems = allItemsRes.data || [];
+  const ownedIds = new Set((inventoryRes.data || []).map(r => r.item_id));
+
+  if (!allItems.length) return;
+
+  const slotDefs = [
+    { key: 'frame',      label: 'Cadre',       col: 'active_frame',      active: profile.active_frame },
+    { key: 'effect',     label: 'Effet',        col: 'active_effect',     active: profile.active_effect },
+    { key: 'background', label: 'Fond de page', col: 'active_background', active: profile.active_background },
+    { key: 'title',      label: 'Titre',        col: 'active_title',      active: profile.active_title },
+  ];
+
+  const html = slotDefs.map(slot => {
+    const items = allItems.filter(it => it.type === slot.key);
+    if (!items.length) return '';
+
+    const opts = [
+      `<div class="cosm-opt cosm-opt-none ${!slot.active ? 'active' : ''}" onclick="setCosmetic('${slot.col}',null,this,'${slot.key}')">Aucun</div>`
+    ].concat(items.map(it => {
+      const owned   = ownedIds.has(it.id) || (it.unlock_level !== null && (profile.level||1) >= it.unlock_level);
+      const isActive = slot.key === 'title' ? slot.active === it.item_key : slot.active === it.item_key;
+      const cls = `cosm-opt ${isActive ? 'active' : ''} ${!owned ? 'locked' : ''}`;
+      const lockIcon = !owned ? ' 🔒' : '';
+      return `<div class="${cls}" onclick="${owned ? `setCosmetic('${slot.col}','${it.item_key}',this,'${slot.key}')` : ''}" title="${it.description}${!owned ? ' — Non débloqué' : ''}">
+        ${it.icon} ${it.name}${lockIcon}
+      </div>`;
+    })).join('');
+
+    return `<div class="cosm-slot"><div class="cosm-slot-label">${slot.label}</div><div class="cosm-opts">${opts}</div></div>`;
+  }).join('');
+
+  const section = document.getElementById('cosmetics-section');
+  document.getElementById('cosmetics-grid').innerHTML = html;
+  section.style.display = '';
+}
+
+async function setCosmetic(col, itemKey, el, slotType) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  // Mise à jour optimiste UI
+  const wrap = el.closest('.cosm-opts');
+  if (wrap) wrap.querySelectorAll('.cosm-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+
+  // Valeur à stocker : pour title on stocke item_key (le texte du titre), sinon la classe CSS
+  await setActiveCosmetic(user.id, col, itemKey);
+
+  // Appliquer immédiatement sur la page
+  if (slotType === 'background') {
+    document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+    if (itemKey) document.body.classList.add(itemKey);
+    try { localStorage.setItem('tango_bg', itemKey || ''); } catch(e) {}
+  } else if (slotType === 'frame' || slotType === 'effect') {
+    // Recharger le mini-avatar dans le header
+    const { data: p } = await db.from('profiles').select('active_frame,active_effect,active_background,active_title').eq('id', user.id).maybeSingle();
+    const wrap2 = document.getElementById('profile-avatar-wrap');
+    if (wrap2 && p) wrap2.innerHTML = renderAvatarHtml(p, 64);
+  } else if (slotType === 'title') {
+    const titleEl = document.getElementById('profile-active-title');
+    if (titleEl) { titleEl.textContent = itemKey || ''; titleEl.style.display = itemKey ? '' : 'none'; }
+  }
+}
+
+async function toggleAdminBadge(badgeId, hasIt) {
+  if (!_viewedUserId) return;
+  if (hasIt) {
+    if (!confirm('Retirer ce badge ?')) return;
+    const { error } = await db.from('player_badges').delete().eq('user_id', _viewedUserId).eq('badge_id', badgeId);
+    if (error) { alert('Erreur : ' + error.message); return; }
+  } else {
+    const { error } = await db.from('player_badges').insert({ user_id: _viewedUserId, badge_id: badgeId, earned_at: new Date().toISOString() });
+    if (error) { alert('Erreur : ' + error.message); return; }
+  }
+  // Recharger le profil pour refléter les changements
+  loadProfile();
+}
+
+function _updatePrivacyText(isPublic) {
+  const lbl = document.getElementById('privacy-status-text');
+  if (lbl) lbl.textContent = isPublic ? 'Profil public' : 'Profil privé';
+}
+
+async function onPrivacyChange(cb) {
+  const user = await getCurrentUser();
+  if (!user) return;
+  const isPublic = cb.checked;
+  _updatePrivacyText(isPublic);
+  const { error } = await db.from('profiles').update({ is_public: isPublic }).eq('id', user.id);
+  if (error) console.error('Privacy update error:', error);
+}
+
+async function saveEconomy() {
+  if (!_viewedUserId) return;
+  const level  = parseInt(document.getElementById('eco-level').value)  || 1;
+  const xp     = parseInt(document.getElementById('eco-xp').value)     || 0;
+  const coins  = parseInt(document.getElementById('eco-coins').value)  || 0;
+  const btn = document.getElementById('eco-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  const { error } = await db.from('profiles').update({ level, xp, coins }).eq('id', _viewedUserId);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = error ? 'Erreur ✗' : 'Enregistré ✓';
+    setTimeout(() => { btn.textContent = 'Enregistrer'; }, 2000);
+  }
+  if (error) console.error('Economy update error:', error);
 }
 
 loadProfile();

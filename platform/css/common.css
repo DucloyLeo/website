@@ -49,6 +49,7 @@ body {
   font-family: 'DM Mono', monospace;
   min-height: 100vh;
   padding: 0 1.5rem;
+  isolation: isolate;
 }
 
 /* ── Nav ── */
@@ -123,6 +124,8 @@ body {
   max-width: 680px;
   margin: 0 auto;
   padding: 3rem 0 6rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Titres ── */
@@ -368,6 +371,8 @@ h3 { font-size: 1.1rem; margin-bottom: .5rem; }
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 0 6rem;
+  position: relative;
+  z-index: 1;
 }
 .admin-sidebar { display: flex; flex-direction: column; gap: 2px; }
 .admin-nav-item {
@@ -443,3 +448,326 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 /* Pas de contour de base (la grille delimite deja les cases).
    En erreur, contour rouge net — visible sur fond blanc comme noir. */
 .ci.skin-bw.err { outline: 3px solid #dc503c !important; outline-offset: -3px; }
+
+/* ═══ Pièces dans la nav ═══════════════════════════ */
+.nav-coins {
+  font-size: 12px;
+  color: var(--sun);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .04em;
+  padding: 4px 10px;
+  border: 1px solid rgba(245,200,66,.25);
+  border-radius: 99px;
+  background: var(--surface);
+}
+
+/* ═══ Modale de victoire — récompenses ═══════════════ */
+.win-rewards-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: .75rem 0 .6rem;
+}
+.win-reward-chip {
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+}
+.win-reward-chip.xp    { color: var(--moon); border-color: rgba(143,168,212,.35); }
+.win-reward-chip.coins { color: var(--sun);  border-color: rgba(245,200,66,.35); }
+
+.win-level-block {
+  width: 100%;
+  margin-bottom: .5rem;
+}
+.win-level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.win-level-label {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: .04em;
+}
+.win-level-xp-text {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+.win-xp-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.win-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--moon), #b8cfef);
+  border-radius: 99px;
+  width: 0%;
+}
+
+.win-levelup-banner {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sun);
+  text-align: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(245,200,66,.3);
+  border-radius: 8px;
+  margin-bottom: .5rem;
+  animation: levelupPulse .5s ease;
+}
+@keyframes levelupPulse {
+  0%   { transform: scale(.9); opacity: 0; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.win-login-prompt {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: .5rem 0 .25rem;
+  line-height: 1.6;
+}
+.win-login-prompt a { color: var(--moon); text-decoration: none; }
+.win-login-prompt a:hover { text-decoration: underline; }
+
+/* Effet pop sur les chips de récompense */
+@keyframes rewardPop {
+  0%   { transform: scale(.7);  opacity: 0; }
+  55%  { transform: scale(1.18); opacity: 1; }
+  75%  { transform: scale(.95); }
+  100% { transform: scale(1); }
+}
+.win-reward-chip.pop {
+  animation: rewardPop .45s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+/* Particules texte flottantes */
+@keyframes floatUp {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-36px) scale(.7); opacity: 0; }
+}
+.reward-float {
+  position: absolute;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: floatUp .9s ease forwards;
+}
+
+/* ═══ Profil — niveau & XP ══════════════════════════ */
+.level-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: .75rem;
+}
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.level-badge {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: rgba(143,168,212,.12);
+  border: 1px solid rgba(143,168,212,.3);
+  color: var(--moon);
+}
+.level-coins {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--sun);
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: rgba(245,200,66,.08);
+  border: 1px solid rgba(245,200,66,.25);
+}
+.xp-track {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--moon), #b8cfef);
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+.xp-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ═══ Boutique ══════════════════════════════════════ */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 1rem;
+}
+.shop-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .15s;
+}
+.shop-item:hover { border-color: var(--border2); }
+.shop-item.owned { border-color: rgba(109,187,138,.3); }
+.shop-item-icon { font-size: 1.8rem; }
+.shop-item-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.shop-item-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.shop-item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.shop-item-cost {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--sun);
+}
+.shop-item-status {
+  font-size: 11px;
+  color: var(--muted);
+}
+.shop-item-status.owned { color: var(--green); }
+.shop-item-unlock {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Skin verrouillé sur la page profil */
+.skin-opt.skin-locked { opacity: .5; cursor: default; }
+.skin-opt.skin-locked:hover { border-color: var(--border); box-shadow: none; }
+
+/* ═══════════════════════════════════════════════════
+   COSMÉTIQUES — Cadres, Effets, Fonds, Titres
+   ═══════════════════════════════════════════════════ */
+
+/* ── Wrapper avatar (cadre + effet) ── */
+.avatar-wrap { position:relative; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.avatar-inner { border-radius:50%; background:var(--surface2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; overflow:hidden; width:100%; height:100%; }
+.avatar-inner img { width:100%; height:100%; object-fit:cover; }
+.avatar-effect { position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+
+/* ── Cadres ── */
+.avatar-wrap.frame-gold  .avatar-inner { border:2px solid #f5c842; box-shadow:0 0 10px rgba(245,200,66,.55), inset 0 0 6px rgba(245,200,66,.15); }
+.avatar-wrap.frame-moon  .avatar-inner { border:2px solid var(--moon); box-shadow:0 0 10px rgba(143,168,212,.5), inset 0 0 6px rgba(143,168,212,.1); }
+.avatar-wrap.frame-vip   .avatar-inner { border:2px solid #c084fc; box-shadow:0 0 12px rgba(192,132,252,.55), inset 0 0 8px rgba(192,132,252,.1); }
+
+/* ── Effets ── */
+.avatar-wrap.effect-sparkle .avatar-effect, .avatar-effect.effect-sparkle { animation:sparkle-pulse 2.2s ease-in-out infinite; }
+@keyframes sparkle-pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(255,220,80,.0); }
+  50%      { box-shadow:0 0 0 5px rgba(255,220,80,.35); }
+}
+.avatar-wrap.effect-glow .avatar-effect, .avatar-effect.effect-glow { animation:glow-breathe 3s ease-in-out infinite; }
+@keyframes glow-breathe {
+  0%,100% { box-shadow:0 0 4px 2px rgba(143,168,212,.2); }
+  50%      { box-shadow:0 0 14px 6px rgba(143,168,212,.45); }
+}
+
+/* ── Fonds de page ── */
+body.bg-stars::before, body.bg-aurora::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:-1;
+}
+/* Étoiles filantes légères */
+body.bg-stars::before {
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 70%, rgba(255,255,255,.25) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 80% 15%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 85%, rgba(255,255,255,.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 40%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 55%, rgba(255,255,255,.18) 0%, transparent 100%);
+  background-size:400px 400px, 600px 600px, 500px 500px, 700px 700px, 350px 350px, 450px 450px;
+  animation:stars-drift 20s linear infinite;
+}
+[data-theme="light"] body.bg-stars::before {
+  background:
+    radial-gradient(2px 2px at 20% 30%, rgba(30,30,60,.55) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 70%, rgba(30,30,60,.45) 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 15%, rgba(30,30,60,.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 10% 85%, rgba(30,30,60,.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 65% 40%, rgba(30,30,60,.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 40% 55%, rgba(30,30,60,.38) 0%, transparent 100%);
+  background-size:400px 400px, 600px 600px, 500px 500px, 700px 700px, 350px 350px, 450px 450px;
+}
+@keyframes stars-drift { from { background-position:0 0,0 0,0 0,0 0,0 0,0 0; } to { background-position:400px 200px,600px 300px,500px 250px,700px 350px,350px 175px,450px 225px; } }
+
+/* Aurore boréale */
+body.bg-aurora::before {
+  background:linear-gradient(135deg, rgba(143,168,212,.08) 0%, rgba(192,132,252,.06) 35%, rgba(100,220,180,.05) 70%, transparent 100%);
+  animation:aurora-shift 8s ease-in-out infinite alternate;
+}
+@keyframes aurora-shift {
+  from { opacity:.6; transform:scale(1); }
+  to   { opacity:1;  transform:scale(1.04); }
+}
+
+/* ── Titre actif sur profil ── */
+.profile-active-title {
+  font-size:11px; font-family:'DM Mono',monospace;
+  color:var(--sun); letter-spacing:.06em;
+  margin-top:2px;
+}
+
+/* ── Leaderboard ── */
+.lb-table { width:100%; border-collapse:collapse; }
+.lb-table th { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); }
+/* ─── Discovery dots ──────────────────────────────────── */
+.nav-menu-item { position: relative; }
+.discovery-dot {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--moon); pointer-events: none;
+  animation: disc-pulse 2.4s ease-in-out infinite;
+}
+@keyframes disc-pulse {
+  0%, 100% { opacity: .9; box-shadow: 0 0 0 0 rgba(143,168,212,.5); }
+  50%       { opacity: .6; box-shadow: 0 0 0 5px rgba(143,168,212,0); }
+}
+/* ─── Win modal: discovery pills ─────────────────────── */
+.disc-features { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:.9rem; }
+.disc-pill {
+  font-size:11px; background:var(--surface2); border:1px solid var(--border2);
+  border-radius:99px; padding:4px 11px; color:var(--text);
+}
+.win-login-prompt { text-align:center; padding:.1rem 0; }
+.win-login-prompt .disc-tagline { font-size:12px; color:var(--muted); margin-bottom:.75rem; }
+.lb-table td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+.lb-table tr:last-child td { border-bottom:none; }
+.lb-table tr:hover td { background:var(--surface2); }
+.lb-rank { font-family:'DM Mono',monospace; font-size:13px; color:var(--muted); width:40px; }
+.lb-rank.gold   { color:#f5c842; font-weight:600; }
+.lb-rank.silver { color:#b0b8c8; font-weight:600; }
+.lb-rank.bronze { color:#cd7f32; font-weight:600; }
+.lb-username { font-weight:500; }
+.lb-username a { color:var(--text); text-decoration:none; }
+.lb-username a:hover { text-decoration:underline; color:var(--moon); }
+.lb-username .lb-private { color:var(--muted); font-size:11px; cursor:default; }
+.lb-level { font-family:'DM Mono',monospace; font-size:11px; color:var(--moon); }
+.lb-xp    { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
+.lb-title { font-size:10px; font-family:'DM Mono',monospace; color:var(--sun); margin-top:1px; }

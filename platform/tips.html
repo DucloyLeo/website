@@ -13,8 +13,8 @@
 <link rel="canonical" href="https://tangoleo.fr/tips.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=6">
-<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<link rel="stylesheet" href="css/common.css?v=7">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
   .tips-wrap { max-width:680px; margin:0 auto; padding:3rem 0 6rem; }
   .tips-section { margin-bottom:2.5rem; }
@@ -168,7 +168,7 @@
         <span class="rule-ico">🔗</span>
         <div class="rule-text">
           <strong>Contraintes = et ×</strong><br>
-          Un signe entre deux cases indique leur relation : <strong>=</strong> signifie qu'elles doivent être identiques, <strong>×</strong> qu'elles doivent être différentes.
+          Une contrainte indique une relation entre deux case : <strong>=</strong> signifie qu'elles doivent être identiques, <strong>×</strong> qu'elles doivent être différentes.
         </div>
       </div>
     </div>
@@ -198,15 +198,15 @@
     <!-- Anti-triplet -->
     <div class="tip-card">
       <div class="tip-title">Anti-triplet <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">Deux symboles identiques côte à côte forcent les cases adjacentes à l'opposé. De même, si deux cases identiques encadrent une case vide (sandwich), cette case est forcée à l'opposé.</div>
+      <div class="tip-body">Deux symboles identiques côte à côte forcent les cases voisines à prendre le symbole opposé. De même, si deux cases identiques encadrent une case vide (sandwich), cette case est forcée à l'opposé.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc">☀</div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">🌙</div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
@@ -216,9 +216,9 @@
           <div class="mc">🌙</div><div class="mcstr"></div>
           <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
           <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">☀</div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div>
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
@@ -227,7 +227,7 @@
     <!-- Contrainte directe -->
     <div class="tip-card">
       <div class="tip-title">Contrainte directe <span class="tip-tag easy">Facile</span></div>
-      <div class="tip-body">Si une case est connue et qu'une contrainte = ou × la relie à une case vide, cette case vide est directement déterminée.</div>
+      <div class="tip-body">Si une case est connue et qu'une contrainte = ou × la relie à une case vide, cette case vide est donc connue.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr eq">=</div>
@@ -256,7 +256,7 @@
     <!-- Paire en extrémité -->
     <div class="tip-card">
       <div class="tip-title">Paire en extrémité <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">Si les deux premières cases d'une ligne sont identiques (ex. ☀☀), la dernière case est forcément l'opposé — et vice versa pour les cases [4-5].</div>
+      <div class="tip-body">Si les deux premières cases d'une ligne sont identiques, la dernière case est forcément l'opposé.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
@@ -273,7 +273,7 @@
     <!-- Distance 4 -->
     <div class="tip-card">
       <div class="tip-title">Distance 4 <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">Si deux cases identiques sont séparées de 4 positions (positions 0 et 4), la 6e case (position 5) est forcée vers l'opposé.</div>
+      <div class="tip-body">Si deux cases identiques sont séparées de 3 cases, la 6e case est forcement le symbole opposé.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
@@ -290,7 +290,7 @@
     <!-- Extrémités identiques -->
     <div class="tip-card">
       <div class="tip-title">Extrémités identiques <span class="tip-tag med">Moyen</span></div>
-      <div class="tip-body">Si les cases [0] et [5] d'une ligne sont identiques, alors les cases [1] et [4] sont forcées vers l'opposé (sinon il y aurait violation d'équilibre ou de triplet).</div>
+      <div class="tip-body">Si les cases aux extrémités d'une ligne (ou colonne) sont identiques, alors les deux cases adjacentes prennent forcement le symbole opposé.</div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc">☀</div><div class="mcstr"></div>
@@ -308,26 +308,11 @@
     <div class="tip-card">
       <div class="tip-title">Balance + contrainte × <span class="tip-tag hard">Difficile</span></div>
       <div class="tip-body">
-        Si une ligne (ou colonne) a exactement <strong>3 cases vides</strong> dont deux adjacentes liées par <strong>×</strong>, ces deux cases apportent forcément <strong>1 ☀ et 1 🌙</strong>. La troisième case vide est alors déterminée par l'équilibre.
-      </div>
-      <div class="mini-demo">
-        <div class="mini-row">
-          <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">☀</div><div class="mcstr"></div>
-          <div class="mc">🌙</div><div class="mcstr"></div>
-          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
-          <div class="mc mc-bg"></div><div class="mcstr x">×</div>
-          <div class="mc mc-bg"></div>
-        </div>
-        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
-      </div>
-      <div class="tip-body" style="margin-top:.4rem;font-size:11px">
-        2 ☀ et 1 🌙 connus → il manque 1 ☀ et 2 🌙. La paire × apporte 1 ☀ + 1 🌙, donc la case libre = 🌙.
+        Si une ligne (ou colonne) contient deux cases vides liées par <strong>une contrainte ×</strong> alors des déductions sont possible sur le principe de l'équilibre. Les deux cases vides lié par <strong>×</strong> approtent forcément un exemplaire de chaque symbole dans l'équilibre. Il reste alors seulement <strong>2 ☀ et 2 🌙</strong> à poser. Deux cas sont possibles:
       </div>
       <div class="tip-body" style="margin-top:.9rem">
-        Variante à <strong>4 cases vides</strong> : si déjà 2 symboles identiques sont posés et qu'une contrainte <strong>×</strong> lie deux cases vides adjacentes, les 2 autres cases vides sont toutes deux forcées vers le symbole opposé.
+        Variante à <strong>4 cases vides</strong> : si 2 symboles identiques sont déjà posés et qu'une contrainte <strong>×</strong> lie deux cases vides adjacentes, les 2 autres cases vides sont toutes deux forcées vers le symbole opposé.
       </div>
-      <div class="mini-spacer"></div>
       <div class="mini-demo">
         <div class="mini-row">
           <div class="mc mc-target" data-val="☀">?</div><div class="mcstr"></div>
@@ -351,8 +336,20 @@
         </div>
         <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
-      <div class="tip-body" style="margin-top:.4rem;font-size:11px">
-        2 🌙 connus → il manque 3 ☀ et 1 🌙. La paire × en apporte 1+1, donc les 2 cases libres = ☀.
+      <div class="mini-spacer"></div>
+      <div class="tip-body" style="margin-top:.9rem">
+        Variante à <strong>3 cases vides</strong> : si 3 cases sont vides dont deux lié par une contrainte <strong>×</strong> alors la dernière case vide non lié à la contrainte est forcée afin de respecter l'équilibre.
+      </div>
+      <div class="mini-demo">
+        <div class="mini-row">
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">☀</div><div class="mcstr"></div>
+          <div class="mc">🌙</div><div class="mcstr"></div>
+          <div class="mc mc-target" data-val="🌙">?</div><div class="mcstr"></div>
+          <div class="mc mc-bg"></div><div class="mcstr x">×</div>
+          <div class="mc mc-bg"></div>
+        </div>
+        <button class="btn mini-btn" onclick="revealDemo(this)">→ Déduire</button>
       </div>
     </div>
 
@@ -360,7 +357,7 @@
     <div class="tip-card">
       <div class="tip-title">Élimination <span class="tip-tag hard">Difficile</span></div>
       <div class="tip-body">
-        Tester mentalement les deux symboles dans une case : si l'un mène inévitablement à une contradiction (triplet, déséquilibre, contrainte violée), l'autre symbole est forcé. C'est la technique la plus puissante mais aussi la plus exigeante.
+        Tester mentalement les deux symboles dans une case : si l'un mène inévitablement à une contradiction (triplet, déséquilibre, contrainte non respectée), l'autre symbole est forcé. C'est la technique la plus puissante mais aussi la plus exigeante.
       </div>
     </div>
 
@@ -386,7 +383,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=6"></script>
+<script src="js/auth.js?v=7"></script>
 <script>
 initNavAuth();
 

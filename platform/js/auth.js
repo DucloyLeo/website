@@ -76,6 +76,13 @@ function xpToNextLevel(n) {
 }
 
 // Niveau correspondant à un total d'XP
+// XP total cumulé au début du niveau donné (niveau 1 = 0 XP)
+function xpForLevel(targetLevel) {
+  let cum = 0;
+  for (let l = 1; l < targetLevel; l++) cum += xpToNextLevel(l);
+  return cum;
+}
+
 function levelFromXp(totalXp) {
   let level = 1, cumXp = 0;
   while (true) {
@@ -381,7 +388,7 @@ async function purchaseItem(userId, itemId) {
 
 async function setActiveCosmetic(userId, slot, itemId) {
   // slot = 'active_frame' | 'active_effect' | 'active_title'
-  const allowed = ['active_frame', 'active_effect', 'active_title'];
+  const allowed = ['active_frame', 'active_effect', 'active_title', 'active_background'];
   if (!allowed.includes(slot)) return;
   const { error } = await db.from('profiles').update({ [slot]: itemId || null }).eq('id', userId);
   if (error) console.warn('setActiveCosmetic:', error.message);
@@ -597,13 +604,6 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// ─── Application immédiate du fond de page depuis localStorage ───
-(function() {
-  try {
-    const bg = localStorage.getItem('tango_bg');
-    if (bg) document.body.classList.add(bg);
-  } catch(e) {}
-})();
 
 // ─── Préférences utilisateur (DB) ────────────────────
 
@@ -693,14 +693,11 @@ async function initNavAuth(opts = {}) {
 
     _initRealtime(user.id);
 
-    // Sync fond de page depuis DB → localStorage + application
+    // Sync fond de page depuis DB → localStorage + application immédiate
     const dbBg = profile?.active_background || '';
-    const localBg = (() => { try { return localStorage.getItem('tango_bg') || ''; } catch(e) { return ''; } })();
-    if (dbBg !== localBg) {
-      document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
-      if (dbBg) document.body.classList.add(dbBg);
-      try { localStorage.setItem('tango_bg', dbBg); } catch(e) {}
-    }
+    document.body.className = document.body.className.replace(/bg-\S+/g, '').trim();
+    if (dbBg) document.body.classList.add(dbBg);
+    try { localStorage.setItem('tango_bg', dbBg); } catch(e) {}
 
     const isVip   = profile?.role === 'vip';
     const isAdmin = profile?.role === 'admin';

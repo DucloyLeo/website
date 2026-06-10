@@ -7,11 +7,11 @@
 <meta name="theme-color" content="#0e0e0f">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Créateur de grille — Tangoléo</title>
+<title>Créateur de grille — Tangoléo Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=7">
-<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
+<link rel="stylesheet" href="../css/common.css?v=7">
+<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
 main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem}
 
@@ -60,31 +60,34 @@ td{position:relative;text-align:center;vertical-align:middle;border:1px solid va
   <div class="nav-left">
     <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
     <div class="nav-menu" id="nav-menu">
-      <a href="admin/index.html" class="nav-menu-item">📊 Dashboard</a>
-      <a href="admin/users.html" class="nav-menu-item">👥 Utilisateurs</a>
-      <a href="admin/levels.html" class="nav-menu-item">🎮 Niveaux</a>
-      <a href="admin/daily.html" class="nav-menu-item">📅 Journaliers</a>
-      <a href="admin/badges.html" class="nav-menu-item">🏅 Badges</a>
-      <a href="admin/difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <a href="index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
+      <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <a href="economy.html" class="nav-menu-item">💰 Économie</a>
       <a href="seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
       <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">← Site public</a>
+      <div id="menu-auth-item"></div>
     </div>
   </div>
   <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
-  <div class="nav-right"></div>
+  <div class="nav-right"><div id="nav-auth"></div></div>
 </nav>
 
 <div class="admin-layout">
   <aside class="admin-sidebar">
     <p class="admin-nav-label">Navigation</p>
-    <a href="admin/index.html"      class="admin-nav-item">📊 Dashboard</a>
-    <a href="admin/users.html"      class="admin-nav-item">👥 Utilisateurs</a>
-    <a href="admin/levels.html"     class="admin-nav-item">🎮 Niveaux</a>
-    <a href="admin/daily.html"      class="admin-nav-item">📅 Journaliers</a>
-    <a href="admin/badges.html"     class="admin-nav-item">🏅 Badges</a>
-    <a href="admin/difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
-    <a href="seed-creator.html"     class="admin-nav-item active">🔧 Créateur de seed</a>
+    <a href="index.html"      class="admin-nav-item">📊 Dashboard</a>
+    <a href="users.html"      class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="levels.html"     class="admin-nav-item">🎮 Niveaux</a>
+    <a href="daily.html"      class="admin-nav-item">📅 Journaliers</a>
+    <a href="badges.html"     class="admin-nav-item">🏅 Badges</a>
+    <a href="difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
+    <a href="economy.html"    class="admin-nav-item">💰 Économie</a>
+    <a href="seed-creator.html" class="admin-nav-item active">🔧 Créateur de seed</a>
     <hr class="sep">
     <a href="/index.html" class="admin-nav-item">← Site public</a>
   </aside>
@@ -329,13 +332,13 @@ function encodeSeed(){
 function updateSeed(){
   const seed=encodeSeed();
   const el=document.getElementById('seed-val'),cb=document.getElementById('btn-copy'),tl=document.getElementById('btn-test');
-  if(seed){el.textContent=seed;cb.disabled=false;tl.style.display='inline-flex';tl.href='index.html?seed='+seed;}
+  if(seed){el.textContent=seed;cb.disabled=false;tl.style.display='inline-flex';tl.href='/index.html?seed='+seed;}
   else{el.textContent='—';cb.disabled=true;tl.style.display='none';}
 }
 
 function copySeedLink(){
   const seed=encodeSeed();if(!seed)return;
-  const url=window.location.origin+'/platform/index.html?seed='+seed;
+  const url=window.location.origin+'/index.html?seed='+seed;
   if(navigator.clipboard){
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('btn-copy'),orig=btn.textContent;
@@ -398,5 +401,10 @@ renderGrid();updateStatus();updateSeed();updateButtons();
 </main>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/auth.js?v=7"></script>
+<script>initNavAuth();</script>
 </body>
 </html>

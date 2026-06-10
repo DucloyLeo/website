@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/common.css?v=7">
-<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
   .search-bar { display:flex; gap:8px; margin-bottom:1.5rem; }
   .search-bar input { flex:1; }
@@ -64,7 +64,7 @@
       <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
       <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
       <a href="economy.html" class="nav-menu-item">💰 Économie</a>
-      <a href="../seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <a href="seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
       <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">← Site public</a>
       <div id="menu-auth-item"></div>
@@ -84,7 +84,7 @@
     <a href="badges.html" class="admin-nav-item">🏅 Badges</a>
     <a href="difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
     <a href="economy.html" class="admin-nav-item">💰 Économie</a>
-    <a href="../seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
+    <a href="seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
     <hr class="sep">
     <a href="/index.html" class="admin-nav-item">← Site public</a>
   </aside>
@@ -363,9 +363,12 @@ async function modalGhPage(d) {
 
 async function saveModalEconomy() {
   if (!currentModalUserId) return;
-  const level  = parseInt(document.getElementById('modal-eco-level').value)  || 1;
-  const xp     = parseInt(document.getElementById('modal-eco-xp').value)     || 0;
-  const coins  = parseInt(document.getElementById('modal-eco-coins').value)  || 0;
+  const level  = Math.max(1, parseInt(document.getElementById('modal-eco-level').value)  || 1);
+  let   xp     = Math.max(0, parseInt(document.getElementById('modal-eco-xp').value)     || 0);
+  const coins  = Math.max(0, parseInt(document.getElementById('modal-eco-coins').value)  || 0);
+  // Garantir que l'XP correspond au moins au début du niveau choisi
+  const minXp = typeof xpForLevel === 'function' ? xpForLevel(level) : 0;
+  if (xp < minXp) xp = minXp;
   const btn = document.getElementById('modal-eco-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
   const { error } = await db.from('profiles').update({ level, xp, coins }).eq('id', currentModalUserId);
@@ -448,3 +451,4 @@ loadUsers();
 </script>
 </body>
 </html>
+

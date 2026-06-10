@@ -49,6 +49,7 @@ body {
   font-family: 'DM Mono', monospace;
   min-height: 100vh;
   padding: 0 1.5rem;
+  isolation: isolate;
 }
 
 /* ── Nav ── */
@@ -696,7 +697,7 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 
 /* ── Fonds de page ── */
 body.bg-stars::before, body.bg-aurora::before {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:-1;
 }
 /* Étoiles filantes légères */
 body.bg-stars::before {

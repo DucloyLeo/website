@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Économie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css?v=7">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
+<style>
+  .eco-section { margin-bottom: 2.5rem; }
+  .eco-section-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+  .diff-tab-bar { display:flex; gap:6px; margin-bottom:1.2rem; flex-wrap:wrap; }
+  .diff-tab { background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:5px 16px; font-size:12px; cursor:pointer; color:var(--muted); }
+  .diff-tab.active { border-color:var(--moon); color:var(--text); }
+  .xp-form { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.2rem; display:flex; flex-direction:column; gap:1rem; max-width:520px; }
+  .form-row { display:flex; flex-direction:column; gap:4px; }
+  .form-label { font-size:11px; color:var(--muted); letter-spacing:.04em; }
+  .form-input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:7px 12px; font-size:13px; font-family:'DM Mono',monospace; color:var(--text); width:100%; }
+  .form-input:focus { outline:none; border-color:var(--moon); }
+  .tiers-list { display:flex; flex-direction:column; gap:6px; }
+  .tier-row { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center; }
+  .tier-row input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:6px 10px; font-size:12px; font-family:'DM Mono',monospace; color:var(--text); }
+  .tier-row input:focus { outline:none; border-color:var(--moon); }
+  .tier-remove { background:none; border:1px solid rgba(220,80,60,.4); color:rgba(220,80,60,.8); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px; }
+  .tier-remove:hover { background:rgba(220,80,60,.08); }
+  .tier-header { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; }
+  .tier-header span { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+  .shop-table { width:100%; border-collapse:collapse; }
+  .shop-table th { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:6px 10px; text-align:left; border-bottom:1px solid var(--border); }
+  .shop-table td { font-size:12px; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .shop-table tr:last-child td { border-bottom:none; }
+  .item-active-toggle { cursor:pointer; }
+  .add-item-form { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.2rem; display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:640px; }
+  .add-item-form .full-width { grid-column: 1 / -1; }
+  .status-ok { color:var(--green); font-size:12px; }
+  .status-err { color:var(--red); font-size:12px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav" style="max-width:1100px">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html" class="nav-menu-item">📊 Dashboard</a>
+      <a href="users.html" class="nav-menu-item">👥 Utilisateurs</a>
+      <a href="levels.html" class="nav-menu-item">🎮 Niveaux</a>
+      <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
+      <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
+      <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
+      <a href="economy.html" class="nav-menu-item">💰 Économie</a>
+      <a href="seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <div class="nav-menu-sep"></div>
+      <a href="/index.html" class="nav-menu-item">← Site public</a>
+      <div id="menu-auth-item"></div>
+    </div>
+  </div>
+  <a href="/index.html" class="nav-logo">☀ Tangoléo 🌙</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <p class="admin-nav-label">Navigation</p>
+    <a href="index.html"      class="admin-nav-item">📊 Dashboard</a>
+    <a href="users.html"      class="admin-nav-item">👥 Utilisateurs</a>
+    <a href="levels.html"     class="admin-nav-item">🎮 Niveaux</a>
+    <a href="daily.html"      class="admin-nav-item">📅 Journaliers</a>
+    <a href="badges.html"     class="admin-nav-item">🏅 Badges</a>
+    <a href="difficulty.html" class="admin-nav-item">⚙️ Difficultés</a>
+    <a href="economy.html"    class="admin-nav-item active">💰 Économie</a>
+    <a href="seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
+    <hr class="sep">
+    <a href="/index.html" class="admin-nav-item">← Site public</a>
+  </aside>
+
+  <div class="admin-content">
+    <div id="loading" style="color:var(--muted);font-size:13px;padding:2rem 0">Chargement…</div>
+    <div id="content" style="display:none">
+      <p class="eyebrow">Administration</p>
+      <h1 class="page-title" style="margin-bottom:2rem">Économie</h1>
+
+      <!-- ── Paramètres XP ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Paramètres XP par difficulté</p>
+        <div class="diff-tab-bar" id="diff-tabs"></div>
+        <div id="xp-form-wrap"></div>
+        <div style="margin-top:.75rem;display:flex;gap:10px;align-items:center">
+          <button class="btn sun" onclick="saveXpParams()">Enregistrer</button>
+          <span id="xp-status"></span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:.6rem;line-height:1.7">
+          <strong>Paliers de vitesse :</strong> max_seconds = temps limite pour ce multiplicateur (le premier palier atteint s'applique).<br>
+          <strong>Malus par indice :</strong> soustrait à l'XP de base × multiplicateur (minimum 10 XP garanti).<br>
+          <strong>Ctrl+H :</strong> récompense toujours nulle, quelle que soit la configuration.
+        </p>
+      </div>
+
+      <hr class="sep">
+
+      <!-- ── Courbe XP ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Courbe de progression XP</p>
+
+        <!-- Paramètres -->
+        <div class="xp-form" style="max-width:480px;margin-bottom:1.4rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="form-row">
+              <label class="form-label">Base</label>
+              <input class="form-input" id="curve-base" type="number" min="1" value="300" oninput="updateCurve()">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Multiplicateur</label>
+              <input class="form-input" id="curve-mult" type="number" step="0.01" min="1" value="1.13" oninput="updateCurve()">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Plafond</label>
+              <input class="form-input" id="curve-cap" type="number" min="1" value="3000" oninput="updateCurve()">
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:.6rem;line-height:1.7">
+            Formule appliquée : <code style="color:var(--moon)">min(cap, round(base × mult^(n−1) / 50) × 50</code><br>
+            Modifiez <code>auth.js → xpToNextLevel()</code> pour appliquer ces valeurs.
+          </p>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1.4rem">
+          <button class="btn sun" onclick="saveCurveParams()">Enregistrer</button>
+          <span id="curve-status"></span>
+        </div>
+
+        <!-- Contrôle de fin de courbe -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem">
+          <span class="form-label" style="white-space:nowrap">Afficher jusqu'au niveau</span>
+          <input class="form-input" id="curve-end" type="number" min="2" max="200" value="20" style="max-width:80px" oninput="updateCurve()">
+        </div>
+
+        <!-- Graphique + tableau côte à côte -->
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+          <div id="curve-chart" style="flex:1;min-width:260px"></div>
+          <div id="curve-table" style="flex:0 0 220px;overflow-y:auto;max-height:340px;border:1px solid var(--border);border-radius:10px"></div>
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <!-- ── Streak ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Streak journalier</p>
+        <div style="max-width:520px">
+          <div class="xp-form" style="margin-bottom:1rem">
+            <div class="form-row">
+              <label class="form-label">Nombre de jours max (streak plafonné à)</label>
+              <input class="form-input" id="streak-max-days" type="number" min="1" max="30" value="7">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bonus XP quotidien (flat, en plus de l'XP de partie)</label>
+              <input class="form-input" id="daily-bonus-xp" type="number" min="0" value="50">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bonus pièces quotidien (flat)</label>
+              <input class="form-input" id="daily-bonus-coins" type="number" min="0" value="20">
+            </div>
+          </div>
+          <p class="eco-section-title" style="margin-bottom:.6rem">Multiplicateurs XP par jour de streak</p>
+          <div class="tier-header" style="grid-template-columns:60px 1fr 1fr auto;margin-bottom:4px">
+            <span>Jour</span><span>Label</span><span>Multiplicateur XP</span><span></span>
+          </div>
+          <div id="streak-rows"></div>
+          <button class="btn" style="margin-top:.5rem" onclick="addStreakRow()">+ Ajouter un palier</button>
+        </div>
+        <div style="margin-top:.75rem;display:flex;gap:10px;align-items:center">
+          <button class="btn sun" onclick="saveStreakParams()">Enregistrer</button>
+          <span id="streak-status"></span>
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <!-- ── Boutique ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Articles de la boutique</p>
+        <div id="shop-table-wrap"></div>
+
+        <p class="eco-section-title" style="margin-top:1.5rem">Ajouter un article</p>
+        <div class="add-item-form" id="add-item-form">
+          <div class="form-row">
+            <label class="form-label">ID (unique, ex: skin-stars)</label>
+            <input class="form-input" id="ni-id" placeholder="skin-stars">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Nom</label>
+            <input class="form-input" id="ni-name" placeholder="Étoiles">
+          </div>
+          <div class="form-row full-width">
+            <label class="form-label">Description</label>
+            <input class="form-input" id="ni-desc" placeholder="Description de l'article">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Icône (emoji)</label>
+            <input class="form-input" id="ni-icon" placeholder="⭐" style="width:80px">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Type</label>
+            <select class="form-input" id="ni-type">
+              <option value="skin">skin (symboles)</option>
+              <option value="grid_skin">grid_skin (grille)</option>
+              <option value="frame">frame (cadre avatar)</option>
+              <option value="effect">effect (effet avatar)</option>
+              <option value="background">background (fond page)</option>
+              <option value="title">title (titre profil)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Clé (item_key, ex: bw)</label>
+            <input class="form-input" id="ni-key" placeholder="stars">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Prix (pièces)</label>
+            <input class="form-input" id="ni-cost" type="number" min="0" value="0">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Niveau débloquant (vide = achat seul)</label>
+            <input class="form-input" id="ni-level" type="number" min="1" placeholder="—">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Ordre d'affichage</label>
+            <input class="form-input" id="ni-sort" type="number" value="0">
+          </div>
+          <div class="full-width" style="display:flex;gap:10px;align-items:center">
+            <button class="btn sun" onclick="addShopItem()">Ajouter l'article</button>
+            <span id="shop-status"></span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <!-- ── Historique transactions ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Historique des achats boutique</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.8rem">
+          <input class="form-input" id="tx-search-user" placeholder="Pseudo joueur…" style="max-width:180px" oninput="filterTransactions()">
+          <select class="form-input" id="tx-search-item" style="max-width:200px" onchange="filterTransactions()">
+            <option value="">Tous les articles</option>
+          </select>
+          <input class="form-input" id="tx-search-date" type="date" style="max-width:160px" oninput="filterTransactions()">
+          <button class="btn" onclick="clearTxFilters()">✕ Réinitialiser</button>
+        </div>
+        <div id="tx-table-wrap"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem;gap:8px">
+          <button class="btn" id="tx-prev" onclick="txPage(-1)" disabled>◀</button>
+          <span id="tx-counter" style="font-size:11px;color:var(--muted)"></span>
+          <button class="btn" id="tx-next" onclick="txPage(1)" disabled>▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/auth.js?v=7"></script>
+<script>
+const DIFFS = ['easy','medium','hard','extreme'];
+const DIFF_LABELS_FR = { easy:'Facile', medium:'Moyen', hard:'Difficile', extreme:'Extrême' };
+let _xpParams = {};
+let _activeDiff = 'easy';
+
+async function init() {
+  const ok = await requireAdmin('/index.html');
+  if (!ok) return;
+  await initNavAuth();
+  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions(), loadCurveParams()]);
+  updateCurve();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+}
+
+// ── Streak Params ──
+
+let _streakRows = [];
+
+async function loadStreakParams() {
+  const [streakRes, bonusRes] = await Promise.all([
+    db.from('streak_params').select('*').order('day_count'),
+    db.from('daily_bonus_params').select('*').eq('id', 'default').maybeSingle()
+  ]);
+  _streakRows = (streakRes.data || []).map(r => ({ ...r }));
+  const bonus = bonusRes.data || {};
+  document.getElementById('streak-max-days').value   = bonus.max_streak_days || 7;
+  document.getElementById('daily-bonus-xp').value    = bonus.bonus_xp    ?? 50;
+  document.getElementById('daily-bonus-coins').value = bonus.bonus_coins  ?? 20;
+  renderStreakRows();
+}
+
+function renderStreakRows() {
+  document.getElementById('streak-rows').innerHTML = _streakRows.map((r, i) => `
+    <div class="tier-row" style="grid-template-columns:60px 1fr 1fr auto">
+      <input type="number" min="1" max="30" value="${r.day_count}" oninput="_streakRows[${i}].day_count=+this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <input type="text" value="${r.label||''}" placeholder="Label…" oninput="_streakRows[${i}].label=this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <input type="number" step="0.01" min="1" value="${r.xp_multiplier}" oninput="_streakRows[${i}].xp_multiplier=+this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)">
+      <button class="tier-remove" onclick="_streakRows.splice(${i},1);renderStreakRows()">✕</button>
+    </div>`).join('');
+}
+
+function addStreakRow() {
+  const maxDay = _streakRows.reduce((m, r) => Math.max(m, r.day_count), 0);
+  _streakRows.push({ day_count: maxDay + 1, xp_multiplier: 1.0, label: '' });
+  renderStreakRows();
+}
+
+async function saveStreakParams() {
+  const statusEl = document.getElementById('streak-status');
+  statusEl.textContent = 'Enregistrement…';
+
+  const maxDays   = parseInt(document.getElementById('streak-max-days').value) || 7;
+  const bonusXp   = parseInt(document.getElementById('daily-bonus-xp').value)  || 0;
+  const bonusCoins= parseInt(document.getElementById('daily-bonus-coins').value)|| 0;
+
+  // Upsert daily_bonus_params
+  const { error: bonusErr } = await db.from('daily_bonus_params').upsert({
+    id: 'default', bonus_xp: bonusXp, bonus_coins: bonusCoins, max_streak_days: maxDays
+  });
+  if (bonusErr) { statusEl.textContent = 'Erreur bonus : ' + bonusErr.message; return; }
+
+  // Remplacer tous les streak_params
+  await db.from('streak_params').delete().neq('day_count', -1);
+  if (_streakRows.length) {
+    const { error } = await db.from('streak_params').insert(
+      _streakRows.map(r => ({ day_count: r.day_count, xp_multiplier: r.xp_multiplier, label: r.label || null }))
+    );
+    if (error) { statusEl.textContent = 'Erreur streak : ' + error.message; return; }
+  }
+
+  statusEl.textContent = 'Enregistré ✓';
+  setTimeout(() => { statusEl.textContent = ''; }, 2500);
+}
+
+// ── Transactions ──
+
+const TX_PER_PAGE = 25;
+let _txPage = 0, _txTotal = 0, _txUserFilter = '', _txItemFilter = '', _txDateFilter = '';
+
+async function loadTransactions() {
+  // Populate item filter
+  const { data: items } = await db.from('shop_items').select('id, name').order('name');
+  const sel = document.getElementById('tx-search-item');
+  (items || []).forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it.id; opt.textContent = it.name;
+    sel.appendChild(opt);
+  });
+  await renderTransactions();
+}
+
+async function renderTransactions() {
+  const from = _txPage * TX_PER_PAGE, to = from + TX_PER_PAGE - 1;
+  let q = db.from('shop_transactions')
+    .select('id, cost, acquired_at, profiles(username), shop_items(name, icon)', { count: 'exact' })
+    .order('acquired_at', { ascending: false })
+    .range(from, to);
+
+  if (_txItemFilter) q = q.eq('item_id', _txItemFilter);
+  if (_txDateFilter) q = q.gte('acquired_at', _txDateFilter).lt('acquired_at', _txDateFilter + 'T23:59:59Z');
+
+  const { data, count, error } = await q;
+  _txTotal = count || 0;
+
+  const wrap = document.getElementById('tx-table-wrap');
+  if (error || !data?.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:.5rem 0">Aucune transaction.</p>';
+    document.getElementById('tx-counter').textContent = '';
+    document.getElementById('tx-prev').disabled = true;
+    document.getElementById('tx-next').disabled = true;
+    return;
+  }
+
+  // Filtre pseudo côté client (pas de full-text search côté Supabase sans extension)
+  let rows = data;
+  if (_txUserFilter) {
+    const q2 = _txUserFilter.toLowerCase();
+    rows = rows.filter(r => (r.profiles?.username || '').toLowerCase().includes(q2));
+  }
+
+  const html = `<div style="overflow-x:auto"><table class="shop-table">
+    <thead><tr><th>Date</th><th>Joueur</th><th>Article</th><th>Coût</th></tr></thead>
+    <tbody>${rows.map(r => {
+      const date = new Date(r.acquired_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' });
+      const user = r.profiles?.username || '—';
+      const item = `${r.shop_items?.icon||''} ${r.shop_items?.name||r.item_id||'—'}`;
+      return `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${date}</td>
+        <td><a href="../profile.html?user=${encodeURIComponent(user)}" style="color:var(--text);text-decoration:none;font-size:12px">${user}</a></td>
+        <td style="font-size:12px">${item}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--sun)">${r.cost} 🪙</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+
+  wrap.innerHTML = html;
+  const rangeFrom = from + 1, rangeTo = Math.min(from + rows.length, _txTotal);
+  document.getElementById('tx-counter').textContent = `${rangeFrom}–${rangeTo} / ${_txTotal}`;
+  document.getElementById('tx-prev').disabled = _txPage === 0;
+  document.getElementById('tx-next').disabled = rangeTo >= _txTotal;
+}
+
+function filterTransactions() {
+  _txUserFilter = document.getElementById('tx-search-user').value.trim();
+  _txItemFilter = document.getElementById('tx-search-item').value;
+  _txDateFilter = document.getElementById('tx-search-date').value;
+  _txPage = 0;
+  renderTransactions();
+}
+
+function clearTxFilters() {
+  document.getElementById('tx-search-user').value = '';
+  document.getElementById('tx-search-item').value = '';
+  document.getElementById('tx-search-date').value = '';
+  _txUserFilter = ''; _txItemFilter = ''; _txDateFilter = '';
+  _txPage = 0;
+  renderTransactions();
+}
+
+function txPage(d) { _txPage += d; renderTransactions(); }
+
+// ── Courbe XP ──
+
+async function loadCurveParams() {
+  const { data } = await db.from('app_config').select('value').eq('key', 'xp_curve').maybeSingle();
+  if (data?.value) {
+    document.getElementById('curve-base').value = data.value.base ?? 300;
+    document.getElementById('curve-mult').value = data.value.mult ?? 1.13;
+    document.getElementById('curve-cap').value  = data.value.cap  ?? 3000;
+  }
+}
+
+async function saveCurveParams() {
+  const statusEl = document.getElementById('curve-status');
+  statusEl.textContent = 'Enregistrement…';
+  const base = parseFloat(document.getElementById('curve-base').value) || 300;
+  const mult = parseFloat(document.getElementById('curve-mult').value) || 1.13;
+  const cap  = parseInt(document.getElementById('curve-cap').value)    || 3000;
+  const { error } = await db.from('app_config').upsert({
+    key: 'xp_curve', value: { base, mult, cap }, updated_at: new Date().toISOString()
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+}
+
+function curveXpToNext(n, base, mult, cap) {
+  return Math.min(cap, Math.round(base * Math.pow(mult, n - 1) / 50) * 50);
+}
+
+function updateCurve() {
+  const base   = parseFloat(document.getElementById('curve-base').value) || 300;
+  const mult   = parseFloat(document.getElementById('curve-mult').value) || 1.13;
+  const cap    = parseInt(document.getElementById('curve-cap').value)    || 3000;
+  const LEVELS = Math.min(200, Math.max(2, parseInt(document.getElementById('curve-end').value) || 20));
+
+  const perLevel = Array.from({length: LEVELS}, (_, i) => curveXpToNext(i + 1, base, mult, cap));
+  const cumul    = [0];
+  for (let i = 0; i < LEVELS; i++) cumul.push(cumul[i] + perLevel[i]);
+
+  // Chart SVG
+  const W = 460, H = 220, PL = 48, PR = 12, PT = 12, PB = 32;
+  const iW = W - PL - PR, iH = H - PT - PB;
+  const maxVal = Math.max(...perLevel);
+  const barW = iW / LEVELS - 3;
+  const bars = perLevel.map((v, i) => {
+    const bH = Math.round(v / maxVal * iH);
+    const x = PL + i * (iW / LEVELS) + 1;
+    const y = PT + iH - bH;
+    const atCap = v >= cap;
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${bH}"
+      fill="${atCap ? 'rgba(143,168,212,.55)' : 'rgba(143,168,212,.35)'}"
+      rx="3" stroke="${atCap ? 'rgba(143,168,212,.8)' : 'rgba(143,168,212,.5)'}" stroke-width="1"/>
+      <text x="${x + barW/2}" y="${H - PB + 14}" text-anchor="middle"
+        font-size="9" fill="rgba(240,237,230,.4)">${i+1}</text>`;
+  }).join('');
+
+  // Y axis ticks
+  const ticks = [0, Math.round(maxVal/2), maxVal].map(v => {
+    const y = PT + iH - Math.round(v / maxVal * iH);
+    return `<line x1="${PL-4}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,.06)"/>
+      <text x="${PL-6}" y="${y+4}" text-anchor="end" font-size="9" fill="rgba(240,237,230,.4)">${v}</text>`;
+  }).join('');
+
+  document.getElementById('curve-chart').innerHTML = `
+    <p style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">XP requis par niveau (1→20)</p>
+    <svg width="100%" viewBox="0 0 ${W} ${H}" style="max-width:${W}px;display:block">${ticks}${bars}</svg>`;
+
+  // Table
+  const rows = perLevel.map((v, i) =>
+    `<tr style="background:${v>=cap?'rgba(143,168,212,.04)':''}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="color:${v>=cap?'var(--moon)':'var(--text)'}">${v.toLocaleString('fr-FR')}${v>=cap?' ⌀':''}</td>
+      <td style="color:var(--muted)">${cumul[i+1].toLocaleString('fr-FR')}</td>
+    </tr>`).join('');
+
+  document.getElementById('curve-table').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace">
+      <thead><tr>
+        <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">Niv.</th>
+        <th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">XP / niv.</th>
+        <th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--surface)">XP total</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+}
+
+// ── XP Params ──
+
+async function loadXpParams() {
+  const { data } = await db.from('xp_params').select('*');
+  (data || []).forEach(p => { _xpParams[p.id] = p; });
+  renderDiffTabs();
+  renderXpForm(_activeDiff);
+}
+
+function renderDiffTabs() {
+  document.getElementById('diff-tabs').innerHTML = DIFFS.map(d =>
+    `<button class="diff-tab${d===_activeDiff?' active':''}" onclick="switchDiff('${d}')">${DIFF_LABELS_FR[d]}</button>`
+  ).join('');
+}
+
+function switchDiff(d) {
+  _activeDiff = d;
+  renderDiffTabs();
+  renderXpForm(d);
+}
+
+function renderXpForm(diff) {
+  const p = _xpParams[diff] || { base_xp: 50, hint_penalty: 15, speed_tiers: [] };
+  const tiers = (p.speed_tiers || []).slice().sort((a,b) => a.max_seconds - b.max_seconds);
+  const tiersHtml = tiers.map((t,i) => `
+    <div class="tier-row" id="tier-${i}">
+      <input type="number" min="1" value="${t.max_seconds}" id="ts-${i}" placeholder="sec">
+      <input type="number" min="1" step="0.1" value="${t.multiplier}" id="tm-${i}" placeholder="×">
+      <button class="tier-remove" onclick="removeTier(${i})">✕</button>
+    </div>`).join('');
+
+  document.getElementById('xp-form-wrap').innerHTML = `
+    <div class="xp-form">
+      <div class="form-row">
+        <label class="form-label">XP de base</label>
+        <input class="form-input" type="number" min="0" id="xp-base" value="${p.base_xp}" style="max-width:120px">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Malus par indice (XP)</label>
+        <input class="form-input" type="number" min="0" id="xp-penalty" value="${p.hint_penalty}" style="max-width:120px">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Paliers de vitesse</label>
+        <div class="tier-header">
+          <span>Temps max (sec)</span><span>Multiplicateur</span><span></span>
+        </div>
+        <div class="tiers-list" id="tiers-list">${tiersHtml}</div>
+        <button class="btn" style="margin-top:6px;font-size:12px" onclick="addTier()">+ Ajouter un palier</button>
+      </div>
+    </div>`;
+}
+
+function addTier() {
+  const list = document.getElementById('tiers-list');
+  const i = list.children.length;
+  const row = document.createElement('div');
+  row.className = 'tier-row';
+  row.id = 'tier-' + i;
+  row.innerHTML = `
+    <input type="number" min="1" id="ts-${i}" placeholder="ex: 60">
+    <input type="number" min="1" step="0.1" id="tm-${i}" placeholder="ex: 1.5">
+    <button class="tier-remove" onclick="removeTier(${i})">✕</button>`;
+  list.appendChild(row);
+}
+
+function removeTier(i) {
+  const row = document.getElementById('tier-' + i);
+  if (row) row.remove();
+  // Renumber remaining tiers
+  const rows = document.getElementById('tiers-list').children;
+  for (let j = 0; j < rows.length; j++) {
+    rows[j].id = 'tier-' + j;
+    const sec = rows[j].querySelector('input:nth-child(1)');
+    const mul = rows[j].querySelector('input:nth-child(2)');
+    const btn = rows[j].querySelector('button');
+    if (sec) sec.id = 'ts-' + j;
+    if (mul) mul.id = 'tm-' + j;
+    if (btn) btn.setAttribute('onclick', 'removeTier(' + j + ')');
+  }
+}
+
+async function saveXpParams() {
+  const statusEl = document.getElementById('xp-status');
+  statusEl.textContent = '';
+  const base_xp    = parseInt(document.getElementById('xp-base').value) || 0;
+  const hint_penalty = parseInt(document.getElementById('xp-penalty').value) || 0;
+
+  const tiers = [];
+  const rows = document.getElementById('tiers-list').children;
+  for (let i = 0; i < rows.length; i++) {
+    const sec = parseFloat(document.getElementById('ts-' + i)?.value);
+    const mul = parseFloat(document.getElementById('tm-' + i)?.value);
+    if (!isNaN(sec) && !isNaN(mul) && sec > 0 && mul > 0) {
+      tiers.push({ max_seconds: sec, multiplier: mul });
+    }
+  }
+  tiers.sort((a,b) => a.max_seconds - b.max_seconds);
+
+  const diff = _activeDiff;
+  const label = DIFF_LABELS_FR[diff];
+  const { error } = await db.from('xp_params').upsert({
+    id: diff, label, base_xp, hint_penalty,
+    speed_tiers: tiers, updated_at: new Date().toISOString()
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    _xpParams[diff] = { id: diff, label, base_xp, hint_penalty, speed_tiers: tiers };
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+}
+
+// ── Shop Items ──
+
+async function loadShopItems() {
+  const { data } = await db.from('shop_items').select('*').order('sort_order');
+  const items = data || [];
+  const wrap = document.getElementById('shop-table-wrap');
+  if (!items.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted)">Aucun article.</p>';
+    return;
+  }
+  wrap.innerHTML = `<div style="overflow-x:auto"><table class="shop-table">
+    <thead><tr>
+      <th>Icône</th><th>Nom</th><th>Type</th><th>Clé</th>
+      <th>Prix 🪙</th><th>Niv. débloquant</th><th>Actif</th><th></th>
+    </tr></thead>
+    <tbody>${items.map(it => `<tr id="shoprow-${it.id}">
+      <td>${it.icon}</td>
+      <td>${it.name}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${it.type}</span></td>
+      <td><code style="font-size:11px">${it.item_key}</code></td>
+      <td>
+        <input type="number" min="0" value="${it.cost}"
+          style="width:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 7px;font-size:12px;font-family:'DM Mono',monospace;color:var(--sun)"
+          id="item-cost-${it.id}">
+      </td>
+      <td>
+        <input type="number" min="1" placeholder="—" value="${it.unlock_level ?? ''}"
+          style="width:60px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 7px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text)"
+          id="item-level-${it.id}">
+      </td>
+      <td style="text-align:center">
+        <label class="toggle item-active-toggle" title="${it.is_active ? 'Actif' : 'Inactif'}" style="display:inline-flex">
+          <input type="checkbox" ${it.is_active ? 'checked' : ''} onchange="toggleItem('${it.id}',this.checked)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn" style="font-size:11px;padding:4px 10px" onclick="saveItemUnlock('${it.id}')">✓</button>
+        <span id="item-status-${it.id}" style="font-size:11px;margin-left:4px"></span>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function toggleItem(id, active) {
+  const { error } = await db.from('shop_items').update({ is_active: active }).eq('id', id);
+  if (error) alert('Erreur : ' + error.message);
+}
+
+async function saveItemUnlock(id) {
+  const costVal  = parseInt(document.getElementById('item-cost-' + id).value);
+  const levelRaw = document.getElementById('item-level-' + id).value.trim();
+  const levelVal = levelRaw === '' ? null : parseInt(levelRaw);
+  const statusEl = document.getElementById('item-status-' + id);
+  statusEl.textContent = '…';
+  statusEl.style.color = 'var(--muted)';
+  const { error } = await db.from('shop_items').update({ cost: costVal, unlock_level: levelVal }).eq('id', id);
+  if (error) {
+    statusEl.textContent = '✗';
+    statusEl.style.color = 'var(--danger, #f55)';
+  } else {
+    statusEl.textContent = '✓';
+    statusEl.style.color = 'var(--success, #4c8)';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  }
+}
+
+async function addShopItem() {
+  const statusEl = document.getElementById('shop-status');
+  statusEl.textContent = '';
+  const id   = document.getElementById('ni-id').value.trim();
+  const name = document.getElementById('ni-name').value.trim();
+  const desc = document.getElementById('ni-desc').value.trim();
+  const icon = document.getElementById('ni-icon').value.trim() || '🎁';
+  const type = document.getElementById('ni-type').value;
+  const key  = document.getElementById('ni-key').value.trim();
+  const cost = parseInt(document.getElementById('ni-cost').value) || 0;
+  const lvlVal = document.getElementById('ni-level').value.trim();
+  const unlock_level = lvlVal ? parseInt(lvlVal) : null;
+  const sort_order   = parseInt(document.getElementById('ni-sort').value) || 0;
+
+  if (!id || !name || !key) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'ID, Nom et Clé sont obligatoires';
+    return;
+  }
+
+  const { error } = await db.from('shop_items').insert({
+    id, name, description: desc, icon, type, item_key: key,
+    cost, unlock_level, sort_order, is_active: true
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Article ajouté ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    await loadShopItems();
+    ['ni-id','ni-name','ni-desc','ni-key'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('ni-cost').value = '0';
+    document.getElementById('ni-level').value = '';
+    document.getElementById('ni-sort').value = '0';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
+

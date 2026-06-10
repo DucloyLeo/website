@@ -10,8 +10,8 @@
 <title>Admin — Difficultés</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/common.css?v=6">
-<script>(function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<link rel="stylesheet" href="../css/common.css?v=7">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
 <style>
 .diff-form { display:flex; flex-direction:column; gap:1.5rem; }
 .param-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
@@ -44,7 +44,8 @@
       <a href="daily.html" class="nav-menu-item">📅 Journaliers</a>
       <a href="badges.html" class="nav-menu-item">🏅 Badges</a>
       <a href="difficulty.html" class="nav-menu-item">⚙️ Difficultés</a>
-      <a href="../seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
+      <a href="economy.html" class="nav-menu-item">💰 Économie</a>
+      <a href="seed-creator.html" class="nav-menu-item">🔧 Créateur de seed</a>
       <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">← Site public</a>
       <div id="menu-auth-item"></div>
@@ -63,7 +64,8 @@
     <a href="daily.html"      class="admin-nav-item">📅 Journaliers</a>
     <a href="badges.html"     class="admin-nav-item">🏅 Badges</a>
     <a href="difficulty.html" class="admin-nav-item active">⚙️ Difficultés</a>
-    <a href="../seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
+    <a href="economy.html" class="admin-nav-item">💰 Économie</a>
+    <a href="seed-creator.html" class="admin-nav-item">🔧 Créateur de seed</a>
     <hr class="sep">
     <a href="/index.html" class="admin-nav-item">← Site public</a>
   </aside>
@@ -97,7 +99,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
-<script src="../js/auth.js?v=6"></script>
+<script src="../js/auth.js?v=7"></script>
 <script>
 const DIFFS = ['easy','medium','hard','extreme'];
 const LABELS = { easy:'🌱 Facile', medium:'🔥 Moyen', hard:'💀 Difficile', extreme:'☠ Extrême' };
@@ -238,3 +240,4 @@ loadPage();
 </script>
 </body>
 </html>
+

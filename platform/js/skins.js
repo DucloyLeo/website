@@ -78,6 +78,30 @@ function setSkin(name) {
   saveSkinToAccount(name);
 }
 
+// Vérifie si un skin est déverrouillé pour l'utilisateur courant.
+// emoji et circles sont toujours disponibles.
+async function isSkinUnlocked(skinKey) {
+  if (skinKey === 'emoji' || skinKey === 'circles') return true;
+  try {
+    if (typeof getCurrentUser !== 'function') return false;
+    const user = await getCurrentUser();
+    if (!user) return false;
+
+    const itemId = 'skin-' + skinKey;
+    const [invRes, itemRes, profileRes] = await Promise.all([
+      db.from('player_inventory').select('id').eq('user_id', user.id).eq('item_id', itemId).maybeSingle(),
+      db.from('shop_items').select('unlock_level').eq('id', itemId).maybeSingle(),
+      db.from('profiles').select('level').eq('id', user.id).maybeSingle()
+    ]);
+
+    if (invRes.data) return true;
+
+    const unlockLevel = itemRes.data?.unlock_level;
+    const userLevel   = profileRes.data?.level || 1;
+    return unlockLevel !== null && unlockLevel !== undefined && userLevel >= unlockLevel;
+  } catch(e) { return false; }
+}
+
 // Init au chargement du script (rendu immédiat depuis le cache local).
 document.documentElement.setAttribute('data-skin', getSkin());
 

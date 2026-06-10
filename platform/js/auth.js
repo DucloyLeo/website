@@ -72,7 +72,7 @@ async function signOut() {
 
 // XP nécessaire pour passer du niveau n au niveau n+1
 function xpToNextLevel(n) {
-  return Math.min(1200, Math.floor(100 * Math.pow(1.4, n - 1)));
+  return Math.min(3000, Math.floor(300 + Math.pow(1.13, n - 1)));
 }
 
 // Niveau correspondant à un total d'XP

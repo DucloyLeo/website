@@ -552,7 +552,7 @@ function _showDailyRewards(r,elapsed){
   document.getElementById('dr-level-num').textContent=r.new_level;
   document.getElementById('dr-xp-text').textContent=r.xp_in_level+' / '+r.xp_to_next+' XP';
   const fill=document.getElementById('dr-xp-fill');
-  if(fill){fill.style.width='0%';setTimeout(()=>{fill.style.width=Math.round(r.xp_in_level/r.xp_to_next*100)+'%';},100);}
+  if(fill){const _pre=window._cachedProfile?xpProgressInLevel(window._cachedProfile.xp||0):null;fill.style.transition='none';fill.style.width=(_pre?Math.round(_pre.current/_pre.needed*100):0)+'%';setTimeout(()=>{fill.style.transition='';fill.style.width=Math.round(r.xp_in_level/r.xp_to_next*100)+'%';},100);}
   const banner=document.getElementById('dr-levelup-banner');
   if(banner){banner.style.display=r.leveled_up?'':'none';}
 }

@@ -684,6 +684,7 @@ async function initNavAuth(opts = {}) {
 
   if (user) {
     const [profile, prefs] = await Promise.all([getCurrentProfile(), getUserPrefs(user.id).catch(() => ({}))]);
+    window._cachedProfile = profile;
     window._userPrefs = prefs;
 
     if (prefs.theme && prefs.theme !== document.documentElement.getAttribute('data-theme')) {

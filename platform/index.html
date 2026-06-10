@@ -659,7 +659,7 @@ async function checkWin(){
     document.getElementById('win-xp-chip').textContent='…';
     document.getElementById('win-coins-chip').textContent='…';
     document.getElementById('win-level-xp-text').textContent='…';
-    document.getElementById('win-xp-fill').style.cssText='width:0%;transition:none';
+    {const _f=document.getElementById('win-xp-fill');_f.style.transition='none';const _pre=window._cachedProfile?xpProgressInLevel(window._cachedProfile.xp||0):null;_f.style.width=(_pre?Math.round(_pre.current/_pre.needed*100):0)+'%';}
     document.getElementById('win-levelup-banner').style.display='none';
     rewardsSec.style.display='';
   } else if(!currentUserId){

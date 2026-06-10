@@ -656,7 +656,6 @@ function renderGameMenu() {
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
-      <a href="/shop.html" class="nav-menu-item">🛒 Boutique</a>
       <div id="menu-auth-item"></div>
       <div class="nav-menu-sep"></div>
       <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
@@ -769,13 +768,13 @@ async function initNavAuth(opts = {}) {
       <div class="nav-menu-sep"></div>
       <a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a>
       <a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a>
-      <a href="/shop.html" class="nav-menu-item">🛍 Boutique</a>
+      <a href="/shop.html" class="nav-menu-item">🛒 Boutique</a>
       <a href="/profile.html" class="nav-menu-item">👤 ${profile?.username || 'Profil'}${isVip ? ' ✦' : ''}</a>
       <button onclick="signOut()" class="nav-menu-item">🚪 Déconnexion</button>`;
   } else {
     window._userPrefs = null;
     if (el) el.innerHTML = `<a href="/leaderboard.html" class="nav-auth-link">Classement</a><a href="/login.html" class="nav-auth-btn">Connexion</a>`;
-    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/shop.html" class="nav-menu-item">🛍 Boutique</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
+    if (mel) mel.innerHTML = `<div class="nav-menu-sep"></div><a href="/daily.html" class="nav-menu-item">📅 Niveau du jour</a><a href="/leaderboard.html" class="nav-menu-item">🏆 Classement</a><a href="/shop.html" class="nav-menu-item">🛒 Boutique</a><a href="/login.html" class="nav-menu-item">🔑 Connexion</a>`;
   }
 
   _initDiscovery();

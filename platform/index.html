@@ -406,7 +406,7 @@ function copySeed(){
 }
 
 /* ── Overlay ── */
-function onOverlayClick(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('show');}
+function onOverlayClick(e,id){if(e.target===document.getElementById(id)){document.getElementById(id).classList.remove('show');if(id==='diff-modal'&&!puzzle.length)startGeneration('easy');}}
 
 /* ── Prefs ── */
 function loadPrefs(){try{rememberDiff=localStorage.getItem('tango_remember')==='1';document.getElementById('pref-remember').checked=rememberDiff;if(rememberDiff){const d=localStorage.getItem('tango_diff');if(d)currentDiff=d;}extremeMode=localStorage.getItem('tango_extreme')==='1';document.getElementById('pref-extreme').checked=extremeMode;const sc=document.getElementById('pref-sound');if(sc)sc.checked=(typeof SOUND==='undefined'||!SOUND.muted);}catch(e){}}

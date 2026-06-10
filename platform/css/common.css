@@ -237,12 +237,6 @@ h3 { font-size: 1.1rem; margin-bottom: .5rem; }
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 8px;
 }
-.stats-group-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .85rem;
-}
 .stat-card {
   background: var(--surface2);
   border-radius: 8px;

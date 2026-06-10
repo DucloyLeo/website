@@ -138,9 +138,7 @@
     <!-- Stats globales -->
     <div class="diff-section">
       <p class="diff-title">Statistiques globales</p>
-      <div class="stats-group-wrap">
-        <div class="stats-grid" id="global-stats"></div>
-      </div>
+      <div class="stats-grid" id="global-stats"></div>
     </div>
 
     <!-- Stats par difficulté -->
@@ -379,7 +377,7 @@ function renderProfileData(profile, stats, badges, earnedMap, adminView) {
   document.getElementById('diff-stats').innerHTML = ['easy', 'medium', 'hard'].map(diff => {
     const s = stats.find(r => r.difficulty === diff) || { games_played: 0, best_time: 0, total_time: 0 };
     const avg = s.games_played > 0 ? Math.round(s.total_time / s.games_played) : 0;
-    return `<div class="stats-group-wrap" style="margin-bottom:.75rem">
+    return `<div style="margin-bottom:1.2rem">
       <p style="font-size:11px;color:${DIFF_COLORS[diff]};margin-bottom:.6rem;letter-spacing:.06em;font-weight:500">${DIFF_LABELS[diff]}</p>
       <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-card"><span class="stat-label">Parties</span><span class="stat-val">${s.games_played}</span></div>

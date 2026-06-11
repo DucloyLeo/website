@@ -146,12 +146,9 @@ async function checkLevelUnlocks(userId, newLevel) {
 }
 
 // ─── Taux de conversion XP → Pièces ──────────────────
-let _coinRateCache = null;
 async function getCoinRate() {
-  if (_coinRateCache !== null) return _coinRateCache;
   const { data } = await db.from('app_config').select('value').eq('key', 'coin_rate').maybeSingle();
-  _coinRateCache = data?.value?.xp_per_coin ?? 5;
-  return _coinRateCache;
+  return data?.value?.xp_per_coin ?? 5;
 }
 
 // ─── Sauvegarde d'une partie ─────────────────────────

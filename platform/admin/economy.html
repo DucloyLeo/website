@@ -104,6 +104,27 @@
 
       <hr class="sep">
 
+      <!-- ── Taux XP → Pièces ── -->
+      <div class="eco-section">
+        <p class="eco-section-title">Taux de conversion XP → Pièces</p>
+        <div class="xp-form" style="max-width:360px">
+          <div class="form-row">
+            <label class="form-label">XP par pièce gagnée</label>
+            <input class="form-input" id="coin-xp-per-coin" type="number" min="1" value="5" style="max-width:120px">
+          </div>
+          <p style="font-size:11px;color:var(--muted);line-height:1.7">
+            Formule : <code style="color:var(--moon)">pièces = floor(xp_gagné ÷ XP_par_pièce)</code><br>
+            Ex : 100 XP avec un ratio de 5 → 20 🪙
+          </p>
+        </div>
+        <div style="margin-top:.75rem;display:flex;gap:10px;align-items:center">
+          <button class="btn sun" onclick="saveCoinRate()">Enregistrer</button>
+          <span id="coin-rate-status"></span>
+        </div>
+      </div>
+
+      <hr class="sep">
+
       <!-- ── Courbe XP ── -->
       <div class="eco-section">
         <p class="eco-section-title">Courbe de progression XP</p>
@@ -277,10 +298,34 @@ async function init() {
   const ok = await requireAdmin('/index.html');
   if (!ok) return;
   await initNavAuth();
-  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions(), loadCurveParams()]);
+  await Promise.all([loadXpParams(), loadShopItems(), loadStreakParams(), loadTransactions(), loadCurveParams(), loadCoinRate()]);
   updateCurve();
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = '';
+}
+
+// ── Taux XP → Pièces ──
+
+async function loadCoinRate() {
+  const { data } = await db.from('app_config').select('value').eq('key', 'coin_rate').maybeSingle();
+  document.getElementById('coin-xp-per-coin').value = data?.value?.xp_per_coin ?? 5;
+}
+
+async function saveCoinRate() {
+  const statusEl = document.getElementById('coin-rate-status');
+  statusEl.textContent = 'Enregistrement…';
+  const xpPerCoin = Math.max(1, parseInt(document.getElementById('coin-xp-per-coin').value) || 5);
+  const { error } = await db.from('app_config').upsert({
+    key: 'coin_rate', value: { xp_per_coin: xpPerCoin }, updated_at: new Date().toISOString()
+  });
+  if (error) {
+    statusEl.className = 'status-err';
+    statusEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Enregistré ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
 }
 
 // ── Streak Params ──

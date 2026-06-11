@@ -145,6 +145,15 @@ async function checkLevelUnlocks(userId, newLevel) {
   } catch(e) { console.warn('checkLevelUnlocks:', e); }
 }
 
+// ─── Taux de conversion XP → Pièces ──────────────────
+let _coinRateCache = null;
+async function getCoinRate() {
+  if (_coinRateCache !== null) return _coinRateCache;
+  const { data } = await db.from('app_config').select('value').eq('key', 'coin_rate').maybeSingle();
+  _coinRateCache = data?.value?.xp_per_coin ?? 5;
+  return _coinRateCache;
+}
+
 // ─── Sauvegarde d'une partie ─────────────────────────
 // Retourne { xp_earned, coins_earned, new_level, old_level, leveled_up,
 //            xp_in_level, xp_to_next, new_badges }
@@ -190,7 +199,10 @@ async function saveGameResult(userId, diff, timeSeconds, seed, hintCount = 0, ct
   // ── Calcul XP & Pièces ──
   let xp_earned = 0, coins_earned = 0;
   if (!ctrlHUsed) {
-    const { data: params } = await db.from('xp_params').select('*').eq('id', diff).maybeSingle();
+    const [{ data: params }, xpPerCoin] = await Promise.all([
+      db.from('xp_params').select('*').eq('id', diff).maybeSingle(),
+      getCoinRate()
+    ]);
     if (params) {
       const tiers = (params.speed_tiers || []).slice().sort((a, b) => a.max_seconds - b.max_seconds);
       let multiplier = 1.0;
@@ -200,7 +212,7 @@ async function saveGameResult(userId, diff, timeSeconds, seed, hintCount = 0, ct
       const baseWithSpeed = Math.floor(params.base_xp * multiplier);
       const penalty = hintCount * params.hint_penalty;
       xp_earned    = Math.max(10, baseWithSpeed - penalty);
-      coins_earned = Math.floor(xp_earned / 5);
+      coins_earned = Math.floor(xp_earned / xpPerCoin);
     }
   }
 
@@ -497,11 +509,12 @@ async function saveDailyResult(userId, diff, timeSeconds) {
 
   const effectiveDiff = ['easy','medium','hard','extreme'].includes(diff) ? diff : 'medium';
 
-  const [xpParamsRes, bonusRes, streakResult, profileRes] = await Promise.all([
+  const [xpParamsRes, bonusRes, streakResult, profileRes, xpPerCoin] = await Promise.all([
     db.from('xp_params').select('*').eq('id', effectiveDiff).maybeSingle(),
     db.from('daily_bonus_params').select('*').eq('id', 'default').maybeSingle(),
     updateDailyStreak(userId),
-    db.from('profiles').select('xp, level, coins').eq('id', userId).maybeSingle()
+    db.from('profiles').select('xp, level, coins').eq('id', userId).maybeSingle(),
+    getCoinRate()
   ]);
 
   // Streak déjà fait aujourd'hui → pas de récompense double
@@ -523,7 +536,7 @@ async function saveDailyResult(userId, diff, timeSeconds) {
   const bonus_xp     = bonusParam.bonus_xp;
   const bonus_coins  = bonusParam.bonus_coins;
   const xp_earned    = game_xp + bonus_xp;
-  const coins_earned = Math.floor(game_xp / 5) + bonus_coins;
+  const coins_earned = Math.floor(game_xp / xpPerCoin) + bonus_coins;
 
   // Mise à jour profil
   const profile = profileRes.data;

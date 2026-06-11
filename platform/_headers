@@ -14,7 +14,7 @@
   Cache-Control: public, max-age=86400
 
 /*.html
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, no-cache
   Content-Type: text/html; charset=utf-8
 
 /css/*
@@ -22,7 +22,3 @@
 
 /js/*
   Cache-Control: public, no-cache
-
-/index.html
-  Cache-Control: public, max-age=3600, must-revalidate
-  Content-Type: text/html; charset=utf-8

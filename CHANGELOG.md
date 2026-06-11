@@ -5,7 +5,7 @@
 
 ---
 
-## [v0.9] — Économie, onboarding & UX progression
+## [v0.9] — Économie, onboarding, nouvelle technique & page conseils interactive
 
 ### 🪙 Système d'économie (XP, niveaux, boutique)
 
@@ -34,6 +34,23 @@
 - **Pastilles de découverte** (`.discovery-dot`) sur les liens nav vers les nouvelles fonctionnalités (Classement, Daily, Boutique) — disparaissent une fois la page visitée (localStorage `tango_seen`).
 - **Boutique ajoutée** à la barre de navigation (emoji 🛒) pour les utilisateurs connectés et non-connectés.
 - **Difficulté par défaut** : clic en dehors de la modale de choix de difficulté sans partie active → lance automatiquement une partie Facile.
+
+### 🧠 Nouvelle technique de résolution — Balance + contrainte ×
+
+- **Niveau 7 — tXBalance** inséré entre Dist4 (L6) et Élimination (L8 désormais).
+- **Cas 1 — 3 cases vides** : si deux cases vides adjacentes sont liées par ×, elles apportent forcément 1 ☀ et 1 🌙 → la troisième case est déterminée par l'équilibre de la ligne/colonne.
+- **Cas 2 — 4 cases vides** : si 2 symboles identiques sont déjà posés et qu'une contrainte × lie deux cases vides adjacentes, les 2 autres cases vides sont toutes deux forcées vers le symbole opposé.
+- Logique appliquée en lignes **et** en colonnes.
+- `tElim` passe de L7 à **L8** ; `DIFF_PARAMS` `hard`/`extreme` mis à jour (`techMax: 8`).
+- Migration SQL `migration_xbalance_level.sql` : contrainte CHECK étendue à 8, `tech_max` mis à jour pour `hard` et `extreme`.
+
+### 💡 Page Conseils — mini-grilles interactives
+
+- Chaque technique de résolution dispose maintenant d'une **mini-grille de démonstration** (6 cases, contraintes affichées).
+- Bouton **→ Déduire** révèle la case forcée avec une animation pop ; cliquer la case réinitialise la démo.
+- Suppression des cartes « Chaîne == » et « Chaîne ×× » (redondantes avec la contrainte directe itérative).
+- Nouvelle carte **Balance + contrainte ×** avec deux démonstrations pour le cas 3 vides et deux pour le cas 4 vides.
+- Corrections de valeurs sur les démos existantes (anti-triplet, distance 4, paire en extrémité, contrainte directe).
 
 ### 🐛 Corrections
 

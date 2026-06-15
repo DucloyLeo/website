@@ -335,22 +335,35 @@ function _buildTabs(tabs) {
 async function renderSkinOptions() {
   const cur = getSkin();
   const order = ['legacy', 'circles', 'cards1', 'cards2', 'skull', 'tictactoe', 'fruits', 'bw'];
-  const unlockInfo = { circles: 3, cards1: 5, cards2: 7, skull: 10, tictactoe: 12, fruits: 15, bw: 5 };
-  const results = await Promise.all(order.map(k => isSkinUnlocked(k)));
+  const [unlockedResults, shopRes] = await Promise.all([
+    Promise.all(order.map(k => isSkinUnlocked(k))),
+    db.from('shop_items').select('id,cost').in('id', order.map(k => 'skin-' + k))
+  ]);
+  const costs = {};
+  if (shopRes.data) {
+    shopRes.data.forEach(item => {
+      costs[item.id.replace('skin-', '')] = item.cost;
+    });
+  }
   document.getElementById('skin-options').innerHTML = order.map((k, i) => {
     const s = SKINS[k];
-    const unlocked = results[i];
+    const unlocked = unlockedResults[i];
     const locked = !unlocked;
-    const lockLabel = locked && unlockInfo[k] ? '<span style="font-size:10px;color:var(--muted);display:block;margin-top:2px">🔒 Niveau ' + unlockInfo[k] + '</span>' : '';
+    const cost = costs[k];
+    const lockLabel = locked && cost > 0 ? '<span style="font-size:10px;color:var(--muted);display:block;margin-top:2px">🔒 ' + cost + ' 🪙</span>' : '';
     return `<button class="skin-opt ${k === cur ? 'active' : ''} ${locked ? 'skin-locked' : ''}"
-      onclick="${locked ? '' : 'chooseSkin(\'' + k + '\')'}"
-      ${locked ? 'title="Débloqué au niveau ' + (unlockInfo[k] || '') + '" tabindex="-1"' : ''}>
+      onclick="${locked ? 'goToShop()' : 'chooseSkin(\'' + k + '\')'}"
+      ${locked ? 'title="À acheter à la boutique" tabindex="-1"' : ''}>
       <span class="skin-preview">
         <span class="ci sym-sun skin-${k}"></span><span class="ci sym-moon skin-${k}"></span>
       </span>
       <span class="skin-label">${s.label}${lockLabel}</span>
     </button>`;
   }).join('');
+}
+
+function goToShop() {
+  window.location.href = '/shop.html';
 }
 
 function chooseSkin(k) {

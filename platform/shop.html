@@ -51,8 +51,8 @@
   }
   .login-banner a { color: var(--moon); text-decoration: none; }
   .login-banner a:hover { text-decoration: underline; }
-  .shop-item-symbols { display: flex; gap: 8px; justify-content: center; align-items: center; }
-  .shop-item-symbols .ci { width: 60px; height: 60px; font-size: 1.8rem; }
+  .shop-item-skin-preview { display: flex; gap: 12px; justify-content: center; align-items: center; margin: .8rem 0; }
+  .shop-item-skin-preview .ci { width: 72px; height: 72px; font-size: 2rem; border: 1px solid var(--border); border-radius: 8px; }
 </style>
 </head>
 <body>
@@ -158,14 +158,14 @@ function renderShopItem(item) {
   const canAfford = _userId && !owned && !levelLocked && _userCoins >= item.cost;
   const isFree = item.cost === 0 && item.unlock_level !== null;
 
-  // Pour les skins, afficher les deux symboles au lieu de l'icône
+  // Pour les skins, afficher les deux symboles dans des cases comme dans le profil
   let iconHtml;
   if (item.type === 'skin') {
     const skinKey = item.item_key;
-    iconHtml = `<span class="shop-item-symbols">
+    iconHtml = `<div class="shop-item-skin-preview">
       <span class="ci sym-sun skin-${skinKey}"></span>
       <span class="ci sym-moon skin-${skinKey}"></span>
-    </span>`;
+    </div>`;
   } else {
     iconHtml = `<span class="shop-item-icon">${item.icon}</span>`;
   }

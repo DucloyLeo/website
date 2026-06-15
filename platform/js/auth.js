@@ -676,19 +676,14 @@ function renderGameMenu() {
         <span>☠ Mode extrême</span>
         <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
       </div>
-      <div class="nav-menu-item menu-pref-row" onclick="toggleSoundPref(event)">
-        <span>🔊 Sons</span>
-        <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-sound" onchange="onSoundPrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
-      </div>
-      <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:12px;padding:8px 0">
-        <span style="font-size:12px;color:var(--muted);min-width:40px">🔉</span>
+      <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:12px;padding:8px 0" onclick="event.stopPropagation()">
+        <span style="font-size:12px;color:var(--muted);min-width:40px">🔊</span>
         <input type="range" id="pref-volume" min="0" max="100" value="100" onchange="onSoundVolumeChange()" oninput="updateVolumeLabel()" style="flex:1;cursor:pointer">
         <span id="volume-label" style="font-size:11px;color:var(--muted);min-width:30px;text-align:right">100%</span>
       </div>`;
   try {
     const r = document.getElementById('pref-remember'); if (r) r.checked = localStorage.getItem('tango_remember') === '1';
     const e = document.getElementById('pref-extreme');  if (e) e.checked = localStorage.getItem('tango_extreme') === '1';
-    const s = document.getElementById('pref-sound');    if (s) s.checked = localStorage.getItem('tango_sound') !== '0';
     const v = document.getElementById('pref-volume');   if (v) { const vol = localStorage.getItem('tango_sound_volume') || '100'; v.value = vol; const l = document.getElementById('volume-label'); if (l) l.textContent = vol + '%'; }
   } catch (_) {}
 }
@@ -701,8 +696,6 @@ function onPrefChange()        { try { localStorage.setItem('tango_remember', do
 function toggleRememberDiff(e) { e.stopPropagation(); const cb = document.getElementById('pref-remember'); cb.checked = !cb.checked; onPrefChange(); }
 function onExtremePrefChange() { try { localStorage.setItem('tango_extreme', document.getElementById('pref-extreme').checked ? '1' : '0'); } catch (e) {} }
 function toggleExtremeMode(e)  { e.stopPropagation(); const cb = document.getElementById('pref-extreme'); cb.checked = !cb.checked; onExtremePrefChange(); }
-function onSoundPrefChange()   { const on = document.getElementById('pref-sound').checked; try { localStorage.setItem('tango_sound', on ? '1' : '0'); } catch (e) {} if (typeof SOUND !== 'undefined') SOUND.setMuted(!on); }
-function toggleSoundPref(e)    { e.stopPropagation(); const cb = document.getElementById('pref-sound'); cb.checked = !cb.checked; onSoundPrefChange(); }
 
 // ─── Discovery / Onboarding ───────────────────────────
 const _DISC_FEATURES = {
@@ -760,13 +753,7 @@ async function initNavAuth(opts = {}) {
       try { localStorage.setItem('tango_theme', prefs.theme); } catch(e) {}
     }
 
-    // Sync sound preferences depuis DB → localStorage + application immédiate
-    if (prefs.sound_muted !== undefined) {
-      try { localStorage.setItem('tango_sound', prefs.sound_muted ? '0' : '1'); } catch(e) {}
-      if (typeof SOUND !== 'undefined') SOUND.setMuted(!!prefs.sound_muted);
-      const soundCheckbox = document.getElementById('pref-sound');
-      if (soundCheckbox) soundCheckbox.checked = !prefs.sound_muted;
-    }
+    // Sync sound volume depuis DB → localStorage + application immédiate
     if (prefs.sound_volume !== undefined) {
       try { localStorage.setItem('tango_sound_volume', String(prefs.sound_volume)); } catch(e) {}
       if (typeof SOUND !== 'undefined') SOUND.setVolume(prefs.sound_volume);

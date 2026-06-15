@@ -43,6 +43,14 @@
 [data-theme="light"] .theme-icon-moon{opacity:0;transition:opacity .15s 0s}
 [data-theme="light"] .theme-icon-sun{opacity:1;transition:opacity .15s .25s}
 
+/* ── Volume slider ── */
+input[type="range"]{accent-color:var(--moon);height:4px;border-radius:2px;background:var(--surface2);outline:none}
+input[type="range"]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--moon);cursor:pointer;transition:background .2s;border:1px solid var(--border2)}
+input[type="range"]::-webkit-slider-thumb:hover{background:rgba(143,168,212,.8)}
+input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--moon);cursor:pointer;transition:background .2s;border:1px solid var(--border2)}
+input[type="range"]::-moz-range-thumb:hover{background:rgba(143,168,212,.8)}
+.menu-volume-row{padding:8px 0 !important}
+
 body {
   background: var(--bg);
   color: var(--text);

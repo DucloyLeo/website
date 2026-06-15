@@ -9,7 +9,7 @@
 //  formes d'onde : 'sine' | 'triangle' | 'square' | 'sawtooth').
 //
 //  Chaque événement a sa propre méthode dans l'objet SOUND.
-//  Coupure globale : SOUND.toggle() / persistée en localStorage.
+//  Volume (0-100) : réglable via SOUND.setVolume() / persisté en localStorage et DB.
 // ═══════════════════════════════════════════════════════
 
 const SOUND_CONFIG = {
@@ -62,7 +62,7 @@ const SOUND = {
   // Prépare le contexte audio (paresseux, au premier geste utilisateur)
   // et le réveille s'il est suspendu. Retourne false si muet/indispo.
   _ready() {
-    if (this.muted) return false;
+    if (this.volume === 0) return false;
     if (!this.ctx) {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;

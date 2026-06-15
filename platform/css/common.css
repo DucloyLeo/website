@@ -472,9 +472,9 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 /* Skin « Médical » : Cercle bleu vide / Croix rouge */
 .ci.skin-medical.sym-sun::before {
   content: '';
-  width: 70%;
-  height: 70%;
-  border: 3px solid #3c74e0;
+  width: 50%;
+  height: 50%;
+  border: 5px solid #3c74e0;
   border-radius: 50%;
 }
 .ci.skin-medical.sym-moon::before { content: '❌'; }

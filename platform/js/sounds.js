@@ -47,11 +47,16 @@ const SOUND = {
   ctx: null,
   master: null,
   muted: false,
+  volume: 100,
   _lastError: 0,
 
-  // Lit la préférence (par défaut : activé).
+  // Lit les préférences (par défaut : activé à 100%).
   _loadPref() {
     try { this.muted = localStorage.getItem('tango_sound') === '0'; } catch (e) {}
+    try {
+      const v = localStorage.getItem('tango_sound_volume');
+      this.volume = v !== null ? parseInt(v, 10) : 100;
+    } catch (e) {}
   },
 
   // Prépare le contexte audio (paresseux, au premier geste utilisateur)
@@ -64,7 +69,7 @@ const SOUND = {
         if (!AC) return false;
         this.ctx = new AC();
         this.master = this.ctx.createGain();
-        this.master.gain.value = SOUND_CONFIG.masterVolume;
+        this.master.gain.value = (SOUND_CONFIG.masterVolume * this.volume) / 100;
         this.master.connect(this.ctx.destination);
       } catch (e) { return false; }
     }
@@ -145,6 +150,13 @@ const SOUND = {
     try { localStorage.setItem('tango_sound', m ? '0' : '1'); } catch (e) {}
   },
   toggle() { this.setMuted(!this.muted); return !this.muted; },
+
+  // ── Volume (0-100) ────────────────────────────────
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(100, Math.round(v)));
+    try { localStorage.setItem('tango_sound_volume', String(this.volume)); } catch (e) {}
+    if (this.master) this.master.gain.value = (SOUND_CONFIG.masterVolume * this.volume) / 100;
+  },
 };
 
 SOUND._loadPref();

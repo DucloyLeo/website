@@ -459,18 +459,24 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 
 /* Skin « Cartes » : Cœur / Pique */
 .ci.skin-cards.sym-sun::before  { content: '❤'; color: #e0533c; }
-.ci.skin-cards.sym-moon::before { content: '♠'; color: #333333; }
+.ci.skin-cards.sym-moon::before { content: '♠'; color: #333333; font-size: 1.3em; }
 
 /* Skin « Symboles » : Carreau / Trèfle */
-.ci.skin-suits.sym-sun::before  { content: '♦'; color: #f5c842; }
-.ci.skin-suits.sym-moon::before { content: '♣'; color: #6dbb8a; }
+.ci.skin-suits.sym-sun::before  { content: '♦'; color: #f5c842; font-size: 1.2em; }
+.ci.skin-suits.sym-moon::before { content: '♣'; color: #6dbb8a; font-size: 1.4em; }
 
 /* Skin « Amour & Mort » : Cœur / Tête de mort */
 .ci.skin-skull.sym-sun::before  { content: '❤'; color: #e0533c; }
 .ci.skin-skull.sym-moon::before { content: '💀'; color: #666666; }
 
-/* Skin « Médical » : Rond bleu / Croix rouge */
-.ci.skin-medical.sym-sun::before  { content: '🔵'; }
+/* Skin « Médical » : Cercle bleu vide / Croix rouge */
+.ci.skin-medical.sym-sun::before {
+  content: '';
+  width: 50%;
+  height: 50%;
+  border: 3px solid #3c74e0;
+  border-radius: 50%;
+}
 .ci.skin-medical.sym-moon::before { content: '❌'; }
 
 /* Skin « Fruits » : Pomme / Banane */

@@ -383,7 +383,8 @@ async function getPlayerInventory(userId) {
 async function purchaseItem(userId, itemId) {
   const { data: item } = await db.from('shop_items').select('*').eq('id', itemId).eq('is_active', true).maybeSingle();
   if (!item) throw new Error('Article introuvable');
-  if (item.unlock_level !== null) throw new Error('Cet article se débloque par le niveau');
+  // Items gratuits avec unlock_level : débloqués automatiquement, pas d'achat
+  if (item.cost === 0 && item.unlock_level !== null) throw new Error('Cet article se débloque par le niveau');
 
   const { data: profile } = await db.from('profiles').select('coins, level').eq('id', userId).maybeSingle();
   if (!profile) throw new Error('Profil introuvable');

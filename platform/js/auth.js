@@ -677,7 +677,7 @@ function renderGameMenu() {
         <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
       </div>
       <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:8px;padding:8px 0" onclick="event.stopPropagation()">
-        <span id="volume-icon" style="font-size:16px;color:var(--muted);min-width:24px;text-align:center;transition:all .2s">🔊</span>
+        <span id="volume-icon" style="font-size:16px;color:var(--muted);min-width:24px;text-align:center;transition:all .2s;user-select:none;cursor:pointer" onclick="toggleVolumeMute(event)">🔊</span>
         <input type="range" id="pref-volume" min="0" max="100" value="100" onchange="onSoundVolumeChange()" oninput="updateVolumeLabel()" style="flex:1;cursor:pointer">
         <span id="volume-label" style="font-size:11px;color:var(--muted);min-width:30px;text-align:right">100%</span>
       </div>`;
@@ -696,6 +696,25 @@ function onPrefChange()        { try { localStorage.setItem('tango_remember', do
 function toggleRememberDiff(e) { e.stopPropagation(); const cb = document.getElementById('pref-remember'); cb.checked = !cb.checked; onPrefChange(); }
 function onExtremePrefChange() { try { localStorage.setItem('tango_extreme', document.getElementById('pref-extreme').checked ? '1' : '0'); } catch (e) {} }
 function toggleExtremeMode(e)  { e.stopPropagation(); const cb = document.getElementById('pref-extreme'); cb.checked = !cb.checked; onExtremePrefChange(); }
+
+// ── Volume mute toggle ──
+function toggleVolumeMute(e) {
+  e.stopPropagation();
+  const slider = document.getElementById('pref-volume');
+  if (!slider) return;
+  const currentVol = parseInt(slider.value, 10);
+  // Si actif, sauvegarder et mute
+  if (currentVol > 0) {
+    try { localStorage.setItem('tango_sound_volume_last', String(currentVol)); } catch(e) {}
+  }
+  // Toggle : si muted, restaurer dernier volume; sinon mute
+  const newVol = currentVol > 0 ? 0 : parseInt(localStorage.getItem('tango_sound_volume_last') || '100', 10);
+  slider.value = newVol;
+  // Déclencher les mises à jour (updateVolumeLabel et Supabase)
+  if (typeof updateVolumeLabel === 'function') updateVolumeLabel();
+  if (typeof SOUND !== 'undefined') SOUND.setVolume(newVol);
+  if (_currentUserId) saveUserPref(_currentUserId, { sound_volume: newVol });
+}
 
 // ─── Discovery / Onboarding ───────────────────────────
 const _DISC_FEATURES = {

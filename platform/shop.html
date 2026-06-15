@@ -51,6 +51,8 @@
   }
   .login-banner a { color: var(--moon); text-decoration: none; }
   .login-banner a:hover { text-decoration: underline; }
+  .shop-item-symbols { display: flex; gap: 8px; justify-content: center; align-items: center; }
+  .shop-item-symbols .ci { width: 60px; height: 60px; font-size: 1.8rem; }
 </style>
 </head>
 <body>
@@ -156,6 +158,18 @@ function renderShopItem(item) {
   const canAfford = _userId && !owned && !levelLocked && _userCoins >= item.cost;
   const isFree = item.cost === 0 && item.unlock_level !== null;
 
+  // Pour les skins, afficher les deux symboles au lieu de l'icône
+  let iconHtml;
+  if (item.type === 'skin') {
+    const skinKey = item.item_key;
+    iconHtml = `<span class="shop-item-symbols">
+      <span class="ci sym-sun skin-${skinKey}"></span>
+      <span class="ci sym-moon skin-${skinKey}"></span>
+    </span>`;
+  } else {
+    iconHtml = `<span class="shop-item-icon">${item.icon}</span>`;
+  }
+
   let footerHtml;
   if (owned) {
     footerHtml = `<span class="btn-owned">✓ Obtenu</span>`;
@@ -175,7 +189,7 @@ function renderShopItem(item) {
   }
 
   return `<div class="shop-item${owned ? ' owned' : ''}" id="shopitem-${item.id}">
-    <span class="shop-item-icon">${item.icon}</span>
+    ${iconHtml}
     <div class="shop-item-name">${item.name}</div>
     <div class="shop-item-desc">${item.description}</div>
     <div class="shop-item-footer">${footerHtml}</div>

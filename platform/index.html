@@ -411,7 +411,7 @@ function onPrefChange(){rememberDiff=document.getElementById('pref-remember').ch
 function toggleRememberDiff(e){e.stopPropagation();const cb=document.getElementById('pref-remember');cb.checked=!cb.checked;onPrefChange();}
 function onExtremePrefChange(){extremeMode=document.getElementById('pref-extreme').checked;try{localStorage.setItem('tango_extreme',extremeMode?'1':'0');}catch(e){}}
 function toggleExtremeMode(e){e.stopPropagation();const cb=document.getElementById('pref-extreme');cb.checked=!cb.checked;onExtremePrefChange();}
-function updateVolumeLabel(){const v=document.getElementById('pref-volume').value;document.getElementById('volume-label').textContent=v+'%';}
+function updateVolumeLabel(){const v=document.getElementById('pref-volume').value;const label=document.getElementById('volume-label');if(label)label.textContent=v+'%';const icon=document.getElementById('volume-icon');if(icon)icon.classList.toggle('muted',v==='0');}
 function onSoundVolumeChange(){const v=parseInt(document.getElementById('pref-volume').value,10);if(typeof SOUND!=='undefined')SOUND.setVolume(v);updateVolumeLabel();if(currentUserId)saveUserPref(currentUserId,{sound_volume:v});}
 
 /* ── Timer ── */

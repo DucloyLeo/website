@@ -676,15 +676,15 @@ function renderGameMenu() {
         <span>☠ Mode extrême</span>
         <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
       </div>
-      <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:12px;padding:8px 0" onclick="event.stopPropagation()">
-        <span style="font-size:12px;color:var(--muted);min-width:40px">🔊</span>
+      <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:8px;padding:8px 0" onclick="event.stopPropagation()">
+        <span id="volume-icon" style="font-size:16px;color:var(--muted);min-width:24px;text-align:center">🔊</span>
         <input type="range" id="pref-volume" min="0" max="100" value="100" onchange="onSoundVolumeChange()" oninput="updateVolumeLabel()" style="flex:1;cursor:pointer">
         <span id="volume-label" style="font-size:11px;color:var(--muted);min-width:30px;text-align:right">100%</span>
       </div>`;
   try {
     const r = document.getElementById('pref-remember'); if (r) r.checked = localStorage.getItem('tango_remember') === '1';
     const e = document.getElementById('pref-extreme');  if (e) e.checked = localStorage.getItem('tango_extreme') === '1';
-    const v = document.getElementById('pref-volume');   if (v) { const vol = localStorage.getItem('tango_sound_volume') || '100'; v.value = vol; const l = document.getElementById('volume-label'); if (l) l.textContent = vol + '%'; }
+    const v = document.getElementById('pref-volume');   if (v) { const vol = localStorage.getItem('tango_sound_volume') || '100'; v.value = vol; const l = document.getElementById('volume-label'); if (l) l.textContent = vol + '%'; const i = document.getElementById('volume-icon'); if (i) i.classList.toggle('muted', vol === '0'); }
   } catch (_) {}
 }
 
@@ -762,6 +762,8 @@ async function initNavAuth(opts = {}) {
         volumeSlider.value = prefs.sound_volume;
         const volumeLabel = document.getElementById('volume-label');
         if (volumeLabel) volumeLabel.textContent = prefs.sound_volume + '%';
+        const volumeIcon = document.getElementById('volume-icon');
+        if (volumeIcon) volumeIcon.classList.toggle('muted', prefs.sound_volume === 0);
       }
     }
 

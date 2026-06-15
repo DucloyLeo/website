@@ -50,6 +50,8 @@ input[type="range"]::-webkit-slider-thumb:hover{background:rgba(143,168,212,.8)}
 input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--moon);cursor:pointer;transition:background .2s;border:1px solid var(--border2)}
 input[type="range"]::-moz-range-thumb:hover{background:rgba(143,168,212,.8)}
 .menu-volume-row{padding:8px 0 !important}
+#volume-icon{transition:opacity .2s}
+#volume-icon.muted{opacity:.5;text-decoration:line-through;text-decoration-color:var(--muted)}
 
 body {
   background: var(--bg);

@@ -457,6 +457,26 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
    En erreur, contour rouge net — visible sur fond blanc comme noir. */
 .ci.skin-bw.err { outline: 3px solid #dc503c !important; outline-offset: -3px; }
 
+/* Skin « Cartes » : Cœur / Pique */
+.ci.skin-cards.sym-sun::before  { content: '❤'; color: #e0533c; }
+.ci.skin-cards.sym-moon::before { content: '♠'; color: #333333; }
+
+/* Skin « Symboles » : Carreau / Trèfle */
+.ci.skin-suits.sym-sun::before  { content: '♦'; color: #f5c842; }
+.ci.skin-suits.sym-moon::before { content: '♣'; color: #6dbb8a; }
+
+/* Skin « Amour & Mort » : Cœur / Tête de mort */
+.ci.skin-skull.sym-sun::before  { content: '❤'; color: #e0533c; }
+.ci.skin-skull.sym-moon::before { content: '💀'; color: #666666; }
+
+/* Skin « Médical » : Rond bleu / Croix rouge */
+.ci.skin-medical.sym-sun::before  { content: '🔵'; }
+.ci.skin-medical.sym-moon::before { content: '❌'; }
+
+/* Skin « Fruits » : Pomme / Banane */
+.ci.skin-fruits.sym-sun::before  { content: '🍎'; }
+.ci.skin-fruits.sym-moon::before { content: '🍌'; }
+
 /* ═══ Pièces dans la nav ═══════════════════════════ */
 .nav-coins {
   font-size: 12px;

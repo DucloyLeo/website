@@ -10,9 +10,14 @@
 // ═══════════════════════════════════════════════════
 
 const SKINS = {
-  emoji:   { label: 'Emoji',          desc: '☀ / 🌙 classiques' },
-  circles: { label: 'Ronds colorés',  desc: 'Rouge / Bleu' },
-  bw:      { label: 'Cases N&B',      desc: 'Cellule blanche / noire' }
+  emoji:    { label: 'Emoji',          desc: '☀ / 🌙 classiques' },
+  circles:  { label: 'Ronds colorés',  desc: 'Rouge / Bleu' },
+  bw:       { label: 'Cases N&B',      desc: 'Cellule blanche / noire' },
+  cards:    { label: 'Cartes',         desc: '❤ / ♠ (Cœur/Pique)' },
+  suits:    { label: 'Symboles',       desc: '♦ / ♣ (Carreau/Trèfle)' },
+  skull:    { label: 'Amour & Mort',   desc: '❤ / 💀 (Cœur/Tête)' },
+  medical:  { label: 'Médical',        desc: '🔵 / ❌ (Bleu/Rouge)' },
+  fruits:   { label: 'Fruits',         desc: '🍎 / 🍌 (Pomme/Banane)' }
 };
 
 // Marque une cellule selon sa valeur (0 = vide, 1 = soleil, 2 = lune).
@@ -79,9 +84,9 @@ function setSkin(name) {
 }
 
 // Vérifie si un skin est déverrouillé pour l'utilisateur courant.
-// emoji et circles sont toujours disponibles.
+// emoji, circles et nouveaux skins sont toujours disponibles.
 async function isSkinUnlocked(skinKey) {
-  if (skinKey === 'emoji' || skinKey === 'circles') return true;
+  if (['emoji', 'circles', 'cards', 'suits', 'skull', 'medical', 'fruits'].includes(skinKey)) return true;
   try {
     if (typeof getCurrentUser !== 'function') return false;
     const user = await getCurrentUser();

@@ -434,8 +434,8 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .ci.sym-empty::before { content: ''; }
 
 /* Skin « Emoji » (explicite) */
-.ci.skin-emoji.sym-sun::before  { content: '☀'; }
-.ci.skin-emoji.sym-moon::before { content: '🌙'; }
+.ci.skin-legacy.sym-sun::before  { content: '☀'; }
+.ci.skin-legacy.sym-moon::before { content: '🌙'; }
 
 /* Skin « Ronds colorés » */
 .ci.skin-circles.sym-sun::before,
@@ -457,27 +457,27 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
    En erreur, contour rouge net — visible sur fond blanc comme noir. */
 .ci.skin-bw.err { outline: 3px solid #dc503c !important; outline-offset: -3px; }
 
-/* Skin « Cartes » : Cœur / Pique */
-.ci.skin-cards.sym-sun::before  { content: '❤'; color: #e0533c; }
-.ci.skin-cards.sym-moon::before { content: '♠'; color: #333333; font-size: 1.3em; }
+/* Skin « Cartes #1 » : Cœur / Pique */
+.ci.skin-cards1.sym-sun::before  { content: '❤'; color: #e0533c; }
+.ci.skin-cards1.sym-moon::before { content: '♠'; color: #333333; font-size: 1.3em; }
 
-/* Skin « Symboles » : Carreau / Trèfle */
-.ci.skin-suits.sym-sun::before  { content: '♦'; color: #f5c842; font-size: 1.2em; }
-.ci.skin-suits.sym-moon::before { content: '♣'; color: #6dbb8a; font-size: 1.4em; }
+/* Skin « Cartes #2 » : Carreau / Trèfle */
+.ci.skin-cards2.sym-sun::before  { content: '♦'; color: #f5c842; font-size: 1.2em; }
+.ci.skin-cards2.sym-moon::before { content: '♣'; color: #6dbb8a; font-size: 1.4em; }
 
 /* Skin « Amour & Mort » : Cœur / Tête de mort */
 .ci.skin-skull.sym-sun::before  { content: '❤'; color: #e0533c; }
 .ci.skin-skull.sym-moon::before { content: '💀'; color: #666666; }
 
-/* Skin « Médical » : Cercle bleu vide / Croix rouge */
-.ci.skin-medical.sym-sun::before {
+/* Skin « TicTacToe » : Cercle bleu vide / Croix rouge */
+.ci.skin-tictactoe.sym-sun::before {
   content: '';
   width: 60%;
   height: 60%;
   border: 5px solid #3c74e0;
   border-radius: 50%;
 }
-.ci.skin-medical.sym-moon::before { content: '❌'; }
+.ci.skin-tictactoe.sym-moon::before { content: '❌'; }
 
 /* Skin « Fruits » : Pomme / Banane */
 .ci.skin-fruits.sym-sun::before  { content: '🍎'; }

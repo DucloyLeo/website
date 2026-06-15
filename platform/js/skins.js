@@ -6,17 +6,17 @@
 //  setCellSymbol(), et c'est le CSS (piloté par l'attribut
 //  data-skin sur <html>) qui décide de l'apparence.
 //
-//  Skins disponibles : 'emoji' (défaut), 'circles', 'bw'.
+//  Skins disponibles : 'legacy' (défaut), 'circles', 'bw', et autres payants.
 // ═══════════════════════════════════════════════════
 
 const SKINS = {
-  emoji:    { label: 'Emoji',          desc: '☀ / 🌙 classiques' },
+  legacy:   { label: 'Legacy',         desc: '☀ / 🌙 classiques' },
   circles:  { label: 'Ronds colorés',  desc: 'Rouge / Bleu' },
   bw:       { label: 'Cases N&B',      desc: 'Cellule blanche / noire' },
-  cards:    { label: 'Cartes',         desc: '❤ / ♠ (Cœur/Pique)' },
-  suits:    { label: 'Symboles',       desc: '♦ / ♣ (Carreau/Trèfle)' },
+  cards1:   { label: 'Cartes #1',      desc: '❤ / ♠ (Cœur/Pique)' },
+  cards2:   { label: 'Cartes #2',      desc: '♦ / ♣ (Carreau/Trèfle)' },
   skull:    { label: 'Amour & Mort',   desc: '❤ / 💀 (Cœur/Tête)' },
-  medical:  { label: 'Médical',        desc: '🔵 / ❌ (Bleu/Rouge)' },
+  tictactoe: { label: 'TicTacToe',     desc: '🔵 / ❌ (Bleu/Rouge)' },
   fruits:   { label: 'Fruits',         desc: '🍎 / 🍌 (Pomme/Banane)' }
 };
 
@@ -27,23 +27,23 @@ function setCellSymbol(el, val) {
   el.classList.add(val === 1 ? 'sym-sun' : val === 2 ? 'sym-moon' : 'sym-empty');
   // La classe du skin est posée sur la cellule elle-même (pas via un
   // ancêtre data-skin) pour éviter toute « fuite » entre contextes.
-  el.classList.remove('skin-emoji', 'skin-circles', 'skin-bw');
+  el.classList.remove('skin-legacy', 'skin-circles', 'skin-bw', 'skin-cards1', 'skin-cards2', 'skin-skull', 'skin-tictactoe', 'skin-fruits');
   el.classList.add('skin-' + getSkin());
   el.textContent = '';
 }
 
 // Applique un skin et le mémorise (localStorage).
 function applySkin(name) {
-  if (!SKINS[name]) name = 'emoji';
+  if (!SKINS[name]) name = 'legacy';
   document.documentElement.setAttribute('data-skin', name);
   try { localStorage.setItem('tango_skin', name); } catch (e) {}
 }
 
-// Lit le skin mémorisé (défaut : emoji).
+// Lit le skin mémorisé (défaut : legacy).
 function getSkin() {
   let s = null;
   try { s = localStorage.getItem('tango_skin'); } catch (e) {}
-  return SKINS[s] ? s : 'emoji';
+  return SKINS[s] ? s : 'legacy';
 }
 
 // Rafraîchit les vues affectées par un changement de skin (si présentes).
@@ -84,9 +84,9 @@ function setSkin(name) {
 }
 
 // Vérifie si un skin est déverrouillé pour l'utilisateur courant.
-// emoji, circles et nouveaux skins sont toujours disponibles.
+// legacy et bw sont toujours disponibles. Les autres doivent être achetés ou débloqués par niveau.
 async function isSkinUnlocked(skinKey) {
-  if (['emoji', 'circles', 'cards', 'suits', 'skull', 'medical', 'fruits'].includes(skinKey)) return true;
+  if (['legacy', 'bw'].includes(skinKey)) return true;
   try {
     if (typeof getCurrentUser !== 'function') return false;
     const user = await getCurrentUser();

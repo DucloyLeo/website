@@ -334,8 +334,8 @@ function _buildTabs(tabs) {
 
 async function renderSkinOptions() {
   const cur = getSkin();
-  const order = ['emoji', 'circles', 'cards', 'suits', 'skull', 'medical', 'fruits', 'bw'];
-  const unlockInfo = { bw: 5 };
+  const order = ['legacy', 'circles', 'cards1', 'cards2', 'skull', 'tictactoe', 'fruits', 'bw'];
+  const unlockInfo = { circles: 3, cards1: 5, cards2: 7, skull: 10, tictactoe: 12, fruits: 15, bw: 5 };
   const results = await Promise.all(order.map(k => isSkinUnlocked(k)));
   document.getElementById('skin-options').innerHTML = order.map((k, i) => {
     const s = SKINS[k];

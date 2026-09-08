@@ -662,13 +662,20 @@ function renderGameMenu() {
   if (location.pathname.includes('/admin/')) return;
   const menu = document.getElementById('nav-menu');
   if (!menu) return;
+  // Le mode extrême et la mémorisation de difficulté sont des réglages
+  // propres au moteur Tango (grille 6×6 seedée) : sans objet sur Queens.
+  const isQueens = location.pathname.includes('/queens.html');
   menu.innerHTML = `
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
       <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <div class="nav-menu-sep"></div>
+      <a href="/index.html" class="nav-menu-item">☀ Tangoléo</a>
+      <a href="/queens.html" class="nav-menu-item">♛ Queens</a>
       <div id="menu-auth-item"></div>
       <div class="nav-menu-sep"></div>
+      ${isQueens ? '' : `
       <div class="nav-menu-item menu-pref-row" onclick="toggleRememberDiff(event)">
         <span>Mémoriser la difficulté</span>
         <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-remember" onchange="onPrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
@@ -676,7 +683,7 @@ function renderGameMenu() {
       <div class="nav-menu-item menu-pref-row" onclick="toggleExtremeMode(event)" style="color:var(--sun)">
         <span>☠ Mode extrême</span>
         <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="pref-extreme" onchange="onExtremePrefChange()"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
-      </div>
+      </div>`}
       <div class="nav-menu-item menu-volume-row" id="volume-control" style="display:flex;align-items:center;gap:8px;padding:8px 0" onclick="event.stopPropagation()">
         <span id="volume-icon" style="font-size:16px;color:var(--muted);min-width:24px;text-align:center;transition:all .2s;user-select:none;cursor:pointer" onclick="toggleVolumeMute(event)">🔊</span>
         <input type="range" id="pref-volume" min="0" max="100" value="100" onchange="onSoundVolumeChange()" oninput="updateVolumeLabel()" style="flex:1;cursor:pointer">

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queens — Jeu de puzzle logique gratuit</title>
+<meta name="description" content="Queens est un jeu de puzzle logique gratuit inspiré du jeu Queens de LinkedIn. Placez une couronne par ligne, colonne et couleur, sans jamais vous toucher.">
+<meta name="keywords" content="queens, puzzle, logique, jeu gratuit, linkedin queens, couronnes, reines">
+<meta name="author" content="Ducloy Léo">
+<link rel="canonical" href="https://tangoleo.fr/queens.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Queens — Jeu de puzzle logique gratuit">
+<meta property="og:description" content="Queens est un jeu de puzzle logique gratuit inspiré du jeu Queens de LinkedIn. Placez une couronne par ligne, colonne et couleur.">
+<meta property="og:url" content="https://tangoleo.fr/queens.html">
+<meta property="og:site_name" content="Tangoléo">
+<meta property="og:image" content="https://tangoleo.fr/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tangoleo.fr/og-image.png">
+<meta name="twitter:title" content="Queens — Jeu de puzzle logique">
+<meta name="twitter:description" content="Défiez-vous avec Queens : un jeu de puzzle logique gratuit. Une couronne par ligne, colonne et couleur.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Queens",
+  "description": "Jeu de puzzle logique gratuit inspiré du jeu Queens de LinkedIn. Placez une couronne par ligne, colonne et couleur, sans jamais vous toucher.",
+  "url": "https://tangoleo.fr/queens.html",
+  "applicationCategory": "Game",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "creator": { "@type": "Person", "name": "Ducloy Léo", "email": "ducloy.leo@gmail.com" },
+  "inLanguage": "fr"
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css?v=7">
+<link rel="stylesheet" href="css/animations.css">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
+<style>
+nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border)}
+.nav-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;text-align:center;text-decoration:none;color:var(--text)}
+
+.cmd-section{display:flex;flex-direction:column;gap:4px}
+.cmd-section-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:0 0 4px}
+.cmd-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;font-size:11px;color:var(--muted)}
+.cmd-key{font-family:'DM Mono',monospace;font-size:10px;color:var(--text);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0}
+
+.seed-btn{background:none;border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace}
+.seed-btn:hover{background:var(--surface2);color:var(--text)}
+
+.timer-bar{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:99px;padding:5px 16px;margin-top:-0.5rem;background:var(--surface)}
+.timer-val{font-size:1.35rem;font-weight:500;color:var(--text);letter-spacing:.06em}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.tdot.run{background:var(--sun)}.tdot.done{background:var(--green)}
+
+.diff-badge-btn{font-size:11px;padding:3px 11px;border-radius:99px;border:1px solid var(--border2);color:var(--muted);letter-spacing:.06em;cursor:pointer;transition:all .15s;background:none;font-family:'DM Mono',monospace}
+.diff-badge-btn:hover{background:var(--surface2)}
+.diff-badge-btn.easy{border-color:#6dbb8a66;color:var(--green)}
+.diff-badge-btn.medium{border-color:#f5c84266;color:var(--sun)}
+.diff-badge-btn.hard{border-color:#d87a5066;color:#d87a50}
+
+[data-theme="light"] .seed-btn{background:var(--surface)}
+[data-theme="light"] .seed-btn:hover{background:var(--surface2)}
+[data-theme="light"] .diff-badge-btn{background:var(--surface)}
+[data-theme="light"] .diff-badge-btn:hover{background:var(--surface2)}
+[data-theme="light"] .rules-toggle-btn{background:var(--surface)}
+[data-theme="light"] .rules-toggle-btn:hover{background:var(--surface2)}
+
+.grid-outer{position:relative;isolation:isolate}.grid-outer::after{content:'';position:absolute;inset:-4px;background:var(--bg);border-radius:14px;z-index:-1;pointer-events:none}
+.timer-bar{position:relative;z-index:1}
+.grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
+.grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
+table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}
+table.q-table td{padding:0}
+.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:var(--text)}
+.qc:hover{filter:brightness(1.1)}
+.qc.mark{font-size:1rem!important;color:var(--muted)}
+.qc.queen{text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.qc.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
+.qc.hint-preview{opacity:.6}
+.qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
+
+/* Palette des zones (10 couleurs max) */
+.qr-0{background:rgba(245,200,66,.30)}.qr-1{background:rgba(143,168,212,.30)}
+.qr-2{background:rgba(109,187,138,.30)}.qr-3{background:rgba(216,122,80,.28)}
+.qr-4{background:rgba(192,132,252,.28)}.qr-5{background:rgba(224,83,60,.26)}
+.qr-6{background:rgba(60,116,224,.26)}.qr-7{background:rgba(69,184,172,.28)}
+.qr-8{background:rgba(224,123,176,.28)}.qr-9{background:rgba(163,193,74,.28)}
+[data-theme="light"] .qr-0{background:rgba(245,200,66,.40)}[data-theme="light"] .qr-1{background:rgba(143,168,212,.38)}
+[data-theme="light"] .qr-2{background:rgba(109,187,138,.36)}[data-theme="light"] .qr-3{background:rgba(216,122,80,.32)}
+[data-theme="light"] .qr-4{background:rgba(192,132,252,.32)}[data-theme="light"] .qr-5{background:rgba(224,83,60,.28)}
+[data-theme="light"] .qr-6{background:rgba(60,116,224,.28)}[data-theme="light"] .qr-7{background:rgba(69,184,172,.32)}
+[data-theme="light"] .qr-8{background:rgba(224,123,176,.32)}[data-theme="light"] .qr-9{background:rgba(163,193,74,.32)}
+
+.q-table.n6 .qc{width:92px;height:92px;font-size:2.5rem}
+.q-table.n8 .qc{width:72px;height:72px;font-size:1.9rem}
+.q-table.n10 .qc{width:56px;height:56px;font-size:1.45rem}
+@media(max-width:700px){
+  .q-table.n6 .qc{width:52px!important;height:52px!important;font-size:1.5rem!important}
+  .q-table.n8 .qc{width:41px!important;height:41px!important;font-size:1.15rem!important}
+  .q-table.n10 .qc{width:32px!important;height:32px!important;font-size:.9rem!important}
+  .qc.mark{font-size:.8rem!important}
+}
+
+.hint-bubble{max-width:560px;width:100%;background:rgba(143,168,212,.08);border:1px solid rgba(143,168,212,.25);border-radius:var(--radius);padding:.85rem 1.1rem;font-size:12px;color:var(--text);line-height:1.65;animation:bubblein .2s ease;display:none}
+.hint-bubble.show{display:block}
+@keyframes bubblein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+.controls-top,.controls-bot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+.game-sub-bar{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:.55rem 0}
+.rules-section{max-width:560px;width:100%;display:flex;flex-direction:column;gap:6px}
+.rules-toggle-btn{font-family:'DM Mono',monospace;font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;width:100%;text-align:center}
+.rules-toggle-btn:hover{background:var(--surface2);color:var(--text)}
+.rules-collapsible{display:none;flex-direction:column;gap:6px}
+.rules-collapsible.open{display:flex}
+.rules{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1.1rem;font-size:11px;color:var(--muted);line-height:1.6;width:100%}
+.rule-item{display:block;padding:3px 0}
+
+.diff-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.diff-opt{font-family:'DM Mono',monospace;font-size:11px;padding:14px 8px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.diff-opt .d-icon{font-size:1.4rem}.diff-opt .d-name{font-weight:500;color:var(--text);font-size:12px}.diff-opt .d-desc{font-size:10px;line-height:1.4;text-align:center}
+.diff-opt.easy:hover{border-color:#6dbb8a88;background:rgba(109,187,138,.07)}
+.diff-opt.medium:hover{border-color:#f5c84266;background:rgba(245,200,66,.06)}
+.diff-opt.hard:hover{border-color:#d87a5066;background:rgba(216,122,80,.06)}
+
+[data-tooltip]{position:relative}
+[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s 0s;z-index:10}
+[data-tooltip]:hover::after{opacity:1;transition:opacity .15s 1s}
+
+.modal-time{font-size:1.7rem;font-weight:500;color:var(--sun);text-align:center;letter-spacing:.06em}
+.modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:.3rem}
+#win-modal{background:transparent}
+#win-modal .modal{background:var(--surface);box-shadow:0 10px 40px rgba(0,0,0,.45)}
+
+main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;flex-direction:column;align-items:center;gap:1.3rem;position:relative;z-index:1}
+</style>
+</head>
+<body>
+
+<nav class="game-nav">
+  <div class="nav-left">
+    <button class="hamburger" id="hamburger-btn" onclick="toggleMenu(event)" aria-label="Menu">
+      <span class="hline"></span><span class="hline"></span><span class="hline"></span>
+    </button>
+    <div class="nav-menu" id="nav-menu"></div>
+  </div>
+  <a href="/queens.html" class="nav-title">♛ Queens</a>
+  <div class="nav-right">
+    <div id="nav-auth"></div>
+  </div>
+</nav>
+<div class="game-sub-bar">
+  <div></div>
+  <p style="font-size:12px;color:var(--muted);line-height:1.4;margin:0;text-align:center">Une couronne par ligne, colonne et couleur — sans jamais se toucher.</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="seed-btn" id="seed-btn" onclick="copySeed()">🔗 Seed</button>
+    <button class="diff-badge-btn" id="diff-badge" onclick="openChangeDiff()">—</button>
+  </div>
+</div>
+
+<main class="game-main">
+  <h1 style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">Queens — Jeu de puzzle logique gratuit inspiré de LinkedIn Queens</h1>
+
+  <div class="timer-bar">
+    <span class="tdot" id="tdot"></span>
+    <span class="timer-val" id="tval">0:00</span>
+  </div>
+
+  <div class="grid-outer">
+    <div class="grid-wrap" id="grid-wrap"><table class="q-table" id="grid"></table></div>
+  </div>
+
+  <div class="hint-bubble" id="hint-bubble"></div>
+
+  <div class="controls-top">
+    <button class="btn" id="btn-undo" onclick="undo()" disabled data-tooltip="Ctrl + Z">↩ Annuler</button>
+    <button class="btn moon" id="btn-hint" onclick="giveHint()" data-tooltip="H">💡 Indice</button>
+  </div>
+  <div class="controls-bot">
+    <button class="btn" id="btn-reset" onclick="resetPuzzle()" data-tooltip="R">↺ Recommencer</button>
+    <button class="btn sun" id="btn-new" onclick="askNewPuzzle()" data-tooltip="W">✦ Nouveau puzzle</button>
+  </div>
+
+  <div class="rules-section">
+    <button class="rules-toggle-btn" onclick="toggleRules()">📋 Règles du jeu</button>
+    <div class="rules-collapsible" id="rules-collapsible">
+      <div class="rules">
+        <div class="rule-item"><b style="color:var(--text);font-weight:500">👑 Une par zone :</b> exactement une couronne par ligne, colonne et couleur</div>
+        <div class="rule-item"><b style="color:var(--text);font-weight:500">🚫 Contact interdit :</b> deux couronnes ne peuvent jamais se toucher, même en diagonale</div>
+        <div class="rule-item"><b style="color:var(--text);font-weight:500">✕ Repère :</b> cliquez pour marquer une case, encore pour poser une couronne</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Difficulty picker -->
+<div class="overlay" id="diff-modal" onclick="onOverlayClick(event,'diff-modal')">
+  <div class="modal">
+    <div class="modal-ico">♛</div>
+    <div class="modal-title">Choisir la difficulté</div>
+    <div class="modal-sub" id="diff-modal-sub">Quelle taille de grille pour ce puzzle ?</div>
+    <div class="diff-grid">
+      <button class="diff-opt easy"   onclick="pickDiff('easy')"><span class="d-icon">🌱</span><span class="d-name">Facile</span><span class="d-desc">Grille 6×6</span></button>
+      <button class="diff-opt medium" onclick="pickDiff('medium')"><span class="d-icon">🔥</span><span class="d-name">Moyen</span><span class="d-desc">Grille 8×8</span></button>
+      <button class="diff-opt hard"   onclick="pickDiff('hard')"><span class="d-icon">💀</span><span class="d-name">Difficile</span><span class="d-desc">Grille 10×10</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Win modal -->
+<div class="overlay" id="win-modal" onclick="onWinOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-ico">🎉</div>
+    <div class="modal-title">Puzzle résolu !</div>
+    <div class="modal-time" id="modal-time">—</div>
+    <div class="modal-sub" id="win-sub">Bravo !</div>
+    <div class="modal-btns">
+      <button class="btn sun btn-full" onclick="onWinNext()">✦ Nouveau puzzle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generating overlay -->
+<div class="overlay" id="gen-modal">
+  <div class="modal" style="align-items:center;padding:2.5rem">
+    <div style="font-size:2rem">⏳</div>
+    <div class="modal-title" style="font-size:1.2rem" id="gen-label">Génération…</div>
+    <div class="modal-sub">Le puzzle est vérifié pour avoir une solution unique.</div>
+  </div>
+</div>
+
+<!-- Commands modal -->
+<div class="overlay" id="commands-modal" onclick="onOverlayClick(event,'commands-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-ico">⌨️</div>
+    <div class="modal-title">Commandes</div>
+    <div class="cmd-section">
+      <div class="cmd-section-title">Clavier</div>
+      <div class="cmd-row"><span>Annuler le dernier coup</span><span class="cmd-key">Ctrl+Z</span></div>
+      <div class="cmd-row"><span>Afficher l'indice (virtuel)</span><span class="cmd-key">H</span></div>
+      <div class="cmd-row"><span>Placer l'indice directement</span><span class="cmd-key">Ctrl+H</span></div>
+      <div class="cmd-row"><span>Recommencer</span><span class="cmd-key">R</span></div>
+      <div class="cmd-row"><span>Nouveau puzzle</span><span class="cmd-key">W</span></div>
+    </div>
+    <hr class="sep">
+    <div class="cmd-section">
+      <div class="cmd-section-title">Souris</div>
+      <div class="cmd-row"><span>Vide → ✕ → 👑 → vide</span><span class="cmd-key">Clic gauche</span></div>
+      <div class="cmd-row"><span>Sens inverse</span><span class="cmd-key">Clic droit</span></div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js?v=8"></script>
+<script src="js/animations.js"></script>
+<script src="js/sounds.js"></script>
+<script>
+// ═══ GAME ENGINE — Queens ══════════════════════════════
+// Même architecture que le moteur Tango (index.html) : génération procédurale,
+// seed encodée en base64url, undo/hint/timer, mais règles et solveur propres
+// au jeu Queens (une couronne par ligne/colonne/zone, jamais adjacentes).
+const EMPTY=0,MARK=1,QUEEN=2;
+const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile'};
+const DIFF_N={easy:6,medium:8,hard:10};
+
+let N=8,regions=[],board=[],solutionCells=null;
+let _animNextGrid=false;
+let hist=[];
+let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
+let generating=false,currentDiff=null;
+let hintCell=null,gameWon=false;
+let currentSeedStr=null;
+let currentUserId=null;
+let hintCount=0,ctrlHUsed=false;
+
+/* ── Seed encoding (base64url, longueur variable selon N) ── */
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function encodeSeed(diff,n,regs){
+  const diffs=['easy','medium','hard'];
+  const diffIdx=diffs.indexOf(diff);
+  const bitsPerCell=Math.ceil(Math.log2(n));
+  const bits=[(diffIdx>>1)&1,diffIdx&1];
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){const v=regs[r][c];for(let b=bitsPerCell-1;b>=0;b--)bits.push((v>>b)&1);}
+  let result='';
+  for(let i=0;i<bits.length;i+=6){let v=0;for(let j=0;j<6;j++)v=(v<<1)|(bits[i+j]||0);result+=B64[v];}
+  return result;
+}
+function decodeSeed(s){
+  const bits=[];
+  for(let i=0;i<s.length;i++){const v=B64.indexOf(s[i]);if(v<0)return null;for(let j=5;j>=0;j--)bits.push((v>>j)&1);}
+  let p=0;const nb=()=>bits[p++];
+  const diffIdx=(nb()<<1)|nb();
+  const diffs=['easy','medium','hard'];
+  const diff=diffs[diffIdx];if(!diff)return null;
+  const n=DIFF_N[diff];
+  const bitsPerCell=Math.ceil(Math.log2(n));
+  const regs=Array.from({length:n},()=>Array(n).fill(0));
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    let v=0;for(let b=0;b<bitsPerCell;b++){if(p>=bits.length)return null;v=(v<<1)|nb();}
+    if(v>=n)return null;
+    regs[r][c]=v;
+  }
+  return{diff,n,regs};
+}
+
+/* ── Menu (surcharge les fallbacks génériques de auth.js) ── */
+function menuDiff(){closeMenu();openChangeDiff();}
+function menuNew(){closeMenu();askNewPuzzle();}
+function menuCommands(){closeMenu();document.getElementById('commands-modal').classList.add('show');}
+function toggleRules(){document.getElementById('rules-collapsible').classList.toggle('open');}
+
+/* ── Seed ── */
+function copySeed(){
+  if(!currentSeedStr)return;
+  const url=window.location.origin+'/queens.html?seed='+currentSeedStr;
+  if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>{const btn=document.getElementById('seed-btn');const orig=btn.textContent;btn.textContent='✓ Copié !';setTimeout(()=>{btn.textContent=orig;},1800);}).catch(()=>prompt('Lien :',url));}else{prompt('Lien :',url);}
+}
+
+/* ── Overlay ── */
+function onOverlayClick(e,id){if(e.target===document.getElementById(id)){document.getElementById(id).classList.remove('show');if(id==='diff-modal'&&!regions.length)startGeneration('easy');}}
+
+/* ── Timer ── */
+function fmt(s){if(s>=3600){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return h+':'+(m<10?'0':'')+m+':'+(ss<10?'0':'')+ss;}const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+function startTimer(){if(timerOn)return;timerOn=true;timerSec=0;timerDone=false;document.getElementById('tdot').className='tdot run';clearInterval(timerInt);timerInt=setInterval(()=>{timerSec++;document.getElementById('tval').textContent=fmt(timerSec);},1000);}
+function stopTimer(){clearInterval(timerInt);timerOn=false;document.getElementById('tdot').className='tdot done';}
+function resetTimer(){clearInterval(timerInt);timerOn=false;timerSec=0;timerDone=false;document.getElementById('tval').textContent='0:00';document.getElementById('tdot').className='tdot';}
+function resumeTimer(){if(timerOn)return;timerDone=false;timerOn=true;document.getElementById('tdot').className='tdot run';clearInterval(timerInt);timerInt=setInterval(()=>{timerSec++;document.getElementById('tval').textContent=fmt(timerSec);},1000);}
+
+/* ── Solveur (backtracking par zone, la plus contrainte d'abord) ──
+   Utilisé à la génération (vérifier l'unicité) et pour les indices
+   (retrouver LA solution si le solveur logique ne suffit pas).       */
+function regionCellsOf(regs,n){const cells=Array.from({length:n},()=>[]);for(let r=0;r<n;r++)for(let c=0;c<n;c++)cells[regs[r][c]].push([r,c]);return cells;}
+function solveRegions(regs,n,cap){
+  const regionCells=regionCellsOf(regs,n);
+  const order=[...Array(n).keys()].sort((a,b)=>regionCells[a].length-regionCells[b].length);
+  const usedCols=new Set();
+  const placed=[];
+  const solutions=[];
+  let nodes=0;const NODE_CAP=250000;
+  function adjacentOK(r,c){for(const p of placed)if(Math.abs(p.r-r)<=1&&Math.abs(p.c-c)<=1)return false;return true;}
+  function bt(i){
+    if(solutions.length>=cap||nodes>NODE_CAP)return;
+    if(i===n){solutions.push(placed.map(p=>({r:p.r,c:p.c})));return;}
+    const regionId=order[i];
+    for(const[r,c]of regionCells[regionId]){
+      nodes++;if(nodes>NODE_CAP)return;
+      if(usedCols.has(c))continue;
+      if(placed.some(p=>p.r===r))continue;
+      if(!adjacentOK(r,c))continue;
+      usedCols.add(c);placed.push({r,c});
+      bt(i+1);
+      placed.pop();usedCols.delete(c);
+      if(solutions.length>=cap)return;
+    }
+  }
+  bt(0);
+  return solutions;
+}
+
+/* ── Indices (cross-out logique) ── */
+function placedQueens(){const q=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(board[r][c]===QUEEN)q.push({r,c});return q;}
+function computeCandidates(){
+  const queens=placedQueens();
+  const usedRows=new Set(queens.map(q=>q.r)),usedCols=new Set(queens.map(q=>q.c)),usedRegs=new Set(queens.map(q=>regions[q.r][q.c]));
+  const cand=Array.from({length:N},()=>Array(N).fill(true));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(board[r][c]!==EMPTY){cand[r][c]=false;continue;}
+    if(usedRows.has(r)){cand[r][c]=false;continue;}
+    if(usedCols.has(c)){cand[r][c]=false;continue;}
+    if(usedRegs.has(regions[r][c])){cand[r][c]=false;continue;}
+    for(const q of queens)if(Math.abs(q.r-r)<=1&&Math.abs(q.c-c)<=1){cand[r][c]=false;break;}
+  }
+  return cand;
+}
+function findForcedMove(){
+  const cand=computeCandidates();
+  const queens=placedQueens();
+  const usedRegs=new Set(queens.map(q=>regions[q.r][q.c])),usedRows=new Set(queens.map(q=>q.r)),usedCols=new Set(queens.map(q=>q.c));
+  for(let reg=0;reg<N;reg++){
+    if(usedRegs.has(reg))continue;
+    const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(regions[r][c]===reg&&cand[r][c])cells.push({r,c});
+    if(cells.length===1)return{r:cells[0].r,c:cells[0].c,tip:'region'};
+  }
+  for(let r=0;r<N;r++){
+    if(usedRows.has(r))continue;
+    const cells=[];for(let c=0;c<N;c++)if(cand[r][c])cells.push({r,c});
+    if(cells.length===1)return{r:cells[0].r,c:cells[0].c,tip:'row'};
+  }
+  for(let c=0;c<N;c++){
+    if(usedCols.has(c))continue;
+    const cells=[];for(let r=0;r<N;r++)if(cand[r][c])cells.push({r,c});
+    if(cells.length===1)return{r:cells[0].r,c:cells[0].c,tip:'col'};
+  }
+  return null;
+}
+const TIP_TEXT={
+  region:'Cette couleur n\'a plus qu\'une case possible pour sa couronne.',
+  row:'Cette ligne n\'a plus qu\'une case possible pour sa couronne.',
+  col:'Cette colonne n\'a plus qu\'une case possible pour sa couronne.',
+  solution:'Cette case peut être déduite logiquement.',
+};
+function cellEl(r,c){const tr=document.getElementById('grid').querySelectorAll('tr')[r];return tr?tr.querySelectorAll('.qc')[c]:null;}
+function giveHint(){
+  if(!timerOn&&!timerDone)startTimer();clearHintPreview();
+  let hint=findForcedMove();
+  if(!hint&&solutionCells){for(const p of solutionCells){if(board[p.r][p.c]!==QUEEN){hint={r:p.r,c:p.c,tip:'solution'};break;}}}
+  if(!hint)return;
+  hintCell=hint;
+  const bubble=document.getElementById('hint-bubble');
+  bubble.textContent=TIP_TEXT[hint.tip]||TIP_TEXT.solution;
+  bubble.classList.add('show');
+  const el=cellEl(hint.r,hint.c);
+  if(el){el.classList.add('hint-preview');setCellSymbol(el,QUEEN);}
+}
+function clearHintPreview(){
+  if(hintCell){const el=cellEl(hintCell.r,hintCell.c);if(el){el.classList.remove('hint-preview');setCellSymbol(el,board[hintCell.r][hintCell.c]);}}
+  hintCell=null;document.getElementById('hint-bubble').classList.remove('show');
+}
+
+/* ── Erreurs ── */
+function getErrorCells(){
+  const queens=placedQueens();
+  const bad=new Set();
+  const byRow={},byCol={},byReg={};
+  queens.forEach(q=>{(byRow[q.r]=byRow[q.r]||[]).push(q);(byCol[q.c]=byCol[q.c]||[]).push(q);const reg=regions[q.r][q.c];(byReg[reg]=byReg[reg]||[]).push(q);});
+  [byRow,byCol,byReg].forEach(map=>{Object.values(map).forEach(arr=>{if(arr.length>1)arr.forEach(q=>bad.add(q.r+','+q.c));});});
+  for(let i=0;i<queens.length;i++)for(let j=i+1;j<queens.length;j++){const a=queens[i],b=queens[j];if(Math.abs(a.r-b.r)<=1&&Math.abs(a.c-b.c)<=1){bad.add(a.r+','+a.c);bad.add(b.r+','+b.c);}}
+  return bad;
+}
+function isCellErr(errSet,r,c){return errSet.has(r+','+c);}
+function applyErrClasses(){
+  const errSet=getErrorCells();
+  const trs=document.getElementById('grid').querySelectorAll('tr');
+  for(let r=0;r<N;r++){const cells=trs[r]&&trs[r].querySelectorAll('.qc');if(!cells)continue;for(let c=0;c<N;c++)if(cells[c])cells[c].classList.toggle('err',isCellErr(errSet,r,c));}
+  return errSet;
+}
+
+/* ── Rendu ── */
+function setCellSymbol(el,state){
+  el.classList.remove('mark','queen');
+  if(state===MARK){el.classList.add('mark');el.textContent='✕';}
+  else if(state===QUEEN){el.classList.add('queen');el.textContent='♛';}
+  else el.textContent='';
+}
+function borderSides(r,c){
+  const reg=regions[r][c];
+  const top=(r===0||regions[r-1][c]!==reg)?'2px solid var(--border2)':'1px solid transparent';
+  const left=(c===0||regions[r][c-1]!==reg)?'2px solid var(--border2)':'1px solid transparent';
+  const bottom=(r===N-1||regions[r+1][c]!==reg)?'2px solid var(--border2)':'1px solid transparent';
+  const right=(c===N-1||regions[r][c+1]!==reg)?'2px solid var(--border2)':'1px solid transparent';
+  return`border-top:${top};border-left:${left};border-bottom:${bottom};border-right:${right}`;
+}
+function renderEmptyGrid(){
+  const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
+}
+function renderGrid(){
+  const tbl=document.getElementById('grid');tbl.innerHTML='';
+  tbl.className='q-table n'+N;
+  const errSet=getErrorCells();
+  for(let r=0;r<N;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<N;c++){
+      const td=document.createElement('td');
+      const inner=document.createElement('div');
+      const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
+      inner.className='qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'');
+      inner.style.cssText=borderSides(r,c);
+      setCellSymbol(inner,isHint?QUEEN:board[r][c]);
+      if(!isHint&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}
+      else if(isHint&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();confirmHint();});inner.addEventListener('contextmenu',e=>{e.preventDefault();clearHintPreview();renderGrid();});}
+      td.appendChild(inner);tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+  document.getElementById('btn-hint').disabled=gameWon;
+  if(_animNextGrid){
+    _animNextGrid=false;
+    const cells=[...tbl.querySelectorAll('.qc')];
+    if(typeof ANIM!=='undefined')ANIM.gridLoad(cells);
+  }
+}
+
+function confirmHint(){
+  if(!hintCell)return;
+  const{r,c}=hintCell;const el=cellEl(r,c);
+  hintCell=null;document.getElementById('hint-bubble').classList.remove('show');
+  const prev=board[r][c];hist.push({r,c,prev});board[r][c]=QUEEN;
+  hintCount++;
+  if(el){el.classList.remove('hint-preview');setCellSymbol(el,QUEEN);}
+  applyErrClasses();
+  if(el&&typeof ANIM!=='undefined'){ANIM.place(el);ANIM.hint(el);}
+  if(typeof SOUND!=='undefined')SOUND.hint();
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+  checkWin();
+}
+
+/* ── Jeu ── */
+function cycleCell(r,c,dir){
+  if(gameWon)return;
+  if(hintCell&&hintCell.r===r&&hintCell.c===c){if(dir>0)confirmHint();else clearHintPreview();return;}
+  if(!timerOn&&!timerDone)startTimer();clearHintPreview();
+  const prev=board[r][c];
+  hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
+  const next=board[r][c];
+  const el=cellEl(r,c);
+  if(el)setCellSymbol(el,next);
+  applyErrClasses();
+  if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
+  if(typeof SOUND!=='undefined'){next===EMPTY?SOUND.erase():SOUND.place(next);}
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+  checkWin();
+}
+function undo(){
+  if(!hist.length||gameWon)return;
+  clearHintPreview();
+  const{r,c,prev}=hist.pop();board[r][c]=prev;
+  const el=cellEl(r,c);if(el)setCellSymbol(el,prev);
+  applyErrClasses();
+  document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+}
+
+function checkWin(){
+  const queens=placedQueens();
+  if(queens.length!==N)return;
+  if(getErrorCells().size>0)return;
+  clearHintPreview();stopTimer();timerDone=true;gameWon=true;
+  if(typeof ANIM!=='undefined'){
+    const cells=[...document.getElementById('grid').querySelectorAll('.qc')];
+    ANIM.winCascade(cells);
+  }
+  if(typeof SOUND!=='undefined')SOUND.win();
+  const best=saveStatsLocal(currentDiff,timerSec);
+  document.getElementById('modal-time').textContent=fmt(timerSec);
+  document.getElementById('win-sub').textContent=(best&&best===timerSec&&hintCount===0&&!ctrlHUsed)?'Nouveau record · Niveau '+DIFF_LABELS[currentDiff]+' !':'Niveau '+DIFF_LABELS[currentDiff]+' · Bravo !';
+  document.getElementById('win-modal').classList.add('show');
+}
+
+function resetPuzzle(){clearHintPreview();board=Array.from({length:N},()=>Array(N).fill(EMPTY));hist=[];gameWon=false;hintCount=0;ctrlHUsed=false;document.getElementById('grid-wrap').classList.remove('blurred');if(timerDone)resumeTimer();renderGrid();}
+function onWinOverlayClick(e){if(e.target===document.getElementById('win-modal')){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');}}
+function onWinNext(){document.getElementById('win-modal').classList.remove('show');document.getElementById('grid-wrap').classList.remove('blurred');askNewPuzzle();}
+
+function applyHintDirect(){
+  if(gameWon)return;
+  ctrlHUsed=true;
+  if(!timerOn&&!timerDone)startTimer();
+  if(!hintCell){
+    let hint=findForcedMove();
+    if(!hint&&solutionCells){for(const p of solutionCells){if(board[p.r][p.c]!==QUEEN){hint={r:p.r,c:p.c,tip:'solution'};break;}}}
+    if(!hint)return;
+    hintCell=hint;
+  }
+  confirmHint();
+}
+
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement&&document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  else if(e.ctrlKey&&(e.key==='h'||e.key==='H')){e.preventDefault();applyHintDirect();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='h'||e.key==='H')){e.preventDefault();giveHint();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='r'||e.key==='R')){e.preventDefault();resetPuzzle();}
+  else if(!e.ctrlKey&&!e.altKey&&!e.metaKey&&(e.key==='w'||e.key==='W')){e.preventDefault();askNewPuzzle();}
+});
+
+/* ── Difficulté ── */
+function setDiffBadge(diff){const el=document.getElementById('diff-badge');el.textContent=DIFF_LABELS[diff]+' · '+DIFF_N[diff]+'×'+DIFF_N[diff];el.className='diff-badge-btn '+diff;}
+function openChangeDiff(){document.getElementById('diff-modal-sub').textContent='Changer la difficulté (génère un nouveau puzzle)';document.getElementById('diff-modal').classList.add('show');}
+function askNewPuzzle(){
+  document.getElementById('win-modal').classList.remove('show');
+  const storedDiff=localStorage.getItem('queens_diff');
+  if(storedDiff&&DIFF_N[storedDiff]){startGeneration(storedDiff);}
+  else{document.getElementById('diff-modal-sub').textContent='Quelle taille de grille pour ce nouveau puzzle ?';document.getElementById('diff-modal').classList.add('show');}
+}
+function pickDiff(diff){currentDiff=diff;try{localStorage.setItem('queens_diff',diff);}catch(e){}document.getElementById('diff-modal').classList.remove('show');startGeneration(diff);}
+
+/* ── Générateur ──
+   1) Place N couronnes (1/ligne, 1/colonne, jamais adjacentes) — solution.
+   2) Fait croître N zones connexes depuis chaque couronne (flood-fill aléatoire).
+   3) Vérifie que la partition n'a qu'UNE seule solution valide (sinon on relance). */
+function genQueensSolution(n){
+  for(let attempt=0;attempt<200;attempt++){
+    const placed=[];
+    function bt(row){
+      if(row===n)return true;
+      const colsOrder=[...Array(n).keys()].sort(()=>Math.random()-.5);
+      for(const c of colsOrder){
+        if(placed.some(p=>p.c===c))continue;
+        if(placed.length&&Math.abs(placed[placed.length-1].r-row)<=1&&Math.abs(placed[placed.length-1].c-c)<=1)continue;
+        placed.push({r:row,c});
+        if(bt(row+1))return true;
+        placed.pop();
+      }
+      return false;
+    }
+    if(bt(0))return placed.map(p=>({r:p.r,c:p.c}));
+  }
+  return null;
+}
+function genRegions(sol,n){
+  const regs=Array.from({length:n},()=>Array(n).fill(-1));
+  const frontier=[];
+  function pushNeighbors(r,c,region){
+    const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    for(const[dr,dc]of dirs){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<n&&nc>=0&&nc<n&&regs[nr][nc]===-1)frontier.push({r:nr,c:nc,region});}
+  }
+  sol.forEach((p,idx)=>{regs[p.r][p.c]=idx;pushNeighbors(p.r,p.c,idx);});
+  while(frontier.length){
+    const idx=Math.floor(Math.random()*frontier.length);
+    const{r,c,region}=frontier.splice(idx,1)[0];
+    if(regs[r][c]!==-1)continue;
+    regs[r][c]=region;
+    pushNeighbors(r,c,region);
+  }
+  return regs;
+}
+// Une partition en zones tirée purement au hasard admet presque toujours
+// plusieurs solutions valides. On la "répare" en déplaçant les cases en
+// litige (celles utilisées par une solution alternative) vers une zone
+// voisine, tant que ça ne casse pas la connexité des zones concernées.
+function sameSolution(a,b){
+  const ak=a.map(p=>p.r+','+p.c).sort().join('|');
+  const bk=b.map(p=>p.r+','+p.c).sort().join('|');
+  return ak===bk;
+}
+function isRegionConnected(regs,n,regionId,seed){
+  const seen=new Set([seed.r+','+seed.c]);
+  const stack=[seed];
+  let total=0;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(regs[r][c]===regionId)total++;
+  while(stack.length){
+    const{r,c}=stack.pop();
+    for(const[dr,dc]of[[1,0],[-1,0],[0,1],[0,-1]]){
+      const nr=r+dr,nc=c+dc;
+      if(nr<0||nr>=n||nc<0||nc>=n||regs[nr][nc]!==regionId)continue;
+      const key=nr+','+nc;
+      if(seen.has(key))continue;
+      seen.add(key);stack.push({r:nr,c:nc});
+    }
+  }
+  return seen.size===total;
+}
+function repairUniqueness(sol,regs,n,maxRepairs){
+  for(let iter=0;iter<maxRepairs;iter++){
+    const solutions=solveRegions(regs,n,2);
+    if(solutions.length<=1)return true;
+    const alt=solutions.find(s=>!sameSolution(s,sol));
+    if(!alt)return true;
+    const cellsShuffled=[...alt].sort(()=>Math.random()-.5);
+    let fixed=false;
+    for(const{r,c}of cellsShuffled){
+      const reg=regs[r][c];
+      if(r===sol[reg].r&&c===sol[reg].c)continue; // case-germe de sa zone : intouchable
+      const neighbors=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([nr,nc])=>nr>=0&&nr<n&&nc>=0&&nc<n);
+      const neighborRegions=[...new Set(neighbors.map(([nr,nc])=>regs[nr][nc]).filter(rg=>rg!==reg))].sort(()=>Math.random()-.5);
+      for(const newReg of neighborRegions){
+        const backup=regs[r][c];
+        regs[r][c]=newReg;
+        if(isRegionConnected(regs,n,reg,sol[reg])&&isRegionConnected(regs,n,newReg,sol[newReg])){fixed=true;break;}
+        regs[r][c]=backup;
+      }
+      if(fixed)break;
+    }
+    if(!fixed)return false;
+  }
+  return false;
+}
+function generateQueensPuzzle(diff){
+  const n=DIFF_N[diff];
+  for(let attempt=0;attempt<80;attempt++){
+    const sol=genQueensSolution(n);if(!sol)continue;
+    const regs=genRegions(sol,n);
+    if(!repairUniqueness(sol,regs,n,300))continue;
+    return{n,regs,solution:sol};
+  }
+  return null;
+}
+
+async function startGeneration(diff){
+  if(generating)return;
+  generating=true;hintCount=0;ctrlHUsed=false;setButtons(true);gameWon=false;
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('win-modal').classList.remove('show');
+  document.getElementById('gen-label').textContent='Génération niveau '+DIFF_LABELS[diff]+'…';
+  setDiffBadge(diff);
+  const genModalTimer=setTimeout(()=>document.getElementById('gen-modal').classList.add('show'),100);
+  resetTimer();hist=[];renderEmptyGrid();
+  setTimeout(()=>{
+    let res=null;
+    for(let i=0;i<5;i++){res=generateQueensPuzzle(diff);if(res)break;}
+    clearTimeout(genModalTimer);document.getElementById('gen-modal').classList.remove('show');generating=false;setButtons(false);
+    if(!res)return;
+    N=res.n;regions=res.regs;solutionCells=res.solution;
+    board=Array.from({length:N},()=>Array(N).fill(EMPTY));
+    currentDiff=diff;
+    currentSeedStr=encodeSeed(diff,N,regions);
+    setDiffBadge(diff);
+    _animNextGrid=true;renderGrid();
+  },30);
+}
+function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
+
+/* ── Stats locales ── */
+const STATS_KEY='queens_stats_v1';
+function loadStatsLocal(){try{const r=localStorage.getItem(STATS_KEY);if(r)return JSON.parse(r);}catch(e){}return{easy:{count:0,best:0,totalTime:0},medium:{count:0,best:0,totalTime:0},hard:{count:0,best:0,totalTime:0}};}
+function saveStatsLocal(diff,seconds){
+  if(!diff||seconds<=0||!DIFF_N[diff])return 0;
+  const s=loadStatsLocal();const d=s[diff]=s[diff]||{count:0,best:0,totalTime:0};
+  d.count++;d.totalTime+=seconds;
+  const assisted=hintCount>0||ctrlHUsed;
+  if(!assisted&&(d.best===0||seconds<d.best))d.best=seconds;
+  try{localStorage.setItem(STATS_KEY,JSON.stringify(s));}catch(e){}
+  return d.best;
+}
+
+/* ── Démarrage depuis une seed ── */
+function startGameFromSeed(seedStr){
+  const decoded=decodeSeed(seedStr);
+  if(!decoded)throw new Error('invalid seed');
+  const{diff,n,regs}=decoded;
+  const solutions=solveRegions(regs,n,1);
+  clearHintPreview();gameWon=false;
+  document.getElementById('grid-wrap').classList.remove('blurred');
+  document.getElementById('gen-modal').classList.remove('show');
+  resetTimer();hist=[];
+  N=n;regions=regs;solutionCells=solutions[0]||null;
+  board=Array.from({length:N},()=>Array(N).fill(EMPTY));
+  currentDiff=diff;currentSeedStr=seedStr;
+  setDiffBadge(diff);_animNextGrid=true;renderGrid();
+}
+
+/* ── Init ── */
+async function init(){
+  renderEmptyGrid();
+  const user=await initNavAuth();
+  currentUserId=user?.id||null;
+
+  const urlParams=new URLSearchParams(window.location.search);
+  const seedParam=urlParams.get('seed');
+  if(seedParam){
+    try{startGameFromSeed(seedParam);}
+    catch(e){document.getElementById('diff-modal-sub').textContent='Seed invalide. Quelle taille de grille pour commencer ?';document.getElementById('diff-modal').classList.add('show');}
+  }else{
+    document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quelle taille de grille pour commencer ?';
+    document.getElementById('diff-modal').classList.add('show');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

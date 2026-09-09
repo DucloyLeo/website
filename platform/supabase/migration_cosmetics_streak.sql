@@ -67,6 +67,10 @@ CREATE POLICY "Insert propre transaction"   ON shop_transactions FOR INSERT WITH
 -- ── 5. Nouveaux types d'items boutique ───────────────────
 -- Les types disponibles : skin, grid_skin, frame, effect, background, title
 -- Pas de contrainte CHECK sur type → scalable
+-- (migration_economy.sql avait posé shop_items_type_check limité à
+--  'skin'/'cosmetic'/'badge' : on la retire pour accueillir les nouveaux
+--  types ci-dessous, conformément à l'intention "scalable" ci-dessus.)
+ALTER TABLE shop_items DROP CONSTRAINT IF EXISTS shop_items_type_check;
 
 -- Items de démonstration (cadres, effets, fonds, titres)
 INSERT INTO shop_items (id, name, description, icon, type, item_key, cost, unlock_level, sort_order) VALUES

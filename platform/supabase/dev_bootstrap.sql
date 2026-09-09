@@ -19,6 +19,20 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
+-- Si "Automatically expose new tables" a été décoché à la création du
+-- projet (recommandé pour ne pas exposer par erreur une future table
+-- sans y penser), PostgreSQL refuse l'accès à anon/authenticated avant
+-- même que les policies RLS ci-dessous soient évaluées. Les policies
+-- restent la seule barrière fine (par ligne) ; ceci ne fait qu'ouvrir
+-- la porte pour qu'elles puissent s'appliquer.
+grant usage on schema public to anon, authenticated;
+grant all on all tables in schema public to anon, authenticated;
+grant all on all sequences in schema public to anon, authenticated;
+grant all on all routines in schema public to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+alter default privileges in schema public grant all on routines to anon, authenticated;
+
 -- ─── 1. Tables (ordre de dépendances FK) ─────────────────────
 
 create table profiles (

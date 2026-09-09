@@ -8,8 +8,8 @@
 const SUPABASE_URL_PROD      = 'https://erukrlfuuivrdtlidodj.supabase.co';
 const SUPABASE_ANON_KEY_PROD = 'sb_publishable_b4b4DqfMAx1V2Df6nYAMOw_ZYFr_xwz';
 
-const SUPABASE_URL_DEV       = ''; // TODO : URL du projet Supabase "dev" (Dashboard → Settings → API)
-const SUPABASE_ANON_KEY_DEV  = ''; // TODO : clé publique (anon) du projet "dev"
+const SUPABASE_URL_DEV       = 'https://dojvvtyjvshnckrftgau.supabase.co';
+const SUPABASE_ANON_KEY_DEV  = 'sb_publishable_22oHxr_i6NIDXx4yuAL4EA_Ri6GB379';
 
 const PROD_HOSTS = ['tangoleo.fr', 'www.tangoleo.fr'];
 const _isProdHost = PROD_HOSTS.includes(window.location.hostname);

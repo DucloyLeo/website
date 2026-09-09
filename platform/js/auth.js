@@ -669,7 +669,7 @@ function renderGameMenu() {
       <button class="nav-menu-item" onclick="menuNew()">✦ Nouvelle partie</button>
       <button class="nav-menu-item" onclick="menuDiff()">🎯 Difficulté</button>
       <button class="nav-menu-item" onclick="menuCommands()">⌨️ Commandes</button>
-      <a href="/tips.html" class="nav-menu-item">💡 Conseils</a>
+      <a href="${isQueens ? '/queens-tips.html' : '/tips.html'}" class="nav-menu-item">💡 Conseils</a>
       <div class="nav-menu-sep"></div>
       <a href="/index.html" class="nav-menu-item">☀ Tangoléo</a>
       <a href="/queens.html" class="nav-menu-item">♛ Queens</a>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conseils & Stratégies — Queens</title>
+<meta name="description" content="Conseils et stratégies pour résoudre les puzzles Queens : une couronne par ligne, colonne et couleur, sans jamais se toucher.">
+<link rel="canonical" href="https://tangoleo.fr/queens-tips.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css?v=7">
+<script>( function(){const t=localStorage.getItem('tango_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');const b=localStorage.getItem('tango_bg');if(b)document.body.classList.add(b);})();</script>
+<style>
+  .tips-wrap { max-width:680px; margin:0 auto; padding:3rem 0 6rem; }
+  .rule-row {
+    display:flex;
+    align-items:flex-start;
+    gap:.9rem;
+    padding:.7rem 0;
+    border-bottom:1px solid var(--border);
+  }
+  .rule-row:last-child { border-bottom:none; }
+  .rule-ico { font-size:1.5rem; flex-shrink:0; line-height:1; margin-top:2px; }
+  .rule-text { font-size:13px; color:var(--muted); line-height:1.6; }
+  .rule-text strong { color:var(--text); }
+  .tip-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:1rem 1.2rem;
+    margin-top:1.5rem;
+  }
+  .tip-body { font-size:12px; color:var(--muted); line-height:1.7; display:flex; flex-direction:column; gap:.6rem; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="toggleMenu(event)" aria-label="Menu"><span class="hline"></span><span class="hline"></span><span class="hline"></span></button>
+    <div class="nav-menu" id="nav-menu"></div>
+  </div>
+  <a href="/queens.html" class="nav-logo">♛ Queens</a>
+  <div class="nav-right"><div id="nav-auth"></div></div>
+</nav>
+
+<div class="tips-wrap">
+  <p class="eyebrow">Apprendre</p>
+  <h1 style="margin-bottom:.4rem">Conseils &amp; Stratégies</h1>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:2rem">Page en construction — voici déjà les règles et quelques réflexes utiles.</p>
+
+  <div>
+    <div class="rule-row">
+      <div class="rule-ico">👑</div>
+      <div class="rule-text"><strong>Une par zone :</strong> exactement une couronne par ligne, par colonne et par couleur de zone.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-ico">🚫</div>
+      <div class="rule-text"><strong>Contact interdit :</strong> deux couronnes ne peuvent jamais se toucher, même en diagonale.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-ico">✕</div>
+      <div class="rule-text"><strong>Repère :</strong> cliquez (ou glissez sur plusieurs cases) pour marquer les cases impossibles, encore pour poser une couronne.</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-body">
+      <div>🔍 <strong style="color:var(--text)">Élimine d'abord les petites zones</strong> — une couleur qui n'occupe que peu de cases limite vite les possibilités.</div>
+      <div>📏 <strong style="color:var(--text)">Pense ligne ET colonne</strong> — une case peut être éliminée par sa ligne, sa colonne, sa couleur ou par une couronne adjacente.</div>
+      <div>↩ <strong style="color:var(--text)">N'hésite pas à annuler</strong> (Ctrl+Z) pour explorer une piste.</div>
+      <div>💡 <strong style="color:var(--text)">L'indice explique son raisonnement</strong> plutôt que de simplement remplir une case.</div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem">
+    <a href="/queens.html" style="color:var(--moon);text-decoration:none;font-size:12px">← Retour au jeu</a>
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js?v=9"></script>
+<script>initNavAuth();</script>
+</body>
+</html>

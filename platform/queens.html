@@ -79,33 +79,32 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
 table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}
 table.q-table td{padding:0}
-.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:var(--text)}
-.qc:hover{filter:brightness(1.1)}
-.qc.mark{font-size:1rem!important;color:var(--muted)}
-.qc.queen{text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:#2a2118}
+.qc:hover{filter:brightness(1.08)}
+.qc.mark{font-size:1rem!important;color:rgba(35,28,20,.55)}
+.qc.queen{text-shadow:0 1px 2px rgba(255,255,255,.55)}
 .qc.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
 .qc.hint-preview{opacity:.6}
 .qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
 
-/* Palette des zones (10 couleurs max) */
-.qr-0{background:rgba(245,200,66,.30)}.qr-1{background:rgba(143,168,212,.30)}
-.qr-2{background:rgba(109,187,138,.30)}.qr-3{background:rgba(216,122,80,.28)}
-.qr-4{background:rgba(192,132,252,.28)}.qr-5{background:rgba(224,83,60,.26)}
-.qr-6{background:rgba(60,116,224,.26)}.qr-7{background:rgba(69,184,172,.28)}
-.qr-8{background:rgba(224,123,176,.28)}.qr-9{background:rgba(163,193,74,.28)}
-[data-theme="light"] .qr-0{background:rgba(245,200,66,.40)}[data-theme="light"] .qr-1{background:rgba(143,168,212,.38)}
-[data-theme="light"] .qr-2{background:rgba(109,187,138,.36)}[data-theme="light"] .qr-3{background:rgba(216,122,80,.32)}
-[data-theme="light"] .qr-4{background:rgba(192,132,252,.32)}[data-theme="light"] .qr-5{background:rgba(224,83,60,.28)}
-[data-theme="light"] .qr-6{background:rgba(60,116,224,.28)}[data-theme="light"] .qr-7{background:rgba(69,184,172,.32)}
-[data-theme="light"] .qr-8{background:rgba(224,123,176,.32)}[data-theme="light"] .qr-9{background:rgba(163,193,74,.32)}
+/* Palette des zones (10 couleurs max) — fixe, ne dépend PAS du thème
+   clair/sombre : les couleurs de la grille doivent rester identiques. */
+.qr-0{background:hsl(0,58%,74%)}.qr-1{background:hsl(36,58%,68%)}
+.qr-2{background:hsl(72,50%,66%)}.qr-3{background:hsl(108,45%,66%)}
+.qr-4{background:hsl(150,45%,64%)}.qr-5{background:hsl(190,50%,66%)}
+.qr-6{background:hsl(215,55%,72%)}.qr-7{background:hsl(255,50%,76%)}
+.qr-8{background:hsl(295,45%,74%)}.qr-9{background:hsl(330,50%,74%)}
 
-.q-table.n6 .qc{width:92px;height:92px;font-size:2.5rem}
-.q-table.n8 .qc{width:72px;height:72px;font-size:1.9rem}
-.q-table.n10 .qc{width:56px;height:56px;font-size:1.45rem}
+/* Grille alignée sur les mêmes tailles que Tango (112px / 52px pour 6×6),
+   proportionnellement réduite pour 8×8 et 10×10 afin que la largeur totale
+   du plateau reste cohérente entre les deux jeux. */
+.q-table.n6 .qc{width:112px;height:112px;font-size:3rem}
+.q-table.n8 .qc{width:84px;height:84px;font-size:2.2rem}
+.q-table.n10 .qc{width:67px;height:67px;font-size:1.7rem}
 @media(max-width:700px){
   .q-table.n6 .qc{width:52px!important;height:52px!important;font-size:1.5rem!important}
-  .q-table.n8 .qc{width:41px!important;height:41px!important;font-size:1.15rem!important}
-  .q-table.n10 .qc{width:32px!important;height:32px!important;font-size:.9rem!important}
+  .q-table.n8 .qc{width:39px!important;height:39px!important;font-size:1.1rem!important}
+  .q-table.n10 .qc{width:31px!important;height:31px!important;font-size:.85rem!important}
   .qc.mark{font-size:.8rem!important}
 }
 
@@ -262,7 +261,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js?v=8"></script>
+<script src="js/auth.js?v=9"></script>
 <script src="js/animations.js"></script>
 <script src="js/sounds.js"></script>
 <script>
@@ -453,13 +452,25 @@ function setCellSymbol(el,state){
   else if(state===QUEEN){el.classList.add('queen');el.textContent='♛';}
   else el.textContent='';
 }
-function borderSides(r,c){
+// Bord sombre uniquement entre deux zones différentes (le bord extérieur de
+// la grille est déjà assuré par table.q-table) + coins arrondis aux angles
+// convexes (les deux côtés du coin sont une frontière) pour un contour de
+// zone continu et soigné plutôt qu'un escalier de cases carrées.
+const BOUNDARY='1.5px solid #2a2118',NO_BORDER='1.5px solid transparent';
+function cellStyle(r,c){
   const reg=regions[r][c];
-  const top=(r===0||regions[r-1][c]!==reg)?'2px solid var(--border2)':'1px solid transparent';
-  const left=(c===0||regions[r][c-1]!==reg)?'2px solid var(--border2)':'1px solid transparent';
-  const bottom=(r===N-1||regions[r+1][c]!==reg)?'2px solid var(--border2)':'1px solid transparent';
-  const right=(c===N-1||regions[r][c+1]!==reg)?'2px solid var(--border2)':'1px solid transparent';
-  return`border-top:${top};border-left:${left};border-bottom:${bottom};border-right:${right}`;
+  const same=(rr,cc)=>(rr<0||rr>=N||cc<0||cc>=N)?true:regions[rr][cc]===reg;
+  const topSame=same(r-1,c),leftSame=same(r,c-1),rightSame=same(r,c+1),bottomSame=same(r+1,c);
+  const top=topSame?NO_BORDER:BOUNDARY;
+  const left=leftSame?NO_BORDER:BOUNDARY;
+  const right=rightSame?NO_BORDER:BOUNDARY;
+  const bottom=bottomSame?NO_BORDER:BOUNDARY;
+  const RAD='9px',SQ='0px';
+  const tl=(!topSame&&!leftSame)?RAD:SQ;
+  const tr=(!topSame&&!rightSame)?RAD:SQ;
+  const br=(!bottomSame&&!rightSame)?RAD:SQ;
+  const bl=(!bottomSame&&!leftSame)?RAD:SQ;
+  return`border-top:${top};border-left:${left};border-right:${right};border-bottom:${bottom};border-radius:${tl} ${tr} ${br} ${bl}`;
 }
 function renderEmptyGrid(){
   const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
@@ -475,10 +486,9 @@ function renderGrid(){
       const inner=document.createElement('div');
       const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
       inner.className='qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'');
-      inner.style.cssText=borderSides(r,c);
+      inner.style.cssText=cellStyle(r,c);
+      inner.dataset.r=r;inner.dataset.c=c;
       setCellSymbol(inner,isHint?QUEEN:board[r][c]);
-      if(!isHint&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();cycleCell(r,c,1);});inner.addEventListener('contextmenu',e=>{e.preventDefault();cycleCell(r,c,-1);});}
-      else if(isHint&&!gameWon){inner.addEventListener('click',e=>{e.preventDefault();confirmHint();});inner.addEventListener('contextmenu',e=>{e.preventDefault();clearHintPreview();renderGrid();});}
       td.appendChild(inner);tr.appendChild(td);
     }
     tbl.appendChild(tr);
@@ -507,13 +517,14 @@ function confirmHint(){
 }
 
 /* ── Jeu ── */
-function cycleCell(r,c,dir){
+// Applique une valeur à une case + historique/anim/son/victoire — utilisé
+// aussi bien par le clic simple (cycle) que par le glisser multi-cases.
+function setCellValue(r,c,next){
   if(gameWon)return;
-  if(hintCell&&hintCell.r===r&&hintCell.c===c){if(dir>0)confirmHint();else clearHintPreview();return;}
-  if(!timerOn&&!timerDone)startTimer();clearHintPreview();
   const prev=board[r][c];
-  hist.push({r,c,prev});board[r][c]=((board[r][c]+dir+3)%3);
-  const next=board[r][c];
+  if(prev===next)return;
+  if(!timerOn&&!timerDone)startTimer();
+  hist.push({r,c,prev});board[r][c]=next;
   const el=cellEl(r,c);
   if(el)setCellSymbol(el,next);
   applyErrClasses();
@@ -522,6 +533,21 @@ function cycleCell(r,c,dir){
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   checkWin();
 }
+function cycleCell(r,c,dir){
+  if(gameWon)return;
+  if(hintCell&&hintCell.r===r&&hintCell.c===c){if(dir>0)confirmHint();else clearHintPreview();return;}
+  clearHintPreview();
+  setCellValue(r,c,(board[r][c]+dir+3)%3);
+}
+// Peint un ✕ sur une case vide (utilisé pendant un glisser) — ne touche
+// jamais une couronne déjà posée pour éviter un effacement accidentel.
+function paintMark(r,c){
+  if(gameWon)return;
+  if(hintCell&&hintCell.r===r&&hintCell.c===c)return;
+  if(board[r][c]!==EMPTY)return;
+  clearHintPreview();
+  setCellValue(r,c,MARK);
+}
 function undo(){
   if(!hist.length||gameWon)return;
   clearHintPreview();
@@ -529,6 +555,75 @@ function undo(){
   const el=cellEl(r,c);if(el)setCellSymbol(el,prev);
   applyErrClasses();
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
+}
+
+/* ── Interaction souris/tactile (clic simple = cycle, glisser = marquer
+   plusieurs cases à la volée) — attachée une seule fois sur la grille. ── */
+let _dragActive=false,_dragStart=null,_dragMoved=false,_dragLast=null;
+function _cellFromPoint(x,y){
+  const el=document.elementFromPoint(x,y);
+  const qc=el&&el.closest('.qc');
+  if(!qc||!qc.dataset)return null;
+  const r=parseInt(qc.dataset.r,10),c=parseInt(qc.dataset.c,10);
+  if(Number.isNaN(r)||Number.isNaN(c))return null;
+  return{r,c};
+}
+// Un glisser rapide (souris ou doigt) ne déclenche pas un pointermove par
+// case traversée — on comble les trous en repeignant en ligne droite entre
+// la dernière case peinte et la case courante (Bresenham).
+function _paintLine(r0,c0,r1,c1){
+  let dr=Math.abs(r1-r0),dc=Math.abs(c1-c0);
+  const sr=r0<r1?1:-1,sc=c0<c1?1:-1;
+  let err=dr-dc,r=r0,c=c0;
+  while(true){
+    paintMark(r,c);
+    if(r===r1&&c===c1)break;
+    const e2=2*err;
+    if(e2>-dc){err-=dc;r+=sr;}
+    if(e2<dr){err+=dr;c+=sc;}
+  }
+}
+function _initGridInteraction(){
+  const grid=document.getElementById('grid');
+  grid.addEventListener('pointerdown',e=>{
+    if(gameWon||e.button>0)return;
+    const cell=_cellFromPoint(e.clientX,e.clientY);
+    if(!cell)return;
+    _dragActive=true;_dragStart=cell;_dragMoved=false;_dragLast=cell;
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove',e=>{
+    if(!_dragActive)return;
+    const cell=_cellFromPoint(e.clientX,e.clientY);
+    if(!cell)return;
+    if(!_dragMoved&&(cell.r!==_dragStart.r||cell.c!==_dragStart.c)){
+      _dragMoved=true;
+      paintMark(_dragStart.r,_dragStart.c);
+    }
+    if(_dragMoved&&(cell.r!==_dragLast.r||cell.c!==_dragLast.c)){
+      _paintLine(_dragLast.r,_dragLast.c,cell.r,cell.c);
+      _dragLast=cell;
+    }
+  });
+  function endDrag(){
+    if(!_dragActive)return;
+    _dragActive=false;
+    if(!_dragMoved&&_dragStart){
+      if(hintCell&&hintCell.r===_dragStart.r&&hintCell.c===_dragStart.c)confirmHint();
+      else cycleCell(_dragStart.r,_dragStart.c,1);
+    }
+    _dragStart=null;_dragLast=null;
+  }
+  window.addEventListener('pointerup',endDrag);
+  window.addEventListener('pointercancel',endDrag);
+  grid.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    if(gameWon)return;
+    const cell=_cellFromPoint(e.clientX,e.clientY);
+    if(!cell)return;
+    if(hintCell&&hintCell.r===cell.r&&hintCell.c===cell.c){clearHintPreview();renderGrid();}
+    else cycleCell(cell.r,cell.c,-1);
+  });
 }
 
 function checkWin(){
@@ -743,6 +838,7 @@ function startGameFromSeed(seedStr){
 /* ── Init ── */
 async function init(){
   renderEmptyGrid();
+  _initGridInteraction();
   const user=await initNavAuth();
   currentUserId=user?.id||null;
 
@@ -751,6 +847,11 @@ async function init(){
   if(seedParam){
     try{startGameFromSeed(seedParam);}
     catch(e){document.getElementById('diff-modal-sub').textContent='Seed invalide. Quelle taille de grille pour commencer ?';document.getElementById('diff-modal').classList.add('show');}
+    return;
+  }
+  const storedDiff=localStorage.getItem('queens_diff');
+  if(storedDiff&&DIFF_N[storedDiff]){
+    startGeneration(storedDiff);
   }else{
     document.getElementById('diff-modal-sub').textContent='Bienvenue ! Quelle taille de grille pour commencer ?';
     document.getElementById('diff-modal').classList.add('show');

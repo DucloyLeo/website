@@ -76,7 +76,7 @@ INSERT INTO shop_items (id, name, description, icon, type, item_key, cost, unloc
   ('effect-sparkle','Éclat Étincelant',   'Des particules scintillantes autour de toi.', '✨', 'effect',     'effect-sparkle', 400,  null,  20),
   ('effect-glow',   'Lueur Douce',        'Un halo lumineux subtil.',                    '🌟', 'effect',     'effect-glow',   200,  null,  21),
   ('bg-stars',      'Fond Étoilé',        'Un ciel étoilé animé en arrière-plan.',       '🌌', 'background', 'bg-stars',      600,  null,  30),
-  ('bg-aurora',     'Aurore Boréale',     'Des teintes d'aurore boréale animées.',       '🎆', 'background', 'bg-aurora',     800,  null,  31),
+  ('bg-aurora',     'Aurore Boréale',     'Des teintes d''aurore boréale animées.',      '🎆', 'background', 'bg-aurora',     800,  null,  31),
   ('title-speedster','Éclair',            'Pour ceux qui ne perdent pas de temps.',      '⚡', 'title',      'Éclair',        300,  null,  40),
   ('title-master',  'Maître du Tango',    'Le titre des légendes.',                      '👑', 'title',      'Maître du Tango',  0, 20,   41),
   ('title-daily',   'Fidèle au Poste',    'Débloqué après 7 jours de streak.',           '🔥', 'title',      'Fidèle au Poste',  0, null,  42),

@@ -77,48 +77,34 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .timer-bar{position:relative;z-index:1}
 .grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
-table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10);position:relative}
-table.q-table td{padding:0}
-.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:#2a2118;border:1px solid rgba(20,16,12,.14)}
-.qc:hover{filter:brightness(1.08)}
-.qc.mark{font-size:1rem!important;color:rgba(15,12,9,.88);font-weight:700}
-.qc.queen{text-shadow:0 1px 2px rgba(255,255,255,.55)}
-.qc.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
-.qc.hint-preview{opacity:.6}
-.qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
-/* Les 4 cases d'angle suivent l'arrondi de la grille (même rayon que
-   table.q-table), sinon leur propre fine bordure droite dépasse du coin. */
-#grid tr:first-child td:first-child .qc{border-top-left-radius:11px}
-#grid tr:first-child td:last-child .qc{border-top-right-radius:11px}
-#grid tr:last-child td:first-child .qc{border-bottom-left-radius:11px}
-#grid tr:last-child td:last-child .qc{border-bottom-right-radius:11px}
-/* Contours de zone : tracés en SVG par-dessus la grille (voir renderZoneLines),
-   continus et d'épaisseur constante même dans les angles — plus marqués que
-   les fins séparateurs de case ci-dessus. overflow:hidden + même border-radius
-   que table.q-table : les bouts arrondis des traits qui touchent le bord de
-   la grille ne doivent jamais dépasser le cadre extérieur. */
-.zone-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;border-radius:12px}
+/* Grille entièrement en SVG : cases, séparateurs, contours de zone et
+   icônes partagent la même coordonnée (viewBox 0 0 N N) — une seule
+   technologie de rendu, alignement garanti par construction (plus de
+   calque séparé à positionner). Taille totale FIXE (672px desktop /
+   312px mobile, alignée sur Tango) quelle que soit la difficulté : le
+   viewBox met à l'échelle proportionnellement, et vector-effect=
+   "non-scaling-stroke" garde les traits à épaisseur fixe en pixels
+   réels quel que soit le nombre de cases. */
+.q-svg{display:block;width:672px;height:672px;border:2.5px solid var(--border2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10);clip-path:inset(0 round 10px);background:var(--surface)}
+@media(max-width:700px){.q-svg{width:312px!important;height:312px!important}}
+
+.qc{cursor:pointer;touch-action:none}
+.qc-bg{stroke:rgba(20,16,12,.16);stroke-width:1.2;vector-effect:non-scaling-stroke;transition:filter .1s}
+.qc:hover .qc-bg{filter:brightness(1.08)}
+.qc.err .qc-bg{stroke:#dc503c;stroke-width:3;vector-effect:non-scaling-stroke}
+.qc-icon-slot{color:#2a2118;pointer-events:none}
+.qc.mark .qc-icon-slot{color:rgba(15,12,9,.88)}
+.qc.hint-preview{opacity:.62}
+.qc-hint-ring{fill:none;stroke:var(--moon);stroke-width:2.5;stroke-dasharray:7 5;vector-effect:non-scaling-stroke;pointer-events:none}
+.qc-zone-lines line{stroke:#4a443c;stroke-width:4;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
 
 /* Palette des zones (10 couleurs max) — fixe, ne dépend PAS du thème
    clair/sombre : les couleurs de la grille doivent rester identiques. */
-.qr-0{background:hsl(0,58%,74%)}.qr-1{background:hsl(36,58%,68%)}
-.qr-2{background:hsl(72,50%,66%)}.qr-3{background:hsl(108,45%,66%)}
-.qr-4{background:hsl(150,45%,64%)}.qr-5{background:hsl(190,50%,66%)}
-.qr-6{background:hsl(215,55%,72%)}.qr-7{background:hsl(255,50%,76%)}
-.qr-8{background:hsl(295,45%,74%)}.qr-9{background:hsl(330,50%,74%)}
-
-/* Grille alignée sur les mêmes tailles que Tango (112px / 52px pour 6×6),
-   proportionnellement réduite pour 8×8 et 10×10 afin que la largeur totale
-   du plateau reste cohérente entre les deux jeux. */
-.q-table.n6 .qc{width:112px;height:112px;font-size:3rem}
-.q-table.n8 .qc{width:84px;height:84px;font-size:2.2rem}
-.q-table.n10 .qc{width:67px;height:67px;font-size:1.7rem}
-@media(max-width:700px){
-  .q-table.n6 .qc{width:52px!important;height:52px!important;font-size:1.5rem!important}
-  .q-table.n8 .qc{width:39px!important;height:39px!important;font-size:1.1rem!important}
-  .q-table.n10 .qc{width:31px!important;height:31px!important;font-size:.85rem!important}
-  .qc.mark{font-size:.8rem!important}
-}
+.qr-0{fill:hsl(0,58%,74%)}.qr-1{fill:hsl(36,58%,68%)}
+.qr-2{fill:hsl(72,50%,66%)}.qr-3{fill:hsl(108,45%,66%)}
+.qr-4{fill:hsl(150,45%,64%)}.qr-5{fill:hsl(190,50%,66%)}
+.qr-6{fill:hsl(215,55%,72%)}.qr-7{fill:hsl(255,50%,76%)}
+.qr-8{fill:hsl(295,45%,74%)}.qr-9{fill:hsl(330,50%,74%)}
 
 .hint-bubble{max-width:560px;width:100%;background:rgba(143,168,212,.08);border:1px solid rgba(143,168,212,.25);border-radius:var(--radius);padding:.85rem 1.1rem;font-size:12px;color:var(--text);line-height:1.65;animation:bubblein .2s ease;display:none}
 .hint-bubble.show{display:block}
@@ -187,8 +173,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 
   <div class="grid-outer">
     <div class="grid-wrap" id="grid-wrap">
-      <table class="q-table" id="grid"></table>
-      <svg class="zone-lines" id="zone-lines" preserveAspectRatio="none"></svg>
+      <svg class="q-svg" id="grid" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
 
@@ -277,7 +262,6 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js?v=9"></script>
-<script src="js/animations.js"></script>
 <script src="js/sounds.js"></script>
 <script>
 // ═══ GAME ENGINE — Queens ══════════════════════════════
@@ -423,7 +407,7 @@ const TIP_TEXT={
   col:'Cette colonne n\'a plus qu\'une case possible pour sa couronne.',
   solution:'Cette case peut être déduite logiquement.',
 };
-function cellEl(r,c){const tr=document.getElementById('grid').querySelectorAll('tr')[r];return tr?tr.querySelectorAll('.qc')[c]:null;}
+function cellEl(r,c){return document.querySelector('.qc[data-r="'+r+'"][data-c="'+c+'"]');}
 function giveHint(){
   if(!timerOn&&!timerDone)startTimer();clearHintPreview();
   let hint=findForcedMove();
@@ -454,94 +438,123 @@ function getErrorCells(){
 function isCellErr(errSet,r,c){return errSet.has(r+','+c);}
 function applyErrClasses(){
   const errSet=getErrorCells();
-  const trs=document.getElementById('grid').querySelectorAll('tr');
-  for(let r=0;r<N;r++){const cells=trs[r]&&trs[r].querySelectorAll('.qc');if(!cells)continue;for(let c=0;c<N;c++)if(cells[c])cells[c].classList.toggle('err',isCellErr(errSet,r,c));}
+  document.querySelectorAll('.qc').forEach(g=>{
+    g.classList.toggle('err',isCellErr(errSet,+g.dataset.r,+g.dataset.c));
+  });
   return errSet;
 }
 
-/* ── Rendu ── */
-function setCellSymbol(el,state){
-  el.classList.remove('mark','queen');
-  if(state===MARK){el.classList.add('mark');el.textContent='✕';}
-  else if(state===QUEEN){el.classList.add('queen');el.textContent='♛';}
-  else el.textContent='';
+/* ── Rendu (grille 100% SVG — voir le commentaire CSS de .q-svg) ── */
+const SVGNS='http://www.w3.org/2000/svg';
+function svgEl(tag,attrs){
+  const el=document.createElementNS(SVGNS,tag);
+  for(const k in attrs)el.setAttribute(k,attrs[k]);
+  return el;
 }
-// Contours de zone : un unique overlay SVG dessine chaque frontière interne
-// entre deux régions différentes (jamais le bord extérieur de la grille,
-// déjà assuré par table.q-table). Les segments partagent leurs extrémités
-// avec stroke-linecap="round", ce qui comble naturellement les angles —
-// épaisseur parfaitement constante, y compris dans les coins concaves,
-// sans les artefacts de l'ancienne méthode (bordures + radius par case).
-// Mesure les positions RÉELLES des cases dans le DOM (au lieu d'un système
-// de coordonnées abstrait mis à l'échelle par le navigateur) pour garantir
-// un alignement pixel-perfect avec la grille HTML même au zoom élevé, et
-// découpe via un <clipPath> SVG explicite (plus fiable que overflow+
-// border-radius sur un <svg>, qui n'est pas toujours respecté aux coins).
-function renderZoneLines(){
-  const svg=document.getElementById('zone-lines');
-  const tbl=document.getElementById('grid');
-  if(!svg||!tbl)return;
-  const tblRect=tbl.getBoundingClientRect();
-  const w=tblRect.width,h=tblRect.height;
-  if(!w||!h)return;
-  const xs=[],ys=[];
-  for(let c=0;c<N;c++){
-    const el=document.querySelector('.qc[data-r="0"][data-c="'+c+'"]');
-    const r=el.getBoundingClientRect();
-    if(c===0)xs.push(r.left-tblRect.left);
-    xs.push(r.right-tblRect.left);
+// Icônes chargées une fois depuis platform/assets/icons/ (fichiers SVG avec
+// fill="currentColor", remplaçables par tes propres icônes sans toucher au
+// code : la couleur suit celle définie en CSS sur .qc-icon-slot).
+const ICONS={};
+async function loadIcon(name,path){
+  try{
+    const text=await fetch(path).then(r=>r.ok?r.text():Promise.reject());
+    const doc=new DOMParser().parseFromString(text,'image/svg+xml');
+    ICONS[name]=doc.documentElement.innerHTML;
+  }catch(e){
+    ICONS[name]=null; // repli : setCellSymbol utilisera un glyphe texte
   }
-  for(let r=0;r<N;r++){
-    const el=document.querySelector('.qc[data-r="'+r+'"][data-c="0"]');
-    const rc=el.getBoundingClientRect();
-    if(r===0)ys.push(rc.top-tblRect.top);
-    ys.push(rc.bottom-tblRect.top);
+}
+function loadIcons(){
+  return Promise.all([
+    loadIcon('queen','assets/icons/queen.svg'),
+    loadIcon('mark','assets/icons/mark.svg'),
+  ]);
+}
+const ICON_SIZE=0.6,ICON_OFF=(1-ICON_SIZE)/2;
+function setCellSymbol(g,state){
+  g.classList.remove('mark','queen');
+  const slot=g.querySelector('.qc-icon-slot');
+  if(!slot)return;
+  slot.innerHTML='';
+  if(state===MARK){
+    g.classList.add('mark');
+    if(ICONS.mark)slot.innerHTML=ICONS.mark;
+    else slot.appendChild(svgEl('text',{x:50,y:68,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='✕';
+  }else if(state===QUEEN){
+    g.classList.add('queen');
+    if(ICONS.queen)slot.innerHTML=ICONS.queen;
+    else slot.appendChild(svgEl('text',{x:50,y:75,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='♛';
   }
-  svg.setAttribute('viewBox','0 0 '+w+' '+h);
-  // Épaisseur FIXE quelle que soit la difficulté (calée sur celle de la
-  // grille 10×10) : calculée à partir d'une taille de case de référence,
-  // pas de w/N (qui varie avec le nombre de cases).
-  const REF_N=10;
-  const sw=(w/REF_N)*0.06;
-  const rad=11; // légèrement < 12px du border-radius de table.q-table pour rester bien à l'intérieur
-  // clip-path CSS (inset+round) plutôt qu'un <clipPath> SVG référencé par id :
-  // plus fiable pour découper aux coins arrondis, notamment pour tout point
-  // du bord (pas seulement les 4 coins) où un trait touche l'extérieur.
-  svg.style.clipPath='inset(0 round '+rad+'px)';
-  let lines='';
-  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-    const reg=regions[r][c];
-    if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+xs[c+1]+'" y1="'+ys[r]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
-    if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+xs[c]+'" y1="'+ys[r+1]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
-  }
-  svg.innerHTML='<g stroke="#4a443c" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
 }
 function renderEmptyGrid(){
-  const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
-  const svg=document.getElementById('zone-lines');if(svg)svg.innerHTML='';
+  const svg=document.getElementById('grid');if(!svg)return;
+  svg.innerHTML='';
 }
 function renderGrid(){
-  const tbl=document.getElementById('grid');tbl.innerHTML='';
-  tbl.className='q-table n'+N;
+  const svg=document.getElementById('grid');
+  svg.innerHTML='';
+  svg.setAttribute('viewBox','0 0 '+N+' '+N);
   const errSet=getErrorCells();
-  for(let r=0;r<N;r++){
-    const tr=document.createElement('tr');
-    for(let c=0;c<N;c++){
-      const td=document.createElement('td');
-      const inner=document.createElement('div');
-      const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
-      inner.className='qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'');
-      inner.dataset.r=r;inner.dataset.c=c;
-      setCellSymbol(inner,isHint?QUEEN:board[r][c]);
-      td.appendChild(inner);tr.appendChild(td);
-    }
-    tbl.appendChild(tr);
+  const cellsFrag=document.createDocumentFragment();
+  let hintG=null;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
+    const g=svgEl('g',{class:'qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'')});
+    g.dataset.r=r;g.dataset.c=c;
+    g.appendChild(svgEl('rect',{class:'qc-bg',x:c,y:r,width:1,height:1}));
+    const slot=svgEl('g',{class:'qc-icon-slot',transform:'translate('+(c+ICON_OFF)+' '+(r+ICON_OFF)+') scale('+(ICON_SIZE/100)+')'});
+    g.appendChild(slot);
+    setCellSymbol(g,isHint?QUEEN:board[r][c]);
+    if(isHint){hintG=g;g.appendChild(svgEl('rect',{class:'qc-hint-ring',x:c+0.05,y:r+0.05,width:0.9,height:0.9,rx:0.08}));}
+    cellsFrag.appendChild(g);
   }
-  renderZoneLines();
+  svg.appendChild(cellsFrag);
+  // Contours de zone : une frontière interne = un seul <line>, jamais le
+  // bord extérieur de la grille (déjà assuré par le cadre de .q-svg).
+  // Même coordonnée que les cases ci-dessus → alignement garanti.
+  const linesG=svgEl('g',{class:'qc-zone-lines'});
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const reg=regions[r][c];
+    if(c<N-1&&regions[r][c+1]!==reg)linesG.appendChild(svgEl('line',{x1:c+1,y1:r,x2:c+1,y2:r+1}));
+    if(r<N-1&&regions[r+1][c]!==reg)linesG.appendChild(svgEl('line',{x1:c,y1:r+1,x2:c+1,y2:r+1}));
+  }
+  svg.appendChild(linesG);
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   document.getElementById('btn-hint').disabled=gameWon;
+  return hintG;
 }
 
+// Animations propres à Queens — Web Animations API sur transform/opacity/
+// filter, qui fonctionnent nativement sur les éléments SVG (contrairement
+// à ANIM.* de animations.js, qui repose sur ::before/box-shadow/
+// background-color, non fiables sur du SVG). Fichier partagé avec Tango
+// non modifié — celui-ci continue d'utiliser ANIM.* normalement.
+const QANIM={
+  get reduced(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches;},
+  place(g){
+    if(this.reduced||!g)return;
+    const slot=g.querySelector('.qc-icon-slot');
+    if(!slot||!slot.animate)return;
+    slot.animate([{transform:'scale(1)'},{transform:'scale(1.16)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.34,1.56,.64,1)'});
+  },
+  erase(g){
+    if(this.reduced||!g)return;
+    const slot=g.querySelector('.qc-icon-slot');
+    if(!slot||!slot.animate)return;
+    slot.animate([{opacity:1},{opacity:.55},{opacity:1}],{duration:100,easing:'ease'});
+  },
+  hint(g){
+    if(this.reduced||!g||!g.animate)return;
+    g.animate([{filter:'brightness(1)'},{filter:'brightness(1.4)'},{filter:'brightness(1)'}],{duration:520,easing:'ease'});
+  },
+  winCascade(cells){
+    if(this.reduced)return;
+    cells.forEach((g,i)=>{
+      if(!g.animate)return;
+      setTimeout(()=>g.animate([{filter:'brightness(1)'},{filter:'brightness(1.45)'},{filter:'brightness(1)'}],{duration:500,easing:'ease'}),i*28);
+    });
+  },
+};
 function confirmHint(){
   if(!hintCell)return;
   const{r,c}=hintCell;const el=cellEl(r,c);
@@ -550,7 +563,7 @@ function confirmHint(){
   hintCount++;
   if(el){el.classList.remove('hint-preview');setCellSymbol(el,QUEEN);}
   applyErrClasses();
-  if(el&&typeof ANIM!=='undefined'){ANIM.place(el);ANIM.hint(el);}
+  if(el){QANIM.place(el);QANIM.hint(el);}
   if(typeof SOUND!=='undefined')SOUND.hint();
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   checkWin();
@@ -568,7 +581,7 @@ function setCellValue(r,c,next){
   const el=cellEl(r,c);
   if(el)setCellSymbol(el,next);
   applyErrClasses();
-  if(el&&typeof ANIM!=='undefined'){next===EMPTY?ANIM.erase(el):ANIM.place(el);}
+  if(el){next===EMPTY?QANIM.erase(el):QANIM.place(el);}
   if(typeof SOUND!=='undefined'){next===EMPTY?SOUND.erase():SOUND.place(next);}
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   checkWin();
@@ -683,10 +696,7 @@ function checkWin(){
   if(queens.length!==N)return;
   if(getErrorCells().size>0)return;
   clearHintPreview();stopTimer();timerDone=true;gameWon=true;
-  if(typeof ANIM!=='undefined'){
-    const cells=[...document.getElementById('grid').querySelectorAll('.qc')];
-    ANIM.winCascade(cells);
-  }
+  QANIM.winCascade([...document.querySelectorAll('.qc')]);
   if(typeof SOUND!=='undefined')SOUND.win();
   const best=saveStatsLocal(currentDiff,timerSec);
   document.getElementById('modal-time').textContent=fmt(timerSec);
@@ -891,6 +901,7 @@ function startGameFromSeed(seedStr){
 async function init(){
   renderEmptyGrid();
   _initGridInteraction();
+  await loadIcons();
   const user=await initNavAuth();
   currentUserId=user?.id||null;
 

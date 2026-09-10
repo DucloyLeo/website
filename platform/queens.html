@@ -91,7 +91,13 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .qc{cursor:pointer;touch-action:none}
 .qc-bg{stroke:rgba(20,16,12,.16);stroke-width:1.2;vector-effect:non-scaling-stroke;transition:filter .1s}
 .qc:hover .qc-bg{filter:brightness(1.08)}
-.qc.err .qc-bg{stroke:#dc503c;stroke-width:3;vector-effect:non-scaling-stroke}
+/* Case en erreur : toute la case passe en rouge (recouvre la couleur de
+   zone) avec un contour blanc et l'icône en blanc — comme le vrai jeu
+   Queens. Rouge plus doux/opacifié en sombre, plus vif ("flash") en clair
+   pour rester lisible sur un fond blanc plutôt que délavé. */
+.qc.err .qc-bg{fill:#dd5c56;stroke:rgba(255,255,255,.6);stroke-width:3;vector-effect:non-scaling-stroke}
+[data-theme="light"] .qc.err .qc-bg{fill:#e2302b;stroke:rgba(255,255,255,.92)}
+.qc.err .qc-icon-slot{color:#fff}
 .qc-icon-slot{color:#2a2118;pointer-events:none}
 .qc-icon-anim{transform-box:fill-box;transform-origin:center}
 .qc.mark .qc-icon-slot{color:#171310}

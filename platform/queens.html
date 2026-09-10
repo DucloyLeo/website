@@ -77,15 +77,22 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .timer-bar{position:relative;z-index:1}
 .grid-wrap{position:relative;display:inline-block;transition:filter .5s ease}
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
-table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10)}
+table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10);position:relative}
 table.q-table td{padding:0}
-.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:#2a2118}
+/* Chargement de grille plus rapide sur Queens (davantage de cases que Tango) :
+   on surcharge juste la variable partagée, sans toucher animations.css. */
+#grid{--anim-grid-stagger:3ms}
+.qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:#2a2118;border:1px solid rgba(20,16,12,.14)}
 .qc:hover{filter:brightness(1.08)}
-.qc.mark{font-size:1rem!important;color:rgba(35,28,20,.55)}
+.qc.mark{font-size:1rem!important;color:rgba(15,12,9,.88);font-weight:700}
 .qc.queen{text-shadow:0 1px 2px rgba(255,255,255,.55)}
 .qc.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
 .qc.hint-preview{opacity:.6}
 .qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
+/* Contours de zone : tracés en SVG par-dessus la grille (voir renderZoneLines),
+   continus et d'épaisseur constante même dans les angles — plus épais et plus
+   marqués que les fins séparateurs de case ci-dessus. */
+.zone-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 
 /* Palette des zones (10 couleurs max) — fixe, ne dépend PAS du thème
    clair/sombre : les couleurs de la grille doivent rester identiques. */
@@ -174,7 +181,10 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   </div>
 
   <div class="grid-outer">
-    <div class="grid-wrap" id="grid-wrap"><table class="q-table" id="grid"></table></div>
+    <div class="grid-wrap" id="grid-wrap">
+      <table class="q-table" id="grid"></table>
+      <svg class="zone-lines" id="zone-lines" preserveAspectRatio="none"></svg>
+    </div>
   </div>
 
   <div class="hint-bubble" id="hint-bubble"></div>
@@ -452,28 +462,28 @@ function setCellSymbol(el,state){
   else if(state===QUEEN){el.classList.add('queen');el.textContent='♛';}
   else el.textContent='';
 }
-// Bord sombre uniquement entre deux zones différentes (le bord extérieur de
-// la grille est déjà assuré par table.q-table) + coins arrondis aux angles
-// convexes (les deux côtés du coin sont une frontière) pour un contour de
-// zone continu et soigné plutôt qu'un escalier de cases carrées.
-const BOUNDARY='1.5px solid #2a2118',NO_BORDER='1.5px solid transparent';
-function cellStyle(r,c){
-  const reg=regions[r][c];
-  const same=(rr,cc)=>(rr<0||rr>=N||cc<0||cc>=N)?true:regions[rr][cc]===reg;
-  const topSame=same(r-1,c),leftSame=same(r,c-1),rightSame=same(r,c+1),bottomSame=same(r+1,c);
-  const top=topSame?NO_BORDER:BOUNDARY;
-  const left=leftSame?NO_BORDER:BOUNDARY;
-  const right=rightSame?NO_BORDER:BOUNDARY;
-  const bottom=bottomSame?NO_BORDER:BOUNDARY;
-  const RAD='9px',SQ='0px';
-  const tl=(!topSame&&!leftSame)?RAD:SQ;
-  const tr=(!topSame&&!rightSame)?RAD:SQ;
-  const br=(!bottomSame&&!rightSame)?RAD:SQ;
-  const bl=(!bottomSame&&!leftSame)?RAD:SQ;
-  return`border-top:${top};border-left:${left};border-right:${right};border-bottom:${bottom};border-radius:${tl} ${tr} ${br} ${bl}`;
+// Contours de zone : un unique overlay SVG dessine chaque frontière interne
+// entre deux régions différentes (jamais le bord extérieur de la grille,
+// déjà assuré par table.q-table). Les segments partagent leurs extrémités
+// avec stroke-linecap="round", ce qui comble naturellement les angles —
+// épaisseur parfaitement constante, y compris dans les coins concaves,
+// sans les artefacts de l'ancienne méthode (bordures + radius par case).
+function renderZoneLines(){
+  const svg=document.getElementById('zone-lines');
+  if(!svg)return;
+  svg.setAttribute('viewBox','0 0 '+N+' '+N);
+  const sw=0.09;
+  let lines='';
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const reg=regions[r][c];
+    if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+(c+1)+'" y1="'+r+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
+    if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+c+'" y1="'+(r+1)+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
+  }
+  svg.innerHTML='<g stroke="#2a2118" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
 }
 function renderEmptyGrid(){
   const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
+  const svg=document.getElementById('zone-lines');if(svg)svg.innerHTML='';
 }
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
@@ -486,13 +496,13 @@ function renderGrid(){
       const inner=document.createElement('div');
       const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
       inner.className='qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'');
-      inner.style.cssText=cellStyle(r,c);
       inner.dataset.r=r;inner.dataset.c=c;
       setCellSymbol(inner,isHint?QUEEN:board[r][c]);
       td.appendChild(inner);tr.appendChild(td);
     }
     tbl.appendChild(tr);
   }
+  renderZoneLines();
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   document.getElementById('btn-hint').disabled=gameWon;
   if(_animNextGrid){
@@ -539,14 +549,22 @@ function cycleCell(r,c,dir){
   clearHintPreview();
   setCellValue(r,c,(board[r][c]+dir+3)%3);
 }
-// Peint un ✕ sur une case vide (utilisé pendant un glisser) — ne touche
-// jamais une couronne déjà posée pour éviter un effacement accidentel.
+// Peint un ✕ sur une case vide (glisser clic gauche) — ne touche jamais
+// une couronne déjà posée pour éviter un effacement accidentel.
 function paintMark(r,c){
   if(gameWon)return;
   if(hintCell&&hintCell.r===r&&hintCell.c===c)return;
   if(board[r][c]!==EMPTY)return;
   clearHintPreview();
   setCellValue(r,c,MARK);
+}
+// Efface un ✕ (glisser clic droit) — ne touche jamais une couronne.
+function eraseMark(r,c){
+  if(gameWon)return;
+  if(hintCell&&hintCell.r===r&&hintCell.c===c)return;
+  if(board[r][c]!==MARK)return;
+  clearHintPreview();
+  setCellValue(r,c,EMPTY);
 }
 function undo(){
   if(!hist.length||gameWon)return;
@@ -557,9 +575,14 @@ function undo(){
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
 }
 
-/* ── Interaction souris/tactile (clic simple = cycle, glisser = marquer
-   plusieurs cases à la volée) — attachée une seule fois sur la grille. ── */
-let _dragActive=false,_dragStart=null,_dragMoved=false,_dragLast=null;
+/* ── Interaction souris/tactile ──────────────────────────────
+   Tap simple gauche  : cycle vide → ✕ → 👑 → vide sur la case
+   Tap simple droit    : cycle inverse sur la case (inchangé)
+   Glisser gauche       : peint des ✕ sur les cases vides traversées
+   Glisser droit        : efface les ✕ des cases traversées (jamais les
+                          couronnes) — symétrique du glisser gauche
+   Attaché une seule fois sur la grille (pas à chaque rendu). ── */
+let _dragActive=false,_dragStart=null,_dragMoved=false,_dragLast=null,_dragButton=0;
 function _cellFromPoint(x,y){
   const el=document.elementFromPoint(x,y);
   const qc=el&&el.closest('.qc');
@@ -570,13 +593,13 @@ function _cellFromPoint(x,y){
 }
 // Un glisser rapide (souris ou doigt) ne déclenche pas un pointermove par
 // case traversée — on comble les trous en repeignant en ligne droite entre
-// la dernière case peinte et la case courante (Bresenham).
-function _paintLine(r0,c0,r1,c1){
+// la dernière case traitée et la case courante (Bresenham).
+function _paintLine(r0,c0,r1,c1,fn){
   let dr=Math.abs(r1-r0),dc=Math.abs(c1-c0);
   const sr=r0<r1?1:-1,sc=c0<c1?1:-1;
   let err=dr-dc,r=r0,c=c0;
   while(true){
-    paintMark(r,c);
+    fn(r,c);
     if(r===r1&&c===c1)break;
     const e2=2*err;
     if(e2>-dc){err-=dc;r+=sr;}
@@ -586,22 +609,23 @@ function _paintLine(r0,c0,r1,c1){
 function _initGridInteraction(){
   const grid=document.getElementById('grid');
   grid.addEventListener('pointerdown',e=>{
-    if(gameWon||e.button>0)return;
+    if(gameWon||(e.button!==0&&e.button!==2))return;
     const cell=_cellFromPoint(e.clientX,e.clientY);
     if(!cell)return;
-    _dragActive=true;_dragStart=cell;_dragMoved=false;_dragLast=cell;
+    _dragActive=true;_dragStart=cell;_dragMoved=false;_dragLast=cell;_dragButton=e.button;
     e.preventDefault();
   });
   window.addEventListener('pointermove',e=>{
     if(!_dragActive)return;
     const cell=_cellFromPoint(e.clientX,e.clientY);
     if(!cell)return;
+    const fn=_dragButton===2?eraseMark:paintMark;
     if(!_dragMoved&&(cell.r!==_dragStart.r||cell.c!==_dragStart.c)){
       _dragMoved=true;
-      paintMark(_dragStart.r,_dragStart.c);
+      fn(_dragStart.r,_dragStart.c);
     }
     if(_dragMoved&&(cell.r!==_dragLast.r||cell.c!==_dragLast.c)){
-      _paintLine(_dragLast.r,_dragLast.c,cell.r,cell.c);
+      _paintLine(_dragLast.r,_dragLast.c,cell.r,cell.c,fn);
       _dragLast=cell;
     }
   });
@@ -609,21 +633,19 @@ function _initGridInteraction(){
     if(!_dragActive)return;
     _dragActive=false;
     if(!_dragMoved&&_dragStart){
-      if(hintCell&&hintCell.r===_dragStart.r&&hintCell.c===_dragStart.c)confirmHint();
-      else cycleCell(_dragStart.r,_dragStart.c,1);
+      if(hintCell&&hintCell.r===_dragStart.r&&hintCell.c===_dragStart.c){
+        if(_dragButton===0)confirmHint();else clearHintPreview();
+      }else{
+        cycleCell(_dragStart.r,_dragStart.c,_dragButton===2?-1:1);
+      }
     }
     _dragStart=null;_dragLast=null;
   }
   window.addEventListener('pointerup',endDrag);
   window.addEventListener('pointercancel',endDrag);
-  grid.addEventListener('contextmenu',e=>{
-    e.preventDefault();
-    if(gameWon)return;
-    const cell=_cellFromPoint(e.clientX,e.clientY);
-    if(!cell)return;
-    if(hintCell&&hintCell.r===cell.r&&hintCell.c===cell.c){clearHintPreview();renderGrid();}
-    else cycleCell(cell.r,cell.c,-1);
-  });
+  // Le clic droit reste géré par pointerdown/up ci-dessus ; ce listener ne
+  // sert qu'à empêcher le menu contextuel du navigateur de s'ouvrir.
+  grid.addEventListener('contextmenu',e=>e.preventDefault());
 }
 
 function checkWin(){

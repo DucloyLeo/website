@@ -86,6 +86,12 @@ table.q-table td{padding:0}
 .qc.err{box-shadow:inset 0 0 0 3px rgba(220,80,60,.85),0 0 14px rgba(220,80,60,.3)}
 .qc.hint-preview{opacity:.6}
 .qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
+/* Les 4 cases d'angle suivent l'arrondi de la grille (même rayon que
+   table.q-table), sinon leur propre fine bordure droite dépasse du coin. */
+#grid tr:first-child td:first-child .qc{border-top-left-radius:11px}
+#grid tr:first-child td:last-child .qc{border-top-right-radius:11px}
+#grid tr:last-child td:first-child .qc{border-bottom-left-radius:11px}
+#grid tr:last-child td:last-child .qc{border-bottom-right-radius:11px}
 /* Contours de zone : tracés en SVG par-dessus la grille (voir renderZoneLines),
    continus et d'épaisseur constante même dans les angles — plus marqués que
    les fins séparateurs de case ci-dessus. overflow:hidden + même border-radius
@@ -466,18 +472,43 @@ function setCellSymbol(el,state){
 // avec stroke-linecap="round", ce qui comble naturellement les angles —
 // épaisseur parfaitement constante, y compris dans les coins concaves,
 // sans les artefacts de l'ancienne méthode (bordures + radius par case).
+// Mesure les positions RÉELLES des cases dans le DOM (au lieu d'un système
+// de coordonnées abstrait mis à l'échelle par le navigateur) pour garantir
+// un alignement pixel-perfect avec la grille HTML même au zoom élevé, et
+// découpe via un <clipPath> SVG explicite (plus fiable que overflow+
+// border-radius sur un <svg>, qui n'est pas toujours respecté aux coins).
 function renderZoneLines(){
   const svg=document.getElementById('zone-lines');
-  if(!svg)return;
-  svg.setAttribute('viewBox','0 0 '+N+' '+N);
-  const sw=0.06;
+  const tbl=document.getElementById('grid');
+  if(!svg||!tbl)return;
+  const tblRect=tbl.getBoundingClientRect();
+  const w=tblRect.width,h=tblRect.height;
+  if(!w||!h)return;
+  const xs=[],ys=[];
+  for(let c=0;c<N;c++){
+    const el=document.querySelector('.qc[data-r="0"][data-c="'+c+'"]');
+    const r=el.getBoundingClientRect();
+    if(c===0)xs.push(r.left-tblRect.left);
+    xs.push(r.right-tblRect.left);
+  }
+  for(let r=0;r<N;r++){
+    const el=document.querySelector('.qc[data-r="'+r+'"][data-c="0"]');
+    const rc=el.getBoundingClientRect();
+    if(r===0)ys.push(rc.top-tblRect.top);
+    ys.push(rc.bottom-tblRect.top);
+  }
+  svg.setAttribute('viewBox','0 0 '+w+' '+h);
+  const sw=(w/N)*0.06;
+  const rad=11; // légèrement < 12px du border-radius de table.q-table pour rester bien à l'intérieur
   let lines='';
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const reg=regions[r][c];
-    if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+(c+1)+'" y1="'+r+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
-    if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+c+'" y1="'+(r+1)+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
+    if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+xs[c+1]+'" y1="'+ys[r]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
+    if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+xs[c]+'" y1="'+ys[r+1]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
   }
-  svg.innerHTML='<g stroke="#4a443c" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
+  svg.innerHTML=
+    '<defs><clipPath id="qzclip"><rect x="0" y="0" width="'+w+'" height="'+h+'" rx="'+rad+'" ry="'+rad+'"/></clipPath></defs>'+
+    '<g clip-path="url(#qzclip)" stroke="#4a443c" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
 }
 function renderEmptyGrid(){
   const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';

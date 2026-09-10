@@ -79,9 +79,6 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .grid-wrap.blurred{filter:blur(8px) brightness(0.5);pointer-events:none}
 table.q-table{border-collapse:collapse;border:2.5px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.10);position:relative}
 table.q-table td{padding:0}
-/* Chargement de grille plus rapide sur Queens (davantage de cases que Tango) :
-   on surcharge juste la variable partagée, sans toucher animations.css. */
-#grid{--anim-grid-stagger:3ms}
 .qc{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:filter .1s,box-shadow .3s;box-sizing:border-box;color:#2a2118;border:1px solid rgba(20,16,12,.14)}
 .qc:hover{filter:brightness(1.08)}
 .qc.mark{font-size:1rem!important;color:rgba(15,12,9,.88);font-weight:700}
@@ -90,9 +87,11 @@ table.q-table td{padding:0}
 .qc.hint-preview{opacity:.6}
 .qc.hint-preview::after{content:'';position:absolute;inset:2px;border:2.5px dashed var(--moon);border-radius:6px;pointer-events:none}
 /* Contours de zone : tracés en SVG par-dessus la grille (voir renderZoneLines),
-   continus et d'épaisseur constante même dans les angles — plus épais et plus
-   marqués que les fins séparateurs de case ci-dessus. */
-.zone-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+   continus et d'épaisseur constante même dans les angles — plus marqués que
+   les fins séparateurs de case ci-dessus. overflow:hidden + même border-radius
+   que table.q-table : les bouts arrondis des traits qui touchent le bord de
+   la grille ne doivent jamais dépasser le cadre extérieur. */
+.zone-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;border-radius:12px}
 
 /* Palette des zones (10 couleurs max) — fixe, ne dépend PAS du thème
    clair/sombre : les couleurs de la grille doivent rester identiques. */
@@ -284,7 +283,6 @@ const DIFF_LABELS={easy:'Facile',medium:'Moyen',hard:'Difficile'};
 const DIFF_N={easy:6,medium:8,hard:10};
 
 let N=8,regions=[],board=[],solutionCells=null;
-let _animNextGrid=false;
 let hist=[];
 let timerInt=null,timerOn=false,timerSec=0,timerDone=false;
 let generating=false,currentDiff=null;
@@ -472,14 +470,14 @@ function renderZoneLines(){
   const svg=document.getElementById('zone-lines');
   if(!svg)return;
   svg.setAttribute('viewBox','0 0 '+N+' '+N);
-  const sw=0.09;
+  const sw=0.06;
   let lines='';
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const reg=regions[r][c];
     if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+(c+1)+'" y1="'+r+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
     if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+c+'" y1="'+(r+1)+'" x2="'+(c+1)+'" y2="'+(r+1)+'"/>';
   }
-  svg.innerHTML='<g stroke="#2a2118" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
+  svg.innerHTML='<g stroke="#4a443c" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
 }
 function renderEmptyGrid(){
   const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
@@ -505,11 +503,6 @@ function renderGrid(){
   renderZoneLines();
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   document.getElementById('btn-hint').disabled=gameWon;
-  if(_animNextGrid){
-    _animNextGrid=false;
-    const cells=[...tbl.querySelectorAll('.qc')];
-    if(typeof ANIM!=='undefined')ANIM.gridLoad(cells);
-  }
 }
 
 function confirmHint(){
@@ -823,7 +816,7 @@ async function startGeneration(diff){
     currentDiff=diff;
     currentSeedStr=encodeSeed(diff,N,regions);
     setDiffBadge(diff);
-    _animNextGrid=true;renderGrid();
+    renderGrid();
   },30);
 }
 function setButtons(d){['btn-undo','btn-reset','btn-new','btn-hint'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=d;});}
@@ -854,7 +847,7 @@ function startGameFromSeed(seedStr){
   N=n;regions=regs;solutionCells=solutions[0]||null;
   board=Array.from({length:N},()=>Array(N).fill(EMPTY));
   currentDiff=diff;currentSeedStr=seedStr;
-  setDiffBadge(diff);_animNextGrid=true;renderGrid();
+  setDiffBadge(diff);renderGrid();
 }
 
 /* ── Init ── */

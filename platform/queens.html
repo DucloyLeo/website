@@ -92,6 +92,12 @@ table.q-table td{padding:0}
 #grid tr:first-child td:last-child .qc{border-top-right-radius:11px}
 #grid tr:last-child td:first-child .qc{border-bottom-left-radius:11px}
 #grid tr:last-child td:last-child .qc{border-bottom-right-radius:11px}
+/* Contours de zone : tracés en SVG par-dessus la grille (voir renderZoneLines),
+   continus et d'épaisseur constante même dans les angles — plus marqués que
+   les fins séparateurs de case ci-dessus. overflow:hidden + même border-radius
+   que table.q-table : les bouts arrondis des traits qui touchent le bord de
+   la grille ne doivent jamais dépasser le cadre extérieur. */
+.zone-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;border-radius:12px}
 
 /* Palette des zones (10 couleurs max) — fixe, ne dépend PAS du thème
    clair/sombre : les couleurs de la grille doivent rester identiques. */
@@ -182,6 +188,7 @@ main.game-main{max-width:900px;margin:0 auto;padding:1.8rem 0 4rem;display:flex;
   <div class="grid-outer">
     <div class="grid-wrap" id="grid-wrap">
       <table class="q-table" id="grid"></table>
+      <svg class="zone-lines" id="zone-lines" preserveAspectRatio="none"></svg>
     </div>
   </div>
 
@@ -459,26 +466,59 @@ function setCellSymbol(el,state){
   else if(state===QUEEN){el.classList.add('queen');el.textContent='♛';}
   else el.textContent='';
 }
-// Contours de zone : bordures natives des <td>, fusionnées par
-// border-collapse (une frontière = une seule ligne physique, jamais deux
-// bordures superposées) — même moteur de rendu que la grille elle-même,
-// donc alignement et confinement à la grille garantis par construction
-// (pas de calque séparé à positionner, pas de tracé pouvant dépasser une
-// boîte CSS). Jamais de bordure sur le bord extérieur de la grille : déjà
-// assuré par table.q-table. Épaisseur fixe (valeur CSS directe), donc
-// identique quelle que soit la difficulté.
-const ZONE_BOUNDARY='4px solid #4a443c',ZONE_NONE='0 none';
-function tdBorderStyle(r,c){
-  const reg=regions[r][c];
-  const same=(rr,cc)=>(rr<0||rr>=N||cc<0||cc>=N)?true:regions[rr][cc]===reg;
-  const top=same(r-1,c)?ZONE_NONE:ZONE_BOUNDARY;
-  const left=same(r,c-1)?ZONE_NONE:ZONE_BOUNDARY;
-  const right=same(r,c+1)?ZONE_NONE:ZONE_BOUNDARY;
-  const bottom=same(r+1,c)?ZONE_NONE:ZONE_BOUNDARY;
-  return'border-top:'+top+';border-left:'+left+';border-right:'+right+';border-bottom:'+bottom;
+// Contours de zone : un unique overlay SVG dessine chaque frontière interne
+// entre deux régions différentes (jamais le bord extérieur de la grille,
+// déjà assuré par table.q-table). Les segments partagent leurs extrémités
+// avec stroke-linecap="round", ce qui comble naturellement les angles —
+// épaisseur parfaitement constante, y compris dans les coins concaves,
+// sans les artefacts de l'ancienne méthode (bordures + radius par case).
+// Mesure les positions RÉELLES des cases dans le DOM (au lieu d'un système
+// de coordonnées abstrait mis à l'échelle par le navigateur) pour garantir
+// un alignement pixel-perfect avec la grille HTML même au zoom élevé, et
+// découpe via un <clipPath> SVG explicite (plus fiable que overflow+
+// border-radius sur un <svg>, qui n'est pas toujours respecté aux coins).
+function renderZoneLines(){
+  const svg=document.getElementById('zone-lines');
+  const tbl=document.getElementById('grid');
+  if(!svg||!tbl)return;
+  const tblRect=tbl.getBoundingClientRect();
+  const w=tblRect.width,h=tblRect.height;
+  if(!w||!h)return;
+  const xs=[],ys=[];
+  for(let c=0;c<N;c++){
+    const el=document.querySelector('.qc[data-r="0"][data-c="'+c+'"]');
+    const r=el.getBoundingClientRect();
+    if(c===0)xs.push(r.left-tblRect.left);
+    xs.push(r.right-tblRect.left);
+  }
+  for(let r=0;r<N;r++){
+    const el=document.querySelector('.qc[data-r="'+r+'"][data-c="0"]');
+    const rc=el.getBoundingClientRect();
+    if(r===0)ys.push(rc.top-tblRect.top);
+    ys.push(rc.bottom-tblRect.top);
+  }
+  svg.setAttribute('viewBox','0 0 '+w+' '+h);
+  // Épaisseur FIXE quelle que soit la difficulté (calée sur celle de la
+  // grille 10×10) : calculée à partir d'une taille de case de référence,
+  // pas de w/N (qui varie avec le nombre de cases).
+  const REF_N=10;
+  const sw=(w/REF_N)*0.06;
+  const rad=11; // légèrement < 12px du border-radius de table.q-table pour rester bien à l'intérieur
+  // clip-path CSS (inset+round) plutôt qu'un <clipPath> SVG référencé par id :
+  // plus fiable pour découper aux coins arrondis, notamment pour tout point
+  // du bord (pas seulement les 4 coins) où un trait touche l'extérieur.
+  svg.style.clipPath='inset(0 round '+rad+'px)';
+  let lines='';
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const reg=regions[r][c];
+    if(c<N-1&&regions[r][c+1]!==reg)lines+='<line x1="'+xs[c+1]+'" y1="'+ys[r]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
+    if(r<N-1&&regions[r+1][c]!==reg)lines+='<line x1="'+xs[c]+'" y1="'+ys[r+1]+'" x2="'+xs[c+1]+'" y2="'+ys[r+1]+'"/>';
+  }
+  svg.innerHTML='<g stroke="#4a443c" stroke-width="'+sw+'" stroke-linecap="round">'+lines+'</g>';
 }
 function renderEmptyGrid(){
   const tbl=document.getElementById('grid');if(!tbl)return;tbl.innerHTML='';tbl.className='q-table';
+  const svg=document.getElementById('zone-lines');if(svg)svg.innerHTML='';
 }
 function renderGrid(){
   const tbl=document.getElementById('grid');tbl.innerHTML='';
@@ -492,12 +532,12 @@ function renderGrid(){
       const isHint=hintCell&&hintCell.r===r&&hintCell.c===c&&board[r][c]!==QUEEN;
       inner.className='qc qr-'+regions[r][c]+(isCellErr(errSet,r,c)?' err':'')+(isHint?' hint-preview':'');
       inner.dataset.r=r;inner.dataset.c=c;
-      td.style.cssText=tdBorderStyle(r,c);
       setCellSymbol(inner,isHint?QUEEN:board[r][c]);
       td.appendChild(inner);tr.appendChild(td);
     }
     tbl.appendChild(tr);
   }
+  renderZoneLines();
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   document.getElementById('btn-hint').disabled=gameWon;
 }

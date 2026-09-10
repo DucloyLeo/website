@@ -93,7 +93,8 @@ nav.game-nav{max-width:900px;margin:0 auto;padding:1.4rem 0;display:grid;grid-te
 .qc:hover .qc-bg{filter:brightness(1.08)}
 .qc.err .qc-bg{stroke:#dc503c;stroke-width:3;vector-effect:non-scaling-stroke}
 .qc-icon-slot{color:#2a2118;pointer-events:none}
-.qc.mark .qc-icon-slot{color:rgba(15,12,9,.88)}
+.qc-icon-anim{transform-box:fill-box;transform-origin:center}
+.qc.mark .qc-icon-slot{color:#171310}
 .qc.hint-preview{opacity:.62}
 .qc-hint-ring{fill:none;stroke:var(--moon);stroke-width:2.5;stroke-dasharray:7 5;vector-effect:non-scaling-stroke;pointer-events:none}
 .qc-zone-lines line{stroke:#4a443c;stroke-width:4;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
@@ -471,19 +472,28 @@ function loadIcons(){
   ]);
 }
 const ICON_SIZE=0.6,ICON_OFF=(1-ICON_SIZE)/2;
+// IMPORTANT : .qc-icon-slot porte le positionnement de l'icône via l'attribut
+// SVG transform="translate(...) scale(...)". Si on animait le transform CSS
+// (via .animate()) directement sur ce même élément, la valeur CSS prendrait
+// le pas sur l'attribut SVG et écraserait complètement la position pendant
+// toute la durée de l'animation (l'icône saute au coin de la grille avant
+// de "revenir" à sa place — c'est ce qui causait le lag ressenti au clic).
+// D'où ce sous-groupe .qc-icon-anim, sans transform propre : c'est LUI que
+// les animations ciblent, jamais .qc-icon-slot.
 function setCellSymbol(g,state){
   g.classList.remove('mark','queen');
-  const slot=g.querySelector('.qc-icon-slot');
-  if(!slot)return;
-  slot.innerHTML='';
+  const anim=g.querySelector('.qc-icon-anim');
+  if(!anim)return;
+  anim.innerHTML='';
+  anim.style.opacity='';anim.style.transform='';
   if(state===MARK){
     g.classList.add('mark');
-    if(ICONS.mark)slot.innerHTML=ICONS.mark;
-    else slot.appendChild(svgEl('text',{x:50,y:68,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='✕';
+    if(ICONS.mark)anim.innerHTML=ICONS.mark;
+    else anim.appendChild(svgEl('text',{x:50,y:68,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='✕';
   }else if(state===QUEEN){
     g.classList.add('queen');
-    if(ICONS.queen)slot.innerHTML=ICONS.queen;
-    else slot.appendChild(svgEl('text',{x:50,y:75,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='♛';
+    if(ICONS.queen)anim.innerHTML=ICONS.queen;
+    else anim.appendChild(svgEl('text',{x:50,y:75,'font-size':60,'text-anchor':'middle',fill:'currentColor'})).textContent='♛';
   }
 }
 function renderEmptyGrid(){
@@ -503,6 +513,7 @@ function renderGrid(){
     g.dataset.r=r;g.dataset.c=c;
     g.appendChild(svgEl('rect',{class:'qc-bg',x:c,y:r,width:1,height:1}));
     const slot=svgEl('g',{class:'qc-icon-slot',transform:'translate('+(c+ICON_OFF)+' '+(r+ICON_OFF)+') scale('+(ICON_SIZE/100)+')'});
+    slot.appendChild(svgEl('g',{class:'qc-icon-anim'}));
     g.appendChild(slot);
     setCellSymbol(g,isHint?QUEEN:board[r][c]);
     if(isHint){hintG=g;g.appendChild(svgEl('rect',{class:'qc-hint-ring',x:c+0.05,y:r+0.05,width:0.9,height:0.9,rx:0.08}));}
@@ -531,17 +542,22 @@ function renderGrid(){
 // non modifié — celui-ci continue d'utiliser ANIM.* normalement.
 const QANIM={
   get reduced(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches;},
+  // Ciblent .qc-icon-anim (jamais .qc-icon-slot, voir le commentaire au-dessus
+  // de setCellSymbol) : élément dédié à l'animation, sans transform propre.
   place(g){
     if(this.reduced||!g)return;
-    const slot=g.querySelector('.qc-icon-slot');
-    if(!slot||!slot.animate)return;
-    slot.animate([{transform:'scale(1)'},{transform:'scale(1.16)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.34,1.56,.64,1)'});
+    const anim=g.querySelector('.qc-icon-anim');
+    if(!anim||!anim.animate)return;
+    anim.animate([{transform:'scale(.5)',opacity:.6},{transform:'scale(1.18)',opacity:1},{transform:'scale(1)',opacity:1}],{duration:170,easing:'cubic-bezier(.34,1.56,.64,1)'});
   },
-  erase(g){
-    if(this.reduced||!g)return;
-    const slot=g.querySelector('.qc-icon-slot');
-    if(!slot||!slot.animate)return;
-    slot.animate([{opacity:1},{opacity:.55},{opacity:1}],{duration:100,easing:'ease'});
+  // onDone : appelé une fois le fondu terminé — c'est là que setCellSymbol
+  // doit effacer l'icône (jamais avant, sinon rien ne reste à animer).
+  erase(g,onDone){
+    if(this.reduced||!g){if(onDone)onDone();return;}
+    const anim=g.querySelector('.qc-icon-anim');
+    if(!anim||!anim.animate){if(onDone)onDone();return;}
+    const a=anim.animate([{transform:'scale(1)',opacity:1},{transform:'scale(.4)',opacity:0}],{duration:120,easing:'cubic-bezier(.4,0,1,1)'});
+    a.onfinish=a.oncancel=()=>{if(onDone)onDone();};
   },
   hint(g){
     if(this.reduced||!g||!g.animate)return;
@@ -579,9 +595,11 @@ function setCellValue(r,c,next){
   if(!timerOn&&!timerDone)startTimer();
   hist.push({r,c,prev});board[r][c]=next;
   const el=cellEl(r,c);
-  if(el)setCellSymbol(el,next);
+  if(el){
+    if(next===EMPTY)QANIM.erase(el,()=>setCellSymbol(el,next)); // efface l'ancienne icône PUIS la vide
+    else{setCellSymbol(el,next);QANIM.place(el);} // affiche la nouvelle icône PUIS anime son apparition
+  }
   applyErrClasses();
-  if(el){next===EMPTY?QANIM.erase(el):QANIM.place(el);}
   if(typeof SOUND!=='undefined'){next===EMPTY?SOUND.erase():SOUND.place(next);}
   document.getElementById('btn-undo').disabled=hist.length===0||gameWon;
   checkWin();
